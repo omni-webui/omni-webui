@@ -95,7 +95,7 @@ print(
       
 v{VERSION} - building the best open-source AI user interface.
 {f"Commit: {WEBUI_BUILD_HASH}" if WEBUI_BUILD_HASH != "dev-build" else ""}
-https://github.com/open-webui/open-webui
+https://github.com/omni-webui/omni-webui
 """
 )
 
@@ -904,7 +904,7 @@ async def get_app_latest_release_version():
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
-                "https://api.github.com/repos/open-webui/open-webui/releases/latest"
+                "https://api.github.com/repos/omni-webui/omni-webui/releases/latest"
             ) as response:
                 response.raise_for_status()
                 data = await response.json()

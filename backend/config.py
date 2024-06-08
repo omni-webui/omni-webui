@@ -4,6 +4,7 @@ import logging
 import importlib.metadata
 import pkgutil
 import chromadb
+import datetime
 from chromadb import Settings
 from base64 import b64encode
 from bs4 import BeautifulSoup
@@ -79,13 +80,14 @@ for source in log_sources:
 
 log.setLevel(SRC_LOG_LEVELS["CONFIG"])
 
-WEBUI_NAME = os.environ.get("WEBUI_NAME", "Open WebUI")
-if WEBUI_NAME != "Open WebUI":
-    WEBUI_NAME += " (Open WebUI)"
+webui_name = "Omni WebUI"
+WEBUI_NAME = os.environ.get("WEBUI_NAME", webui_name)
+if WEBUI_NAME != webui_name:
+    WEBUI_NAME += f" ({webui_name})"
 
 WEBUI_URL = os.environ.get("WEBUI_URL", "http://localhost:3000")
 
-WEBUI_FAVICON_URL = "https://openwebui.com/favicon.png"
+WEBUI_FAVICON_URL = "https://omni-webui.com/favicon.png"
 
 
 ####################################
@@ -98,7 +100,7 @@ try:
     PACKAGE_DATA = json.loads((BASE_DIR / "package.json").read_text())
 except:
     try:
-        PACKAGE_DATA = {"version": importlib.metadata.version("open-webui")}
+        PACKAGE_DATA = {"version": importlib.metadata.version("omni-webui")}
     except importlib.metadata.PackageNotFoundError:
         PACKAGE_DATA = {"version": "0.0.0"}
 
@@ -130,7 +132,7 @@ try:
         changelog_content = file.read()
 
 except:
-    changelog_content = (pkgutil.get_data("open_webui", "CHANGELOG.md") or b"").decode()
+    changelog_content = (pkgutil.get_data("omni_webui", "CHANGELOG.md") or b"").decode()
 
 
 # Convert markdown content to HTML
@@ -144,8 +146,13 @@ changelog_json = {}
 
 # Iterate over each version
 for version in soup.find_all("h2"):
-    version_number = version.get_text().strip().split(" - ")[0][1:-1]  # Remove brackets
-    date = version.get_text().strip().split(" - ")[1]
+    version_text = version.get_text().strip()
+    if version_text == "Unreleased":
+        version_number = "Unreleased"
+        date = datetime.date.today().isoformat()
+    else:
+        version_number = version_text.strip().split(" - ")[0][1:-1]  # Remove brackets
+        date = version_text.strip().split(" - ")[1]
 
     version_data = {"date": date}
 
@@ -318,12 +325,12 @@ CUSTOM_NAME = os.environ.get("CUSTOM_NAME", "")
 
 if CUSTOM_NAME:
     try:
-        r = requests.get(f"https://api.openwebui.com/api/v1/custom/{CUSTOM_NAME}")
+        r = requests.get(f"https://api.omni-webui.com/api/v1/custom/{CUSTOM_NAME}")
         data = r.json()
         if r.ok:
             if "logo" in data:
                 WEBUI_FAVICON_URL = url = (
-                    f"https://api.openwebui.com{data['logo']}"
+                    f"https://api.omni-webui.com{data['logo']}"
                     if data["logo"][0] == "/"
                     else data["logo"]
                 )
@@ -363,40 +370,6 @@ Path(CACHE_DIR).mkdir(parents=True, exist_ok=True)
 DOCS_DIR = os.getenv("DOCS_DIR", f"{DATA_DIR}/docs")
 Path(DOCS_DIR).mkdir(parents=True, exist_ok=True)
 
-
-####################################
-# LITELLM_CONFIG
-####################################
-
-
-def create_config_file(file_path):
-    directory = os.path.dirname(file_path)
-
-    # Check if directory exists, if not, create it
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    # Data to write into the YAML file
-    config_data = {
-        "general_settings": {},
-        "litellm_settings": {},
-        "model_list": [],
-        "router_settings": {},
-    }
-
-    # Write data to YAML file
-    with open(file_path, "w") as file:
-        yaml.dump(config_data, file)
-
-
-LITELLM_CONFIG_PATH = f"{DATA_DIR}/litellm/config.yaml"
-
-# if not os.path.exists(LITELLM_CONFIG_PATH):
-#     log.info("Config file doesn't exist. Creating...")
-#     create_config_file(LITELLM_CONFIG_PATH)
-#     log.info("Config file created successfully.")
-
-
 ####################################
 # OLLAMA_BASE_URL
 ####################################
@@ -426,13 +399,13 @@ if OLLAMA_BASE_URL == "" and OLLAMA_API_BASE_URL != "":
 if ENV == "prod":
     if OLLAMA_BASE_URL == "/ollama" and not K8S_FLAG:
         if USE_OLLAMA_DOCKER.lower() == "true":
-            # if you use all-in-one docker container (Open WebUI + Ollama)
+            # if you use all-in-one docker container (Omni WebUI + Ollama)
             # with the docker build arg USE_OLLAMA=true (--build-arg="USE_OLLAMA=true") this only works with http://localhost:11434
             OLLAMA_BASE_URL = "http://localhost:11434"
         else:
             OLLAMA_BASE_URL = "http://host.docker.internal:11434"
     elif K8S_FLAG:
-        OLLAMA_BASE_URL = "http://ollama-service.open-webui.svc.cluster.local:11434"
+        OLLAMA_BASE_URL = "http://ollama-service.omni-webui.svc.cluster.local:11434"
 
 
 OLLAMA_BASE_URLS = os.environ.get("OLLAMA_BASE_URLS", "")

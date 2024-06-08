@@ -108,11 +108,3 @@ async def download_db(user=Depends(get_admin_user)):
         filename="webui.db",
     )
 
-
-@router.get("/litellm/config")
-async def download_litellm_config_yaml(user=Depends(get_admin_user)):
-    return FileResponse(
-        f"{DATA_DIR}/litellm/config.yaml",
-        media_type="application/octet-stream",
-        filename="config.yaml",
-    )

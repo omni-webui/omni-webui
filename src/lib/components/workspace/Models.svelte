@@ -66,9 +66,9 @@
 	};
 
 	const shareModelHandler = async (model) => {
-		toast.success($i18n.t('Redirecting you to OpenWebUI Community'));
+		toast.success($i18n.t('Redirecting you to OmniWebUI Community'));
 
-		const url = 'https://openwebui.com';
+		const url = 'https://omni-webui.com';
 
 		const tab = await window.open(`${url}/models/create`, '_blank');
 		window.addEventListener(
@@ -479,11 +479,11 @@
 </div>
 
 <div class=" my-16">
-	<div class=" text-lg font-semibold mb-3">{$i18n.t('Made by OpenWebUI Community')}</div>
+	<div class=" text-lg font-semibold mb-3">{$i18n.t('Made by OmniWebUI Community')}</div>
 
 	<a
 		class=" flex space-x-4 cursor-pointer w-full mb-2 px-3 py-2"
-		href="https://openwebui.com/"
+		href="https://omni-webui.com/"
 		target="_blank"
 	>
 		<div class=" self-center w-10">
