@@ -99,7 +99,6 @@ sources = ["backend"]
 exclude = [
     ".dockerignore",
     ".gitignore",
-    ".webui_secret_key",
     "start.sh",
     "webui.db",
     "chroma.sqlite3",
