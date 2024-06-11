@@ -1,71 +1,72 @@
-from contextlib import asynccontextmanager
-from bs4 import BeautifulSoup
 import json
-import markdown
-import time
+import logging
+import mimetypes
 import os
 import sys
-import logging
+import time
+from contextlib import asynccontextmanager
+from typing import List, Optional
+
 import aiohttp
 import requests
-import mimetypes
-
-from fastapi import FastAPI, Request, Depends, status
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
-from fastapi import HTTPException
-from fastapi.middleware.wsgi import WSGIMiddleware
+from art import text2art
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.responses import StreamingResponse, Response
-
-
-from omni_webui.apps.socket.main import app as socket_app
-from omni_webui.apps.ollama.main import app as ollama_app, get_all_models as get_ollama_models
-from omni_webui.apps.openai.main import app as openai_app, get_all_models as get_openai_models
+from starlette.responses import Response, StreamingResponse
 
 from omni_webui.apps.audio.main import app as audio_app
 from omni_webui.apps.images.main import app as images_app
-from omni_webui.apps.rag.main import app as rag_app
-from omni_webui.apps.webui.main import app as webui_app
-
-import asyncio
-from pydantic import BaseModel
-from typing import List, Optional
-
-from omni_webui.apps.webui.models.models import Models, ModelModel
-from omni_webui.utils import (
-    get_admin_user,
-    get_verified_user,
-    get_current_user,
-    get_http_authorization_cred,
+from omni_webui.apps.ollama.main import (
+    app as ollama_app,
 )
+from omni_webui.apps.ollama.main import (
+    get_all_models as get_ollama_models,
+)
+from omni_webui.apps.openai.main import (
+    app as openai_app,
+)
+from omni_webui.apps.openai.main import (
+    get_all_models as get_openai_models,
+)
+from omni_webui.apps.rag.main import app as rag_app
 from omni_webui.apps.rag.utils import rag_messages
-
+from omni_webui.apps.socket.main import app as socket_app
+from omni_webui.apps.webui.main import app as webui_app
+from omni_webui.apps.webui.models.models import Models
 from omni_webui.config import (
+    CACHE_DIR,
+    CHANGELOG,
     CONFIG_DATA,
+    ENABLE_ADMIN_EXPORT,
+    ENABLE_MODEL_FILTER,
+    ENABLE_OLLAMA_API,
+    ENABLE_OPENAI_API,
+    ENV,
+    FRONTEND_BUILD_DIR,
+    GLOBAL_LOG_LEVEL,
+    MODEL_FILTER_LIST,
+    SRC_LOG_LEVELS,
+    STATIC_DIR,
+    VERSION,
+    WEBHOOK_URL,
+    WEBUI_AUTH,
+    WEBUI_BUILD_HASH,
     WEBUI_NAME,
     WEBUI_URL,
-    WEBUI_AUTH,
-    ENV,
-    VERSION,
-    CHANGELOG,
-    FRONTEND_BUILD_DIR,
-    CACHE_DIR,
-    STATIC_DIR,
-    ENABLE_OPENAI_API,
-    ENABLE_OLLAMA_API,
-    ENABLE_MODEL_FILTER,
-    MODEL_FILTER_LIST,
-    GLOBAL_LOG_LEVEL,
-    SRC_LOG_LEVELS,
-    WEBHOOK_URL,
-    ENABLE_ADMIN_EXPORT,
     AppConfig,
-    WEBUI_BUILD_HASH,
 )
 from omni_webui.constants import ERROR_MESSAGES
+from omni_webui.utils import (
+    get_admin_user,
+    get_current_user,
+    get_http_authorization_cred,
+    get_verified_user,
+)
 
 logging.basicConfig(stream=sys.stdout, level=GLOBAL_LOG_LEVEL)
 log = logging.getLogger(__name__)
@@ -84,15 +85,8 @@ class SPAStaticFiles(StaticFiles):
 
 
 print(
-    rf"""
-  ___                    __        __   _     _   _ ___ 
- / _ \ _ __   ___ _ __   \ \      / /__| |__ | | | |_ _|
-| | | | '_ \ / _ \ '_ \   \ \ /\ / / _ \ '_ \| | | || | 
-| |_| | |_) |  __/ | | |   \ V  V /  __/ |_) | |_| || | 
- \___/| .__/ \___|_| |_|    \_/\_/ \___|_.__/ \___/|___|
-      |_|                                               
+    rf"""{text2art(WEBUI_NAME)}
 
-      
 v{VERSION} - building the best open-source AI user interface.
 {f"Commit: {WEBUI_BUILD_HASH}" if WEBUI_BUILD_HASH != "dev-build" else ""}
 https://github.com/omni-webui/omni-webui
@@ -262,15 +256,10 @@ class PipelineMiddleware(BaseHTTPMiddleware):
 
             user = None
             if len(sorted_filters) > 0:
-                try:
-                    user = get_current_user(
-                        get_http_authorization_cred(
-                            request.headers.get("Authorization")
-                        )
-                    )
-                    user = {"id": user.id, "name": user.name, "role": user.role}
-                except:
-                    pass
+                user = get_current_user(
+                    get_http_authorization_cred(request.headers.get("Authorization"))
+                )
+                user = {"id": user.id, "name": user.name, "role": user.role}
 
             model = app.state.MODELS[model_id]
 
@@ -303,16 +292,12 @@ class PipelineMiddleware(BaseHTTPMiddleware):
                     print(f"Connection error: {e}")
 
                     if r is not None:
-                        try:
-                            res = r.json()
-                            if "detail" in res:
-                                return JSONResponse(
-                                    status_code=r.status_code,
-                                    content=res,
-                                )
-                        except:
-                            pass
-
+                        res = r.json()
+                        if "detail" in res:
+                            return JSONResponse(
+                                status_code=r.status_code,
+                                content=res,
+                            )
                     else:
                         pass
 
@@ -421,7 +406,7 @@ async def get_all_models():
     custom_models = Models.get_all_models()
 
     for custom_model in custom_models:
-        if custom_model.base_model_id == None:
+        if custom_model.base_model_id is None:
             for model in models:
                 if (
                     custom_model.id == model["id"]
@@ -536,16 +521,12 @@ async def chat_completed(form_data: dict, user=Depends(get_verified_user)):
             print(f"Connection error: {e}")
 
             if r is not None:
-                try:
-                    res = r.json()
-                    if "detail" in res:
-                        return JSONResponse(
-                            status_code=r.status_code,
-                            content=res,
-                        )
-                except:
-                    pass
-
+                res = r.json()
+                if "detail" in res:
+                    return JSONResponse(
+                        status_code=r.status_code,
+                        content=res,
+                    )
             else:
                 pass
 
@@ -560,7 +541,7 @@ async def get_pipelines_list(user=Depends(get_admin_user)):
     urlIdxs = [
         idx
         for idx, response in enumerate(responses)
-        if response != None and "pipelines" in response
+        if response is not None and "pipelines" in response
     ]
 
     return {
@@ -581,7 +562,6 @@ class AddPipelineForm(BaseModel):
 
 @app.post("/api/pipelines/add")
 async def add_pipeline(form_data: AddPipelineForm, user=Depends(get_admin_user)):
-
     r = None
     try:
         urlIdx = form_data.urlIdx
@@ -604,12 +584,9 @@ async def add_pipeline(form_data: AddPipelineForm, user=Depends(get_admin_user))
 
         detail = "Pipeline not found"
         if r is not None:
-            try:
-                res = r.json()
-                if "detail" in res:
-                    detail = res["detail"]
-            except:
-                pass
+            res = r.json()
+            if "detail" in res:
+                detail = res["detail"]
 
         raise HTTPException(
             status_code=(r.status_code if r is not None else status.HTTP_404_NOT_FOUND),
@@ -624,7 +601,6 @@ class DeletePipelineForm(BaseModel):
 
 @app.delete("/api/pipelines/delete")
 async def delete_pipeline(form_data: DeletePipelineForm, user=Depends(get_admin_user)):
-
     r = None
     try:
         urlIdx = form_data.urlIdx
@@ -647,12 +623,9 @@ async def delete_pipeline(form_data: DeletePipelineForm, user=Depends(get_admin_
 
         detail = "Pipeline not found"
         if r is not None:
-            try:
-                res = r.json()
-                if "detail" in res:
-                    detail = res["detail"]
-            except:
-                pass
+            res = r.json()
+            if "detail" in res:
+                detail = res["detail"]
 
         raise HTTPException(
             status_code=(r.status_code if r is not None else status.HTTP_404_NOT_FOUND),
@@ -682,12 +655,9 @@ async def get_pipelines(urlIdx: Optional[int] = None, user=Depends(get_admin_use
 
         detail = "Pipeline not found"
         if r is not None:
-            try:
-                res = r.json()
-                if "detail" in res:
-                    detail = res["detail"]
-            except:
-                pass
+            res = r.json()
+            if "detail" in res:
+                detail = res["detail"]
 
         raise HTTPException(
             status_code=(r.status_code if r is not None else status.HTTP_404_NOT_FOUND),
@@ -699,10 +669,9 @@ async def get_pipelines(urlIdx: Optional[int] = None, user=Depends(get_admin_use
 async def get_pipeline_valves(
     urlIdx: Optional[int], pipeline_id: str, user=Depends(get_admin_user)
 ):
-    models = await get_all_models()
+    await get_all_models()
     r = None
     try:
-
         url = openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx]
         key = openai_app.state.config.OPENAI_API_KEYS[urlIdx]
 
@@ -720,12 +689,9 @@ async def get_pipeline_valves(
         detail = "Pipeline not found"
 
         if r is not None:
-            try:
-                res = r.json()
-                if "detail" in res:
-                    detail = res["detail"]
-            except:
-                pass
+            res = r.json()
+            if "detail" in res:
+                detail = res["detail"]
 
         raise HTTPException(
             status_code=(r.status_code if r is not None else status.HTTP_404_NOT_FOUND),
@@ -737,7 +703,7 @@ async def get_pipeline_valves(
 async def get_pipeline_valves_spec(
     urlIdx: Optional[int], pipeline_id: str, user=Depends(get_admin_user)
 ):
-    models = await get_all_models()
+    await get_all_models()
 
     r = None
     try:
@@ -757,12 +723,9 @@ async def get_pipeline_valves_spec(
 
         detail = "Pipeline not found"
         if r is not None:
-            try:
-                res = r.json()
-                if "detail" in res:
-                    detail = res["detail"]
-            except:
-                pass
+            res = r.json()
+            if "detail" in res:
+                detail = res["detail"]
 
         raise HTTPException(
             status_code=(r.status_code if r is not None else status.HTTP_404_NOT_FOUND),
@@ -777,7 +740,7 @@ async def update_pipeline_valves(
     form_data: dict,
     user=Depends(get_admin_user),
 ):
-    models = await get_all_models()
+    await get_all_models()
 
     r = None
     try:
@@ -802,12 +765,9 @@ async def update_pipeline_valves(
         detail = "Pipeline not found"
 
         if r is not None:
-            try:
-                res = r.json()
-                if "detail" in res:
-                    detail = res["detail"]
-            except:
-                pass
+            res = r.json()
+            if "detail" in res:
+                detail = res["detail"]
 
         raise HTTPException(
             status_code=(r.status_code if r is not None else status.HTTP_404_NOT_FOUND),
@@ -888,7 +848,7 @@ async def update_webhook_url(form_data: UrlForm, user=Depends(get_admin_user)):
 
 
 @app.get("/api/version")
-async def get_app_config():
+async def get_app_version():
     return {
         "version": VERSION,
     }
@@ -911,7 +871,7 @@ async def get_app_latest_release_version():
                 latest_version = data["tag_name"]
 
                 return {"current": VERSION, "latest": latest_version[1:]}
-    except aiohttp.ClientError as e:
+    except aiohttp.ClientError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=ERROR_MESSAGES.RATE_LIMIT_EXCEEDED,

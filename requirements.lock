@@ -26,6 +26,8 @@ argon2-cffi==23.1.0
     # via omni-webui
 argon2-cffi-bindings==21.2.0
     # via argon2-cffi
+art==6.2
+    # via omni-webui
 asgiref==3.8.1
     # via opentelemetry-instrumentation-asgi
 attrs==23.2.0
