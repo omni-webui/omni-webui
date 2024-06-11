@@ -65,7 +65,7 @@ To add a new language:
 
 ### 🤔 Questions & Feedback
 
-Got questions or feedback? Join our [Discord community](https://discord.gg/5rJgQTnV4s) or open an issue. We're here to help!
+Got questions or feedback? Join our [Discord community](https://discord.gg/NP6SzY96EF) or open an issue. We're here to help!
 
 ## 🙏 Thank You!
 

@@ -118,11 +118,11 @@ After installation, you can access Omni WebUI at [http://localhost:3000](http://
 
 ### Other Installation Methods
 
-We offer various installation alternatives, including non-Docker native installation methods, Docker Compose, Kustomize, and Helm. Visit our [Omni WebUI Documentation](https://docs.omni-webui.com/getting-started/) or join our [Discord community](https://discord.gg/5rJgQTnV4s) for comprehensive guidance.
+We offer various installation alternatives, including non-Docker native installation methods, Docker Compose, Kustomize, and Helm. Visit our [Omni WebUI Documentation](https://docs.omni-webui.com/getting-started/) or join our [Discord community](https://discord.gg/NP6SzY96EF) for comprehensive guidance.
 
 ### Troubleshooting
 
-Encountering connection issues? Our [Omni WebUI Documentation](https://docs.omni-webui.com/troubleshooting/) has got you covered. For further assistance and to join our vibrant community, visit the [Omni WebUI Discord](https://discord.gg/5rJgQTnV4s).
+Encountering connection issues? Our [Omni WebUI Documentation](https://docs.omni-webui.com/troubleshooting/) has got you covered. For further assistance and to join our vibrant community, visit the [Omni WebUI Discord](https://discord.gg/NP6SzY96EF).
 
 #### Omni WebUI: Server Connection Error
 
@@ -171,7 +171,7 @@ This project is licensed under the [MIT License](LICENSE) - see the [LICENSE](LI
 ## Support 💬
 
 If you have any questions, suggestions, or need assistance, please open an issue or join our
-[Omni WebUI Discord community](https://discord.gg/5rJgQTnV4s) to connect with us! 🤝
+[Omni WebUI Discord community](https://discord.gg/NP6SzY96EF) to connect with us! 🤝
 
 ## Star History
 
