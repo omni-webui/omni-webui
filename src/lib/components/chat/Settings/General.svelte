@@ -11,7 +11,6 @@
 	import AdvancedParams from './Advanced/AdvancedParams.svelte';
 
 	export let saveSettings: Function;
-	export let getModels: Function;
 
 	// General
 	let themes = ['dark', 'light', 'rose-pine dark', 'rose-pine-dawn light', 'oled-dark'];

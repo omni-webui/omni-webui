@@ -20,9 +20,6 @@
 	/>
 
 	<HelpMenu
-		showDocsHandler={() => {
-			showShortcuts = !showShortcuts;
-		}}
 		showShortcutsHandler={() => {
 			showShortcuts = !showShortcuts;
 		}}

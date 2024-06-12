@@ -14,9 +14,7 @@
 
 	const i18n = getContext('i18n');
 
-	export let shareEnabled: boolean = false;
 	export let shareHandler: Function;
-	export let downloadHandler: Function;
 
 	// export let tagHandler: Function;
 

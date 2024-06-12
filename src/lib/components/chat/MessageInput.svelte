@@ -489,9 +489,6 @@
 				<Models
 					bind:this={modelsElement}
 					bind:prompt
-					bind:user
-					bind:chatInputPlaceholder
-					{messages}
 					on:select={(e) => {
 						atSelectedModel = e.detail;
 						chatTextAreaElement?.focus();

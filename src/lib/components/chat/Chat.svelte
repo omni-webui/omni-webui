@@ -1223,7 +1223,6 @@
 					<Messages
 						chatId={$chatId}
 						{selectedModels}
-						{processing}
 						bind:history
 						bind:messages
 						bind:autoScroll

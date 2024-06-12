@@ -64,12 +64,8 @@
 				{#if shareEnabled && chat && chat.id}
 					<Menu
 						{chat}
-						{shareEnabled}
 						shareHandler={() => {
 							showShareChatModal = !showShareChatModal;
-						}}
-						downloadHandler={() => {
-							showDownloadChatModal = !showDownloadChatModal;
 						}}
 					>
 						<button

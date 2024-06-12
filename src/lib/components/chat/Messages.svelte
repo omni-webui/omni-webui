@@ -22,7 +22,6 @@
 
 	export let user = $_user;
 	export let prompt;
-	export let processing = '';
 	export let bottomPadding = false;
 	export let autoScroll;
 	export let history = {};

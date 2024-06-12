@@ -6,10 +6,6 @@
 	const dispatch = createEventDispatcher();
 
 	export let prompt = '';
-	export let user = null;
-
-	export let chatInputPlaceholder = '';
-	export let messages = [];
 
 	let selectedIdx = 0;
 	let filteredModels = [];

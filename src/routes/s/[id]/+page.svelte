@@ -19,7 +19,6 @@
 	let loaded = false;
 
 	let autoScroll = true;
-	let processing = '';
 	let selectedModels = [''];
 
 	let chat = null;
@@ -143,7 +142,6 @@
 							chatId={$chatId}
 							readOnly={true}
 							{selectedModels}
-							{processing}
 							bind:history
 							bind:messages
 							bind:autoScroll
