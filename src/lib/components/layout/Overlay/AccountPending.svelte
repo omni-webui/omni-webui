@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getAdminDetails } from '$lib/apis/auths';
-	import { onMount, tick, getContext } from 'svelte';
+	import { onMount, getContext } from 'svelte';
 
 	const i18n = getContext('i18n');
 

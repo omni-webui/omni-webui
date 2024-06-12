@@ -2,7 +2,7 @@
 	import { DropdownMenu } from 'bits-ui';
 
 	import { flyAndScale } from '$lib/utils/transitions';
-	import { createEventDispatcher, onMount, getContext, tick } from 'svelte';
+	import { createEventDispatcher, onMount, getContext } from 'svelte';
 
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import Check from '$lib/components/icons/Check.svelte';
@@ -12,13 +12,13 @@
 
 	import { user, MODEL_DOWNLOAD_POOL, models, mobile } from '$lib/stores';
 	import { toast } from 'svelte-sonner';
-	import { capitalizeFirstLetter, sanitizeResponseContent, splitStream } from '$lib/utils';
+	import { sanitizeResponseContent, splitStream } from '$lib/utils';
 	import { getModels } from '$lib/apis';
 
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 
 	const i18n = getContext('i18n');
-	const dispatch = createEventDispatcher();
+	createEventDispatcher();
 
 	export let value = '';
 	export let placeholder = 'Select a model';
@@ -176,7 +176,7 @@
 	};
 
 	onMount(async () => {
-		ollamaVersion = await getOllamaVersion(localStorage.token).catch((error) => false);
+		ollamaVersion = await getOllamaVersion(localStorage.token).catch(() => false);
 	});
 
 	const cancelModelPullHandler = async (model: string) => {

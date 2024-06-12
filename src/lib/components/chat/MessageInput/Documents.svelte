@@ -30,7 +30,7 @@
 			  ]
 			: []),
 		...$documents
-			.reduce((a, e, i, arr) => {
+			.reduce((a, e) => {
 				return [...new Set([...a, ...(e?.content?.tags ?? []).map((tag) => tag.name)])];
 			}, [])
 			.map((tag) => ({

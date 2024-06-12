@@ -4,7 +4,7 @@
 	import { getLanguages } from '$lib/i18n';
 	const dispatch = createEventDispatcher();
 
-	import { models, settings, theme } from '$lib/stores';
+	import { settings, theme } from '$lib/stores';
 
 	const i18n = getContext('i18n');
 
@@ -159,7 +159,7 @@
 						class=" dark:bg-gray-900 w-fit pr-8 rounded py-2 px-2 text-xs bg-transparent outline-none text-right"
 						bind:value={lang}
 						placeholder="Select a language"
-						on:change={(e) => {
+						on:change={() => {
 							$i18n.changeLanguage(lang);
 						}}
 					>

@@ -12,8 +12,7 @@
 		getOllamaConfig
 	} from '$lib/apis/ollama';
 
-	import { WEBUI_API_BASE_URL, WEBUI_BASE_URL } from '$lib/constants';
-	import { WEBUI_NAME, models, MODEL_DOWNLOAD_POOL, user, config } from '$lib/stores';
+	import { models, MODEL_DOWNLOAD_POOL } from '$lib/stores';
 	import { splitStream } from '$lib/utils';
 	import { onMount, getContext } from 'svelte';
 
@@ -49,9 +48,6 @@
 	let createModelContent = '';
 	let createModelDigest = '';
 	let createModelPullProgress = null;
-
-	let digest = '';
-	let pullProgress = null;
 
 	let modelUploadMode = 'file';
 	let modelInputFile: File[] | null = null;
@@ -376,16 +372,6 @@
 										!data.status.includes('sha256')
 									) {
 										toast.success(data.status);
-									} else {
-										if (data.digest) {
-											digest = data.digest;
-
-											if (data.completed) {
-												pullProgress = Math.round((data.completed / data.total) * 1000) / 10;
-											} else {
-												pullProgress = 100;
-											}
-										}
 									}
 								}
 							}
@@ -536,7 +522,7 @@
 					}
 				})(),
 				(async () => {
-					ollamaVersion = await getOllamaVersion(localStorage.token).catch((error) => false);
+					ollamaVersion = await getOllamaVersion(localStorage.token).catch(() => false);
 				})()
 			]);
 		} else {

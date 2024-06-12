@@ -7,10 +7,9 @@
 
 	import { onMount, getContext, tick } from 'svelte';
 
-	import { WEBUI_NAME, mobile, models, settings, user } from '$lib/stores';
-	import { addNewModel, deleteModelById, getModelInfos, updateModelById } from '$lib/apis/models';
+	import { WEBUI_NAME, mobile, models } from '$lib/stores';
+	import { addNewModel, deleteModelById, updateModelById } from '$lib/apis/models';
 
-	import { deleteModel } from '$lib/apis/ollama';
 	import { goto } from '$app/navigation';
 
 	import { getModels } from '$lib/apis';
@@ -27,7 +26,6 @@
 
 	let _models = [];
 
-	let sortable = null;
 	let searchValue = '';
 
 	const deleteModelHandler = async (model) => {
@@ -179,7 +177,7 @@
 
 		if (!$mobile) {
 			// SortableJS
-			sortable = new Sortable(document.getElementById('model-list'), {
+			new Sortable(document.getElementById('model-list'), {
 				animation: 150,
 				onUpdate: async (event) => {
 					console.log(event);
@@ -372,11 +370,11 @@
 					for (const model of savedModels) {
 						if (model?.info ?? false) {
 							if ($models.find((m) => m.id === model.id)) {
-								await updateModelById(localStorage.token, model.id, model.info).catch((error) => {
+								await updateModelById(localStorage.token, model.id, model.info).catch(() => {
 									return null;
 								});
 							} else {
-								await addNewModel(localStorage.token, model.info).catch((error) => {
+								await addNewModel(localStorage.token, model.info).catch(() => {
 									return null;
 								});
 							}

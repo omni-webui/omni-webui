@@ -1,14 +1,12 @@
 <script>
-	import { v4 as uuidv4 } from 'uuid';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 
 	import { onMount, getContext } from 'svelte';
 	import { page } from '$app/stores';
-	import { settings, user, config, models } from '$lib/stores';
-	import { splitStream } from '$lib/utils';
+	import { models } from '$lib/stores';
 
-	import { getModelInfos, updateModelById } from '$lib/apis/models';
+	import { updateModelById } from '$lib/apis/models';
 
 	import AdvancedParams from '$lib/components/chat/Settings/Advanced/AdvancedParams.svelte';
 	import { getModels } from '$lib/apis';
@@ -18,13 +16,9 @@
 	const i18n = getContext('i18n');
 
 	let loading = false;
-	let success = false;
 
 	let filesInputElement;
 	let inputFiles;
-
-	let digest = '';
-	let pullProgress = null;
 
 	let showAdvanced = false;
 	let showPreview = false;
@@ -82,7 +76,6 @@
 		}
 
 		loading = false;
-		success = false;
 	};
 
 	onMount(() => {
@@ -394,7 +387,7 @@
 						<div class="my-2">
 							<AdvancedParams
 								bind:params
-								on:change={(e) => {
+								on:change={() => {
 									info.params = { ...info.params, ...params };
 								}}
 							/>

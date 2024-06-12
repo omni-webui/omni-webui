@@ -16,7 +16,6 @@
 	let OpenAIKey = '';
 	let OpenAISpeaker = '';
 
-	let STTEngines = ['', 'openai'];
 	let STTEngine = '';
 
 	let conversationMode = false;
@@ -24,7 +23,6 @@
 	let responseAutoPlayback = false;
 	let nonLocalVoices = false;
 
-	let TTSEngines = ['', 'openai'];
 	let TTSEngine = '';
 
 	let voices = [];

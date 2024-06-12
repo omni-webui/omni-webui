@@ -1,10 +1,8 @@
 <script lang="ts">
-	import Spinner from '$lib/components/common/Spinner.svelte';
 	import { copyToClipboard } from '$lib/utils';
 	import hljs from 'highlight.js';
 	import 'highlight.js/styles/github-dark.min.css';
 	import { loadPyodide } from 'pyodide';
-	import { onMount, tick } from 'svelte';
 	import PyodideWorker from '$lib/workers/pyodide.worker?worker';
 
 	export let id = '';

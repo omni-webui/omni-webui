@@ -1,40 +1,21 @@
 <script lang="ts">
-	import { getDocs } from '$lib/apis/documents';
 	import {
 		getRAGConfig,
 		updateRAGConfig,
-		getQuerySettings,
-		scanDocs,
-		updateQuerySettings,
-		resetVectorDB,
-		getEmbeddingConfig,
-		updateEmbeddingConfig,
-		getRerankingConfig,
-		updateRerankingConfig
 	} from '$lib/apis/rag';
 
-	import { documents, models } from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
-	import { toast } from 'svelte-sonner';
-
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
 
 	const i18n = getContext('i18n');
 
 	export let saveHandler: Function;
-
-	let scanDirLoading = false;
-	let updateEmbeddingModelLoading = false;
-	let updateRerankingModelLoading = false;
-
-	let showResetConfirm = false;
 
 	let chunkSize = 0;
 	let chunkOverlap = 0;
 	let pdfExtractImages = true;
 
 	const submitHandler = async () => {
-		const res = await updateRAGConfig(localStorage.token, {
+		await updateRAGConfig(localStorage.token, {
 			pdf_extract_images: pdfExtractImages,
 			chunk: {
 				chunk_overlap: chunkOverlap,

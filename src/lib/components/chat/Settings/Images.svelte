@@ -47,7 +47,7 @@
 			toast.error(error);
 			return null;
 		});
-		selectedModel = await getDefaultImageGenerationModel(localStorage.token).catch((error) => {
+		selectedModel = await getDefaultImageGenerationModel(localStorage.token).catch(() => {
 			return '';
 		});
 	};

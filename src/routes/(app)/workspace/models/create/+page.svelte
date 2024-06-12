@@ -1,11 +1,10 @@
 <script>
-	import { v4 as uuidv4 } from 'uuid';
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
-	import { settings, user, config, models } from '$lib/stores';
+	import { models } from '$lib/stores';
 
 	import { onMount, tick, getContext } from 'svelte';
-	import { addNewModel, getModelById, getModelInfos } from '$lib/apis/models';
+	import { addNewModel } from '$lib/apis/models';
 	import { getModels } from '$lib/apis';
 
 	import AdvancedParams from '$lib/components/chat/Settings/Advanced/AdvancedParams.svelte';
@@ -417,7 +416,7 @@
 					<div class="my-2">
 						<AdvancedParams
 							bind:params
-							on:change={(e) => {
+							on:change={() => {
 								info.params = { ...info.params, ...params };
 							}}
 						/>

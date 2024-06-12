@@ -1,6 +1,5 @@
 import { OPENAI_API_BASE_URL } from '$lib/constants';
 import { titleGenerationTemplate } from '$lib/utils';
-import { type Model, models, settings } from '$lib/stores';
 
 export const getOpenAIConfig = async (token: string = '') => {
 	let error = null;

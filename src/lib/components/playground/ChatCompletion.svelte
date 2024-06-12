@@ -6,7 +6,7 @@
 	export let messages = [];
 	let textAreaElement: HTMLTextAreaElement;
 	onMount(() => {
-		messages.forEach((message, idx) => {
+		messages.forEach(() => {
 			textAreaElement.style.height = '';
 			textAreaElement.style.height = textAreaElement.scrollHeight + 'px';
 		});
@@ -36,15 +36,13 @@
 						role: message.role === 'user' ? $i18n.t('a user') : $i18n.t('an assistant')
 					})}
 					rows="1"
-					on:input={(e) => {
+					on:input={() => {
 						textAreaElement.style.height = '';
 						textAreaElement.style.height = textAreaElement.scrollHeight + 'px';
 					}}
-					on:focus={(e) => {
+					on:focus={() => {
 						textAreaElement.style.height = '';
 						textAreaElement.style.height = textAreaElement.scrollHeight + 'px';
-
-						// e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
 					}}
 					bind:value={message.content}
 				/>

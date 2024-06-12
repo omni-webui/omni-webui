@@ -15,7 +15,6 @@
 		models,
 		settings,
 		showSidebar,
-		tags as _tags,
 		WEBUI_NAME,
 		banners,
 		user,
@@ -30,10 +29,7 @@
 
 	import { generateChatCompletion } from '$lib/apis/ollama';
 	import {
-		addTagById,
 		createNewChat,
-		deleteTagById,
-		getAllChatTags,
 		getChatById,
 		getChatList,
 		getTagsById,
@@ -76,7 +72,6 @@
 	let webSearchEnabled = false;
 
 	let chat = null;
-	let tags = [];
 
 	let title = '';
 	let prompt = '';
@@ -181,13 +176,13 @@
 
 	const loadChat = async () => {
 		chatId.set(chatIdProp);
-		chat = await getChatById(localStorage.token, $chatId).catch(async (error) => {
+		chat = await getChatById(localStorage.token, $chatId).catch(async () => {
 			await goto('/');
 			return null;
 		});
 
 		if (chat) {
-			tags = await getTags();
+			await getTags();
 			const chatContent = chat.chat;
 
 			if (chatContent) {
@@ -582,7 +577,7 @@
 			...messages
 		]
 			.filter((message) => message?.content?.trim())
-			.map((message, idx, arr) => {
+			.map((message) => {
 				// Prepare the base message object
 				const baseMessage = {
 					role: message.role,
@@ -719,7 +714,7 @@
 								messages = messages;
 
 								if ($settings.notificationEnabled && !document.hasFocus()) {
-									const notification = new Notification(
+									new Notification(
 										selectedModelfile
 											? `${
 													selectedModelfile.title.charAt(0).toUpperCase() +
@@ -948,7 +943,7 @@
 				}
 
 				if ($settings.notificationEnabled && !document.hasFocus()) {
-					const notification = new Notification(`OpenAI ${model}`, {
+					new Notification(`OpenAI ${model}`, {
 						body: responseMessage.content,
 						icon: `${WEBUI_BASE_URL}/static/favicon.png`
 					});
@@ -1157,31 +1152,9 @@
 	};
 
 	const getTags = async () => {
-		return await getTagsById(localStorage.token, $chatId).catch(async (error) => {
+		return await getTagsById(localStorage.token, $chatId).catch(async () => {
 			return [];
 		});
-	};
-
-	const addTag = async (tagName) => {
-		const res = await addTagById(localStorage.token, $chatId, tagName);
-		tags = await getTags();
-
-		chat = await updateChatById(localStorage.token, $chatId, {
-			tags: tags
-		});
-
-		_tags.set(await getAllChatTags(localStorage.token));
-	};
-
-	const deleteTag = async (tagName) => {
-		const res = await deleteTagById(localStorage.token, $chatId, tagName);
-		tags = await getTags();
-
-		chat = await updateChatById(localStorage.token, $chatId, {
-			tags: tags
-		});
-
-		_tags.set(await getAllChatTags(localStorage.token));
 	};
 </script>
 
@@ -1240,7 +1213,7 @@
 				class=" pb-2.5 flex flex-col justify-between w-full flex-auto overflow-auto h-0 max-w-full"
 				id="messages-container"
 				bind:this={messagesContainerElement}
-				on:scroll={(e) => {
+				on:scroll={() => {
 					autoScroll =
 						messagesContainerElement.scrollHeight - messagesContainerElement.scrollTop <=
 						messagesContainerElement.clientHeight + 5;

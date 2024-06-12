@@ -1,19 +1,11 @@
 <script lang="ts">
 	import {
-		getCommunitySharingEnabledStatus,
 		getWebhookUrl,
-		toggleCommunitySharingEnabledStatus,
 		updateWebhookUrl
 	} from '$lib/apis';
 	import {
 		getAdminConfig,
-		getDefaultUserRole,
-		getJWTExpiresDuration,
-		getSignUpEnabledStatus,
-		toggleSignUpEnabledStatus,
 		updateAdminConfig,
-		updateDefaultUserRole,
-		updateJWTExpiresDuration
 	} from '$lib/apis/auths';
 	import Switch from '$lib/components/common/Switch.svelte';
 	import { onMount, getContext } from 'svelte';

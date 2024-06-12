@@ -1,13 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 
-	import { generatePrompt } from '$lib/apis/ollama';
 	import { models } from '$lib/stores';
-	import { splitStream } from '$lib/utils';
-	import { tick, getContext } from 'svelte';
-	import { toast } from 'svelte-sonner';
-
-	const i18n = getContext('i18n');
 
 	const dispatch = createEventDispatcher();
 
@@ -39,95 +33,6 @@
 	const confirmSelect = async (model) => {
 		prompt = '';
 		dispatch('select', model);
-	};
-
-	const confirmSelectCollaborativeChat = async (model) => {
-		// dispatch('select', model);
-		prompt = '';
-		user = JSON.parse(JSON.stringify(model.name));
-		await tick();
-
-		chatInputPlaceholder = $i18n.t('{{modelName}} is thinking...', { modelName: model.name });
-
-		const chatInputElement = document.getElementById('chat-textarea');
-
-		await tick();
-		chatInputElement?.focus();
-		await tick();
-
-		const convoText = messages.reduce((a, message, i, arr) => {
-			return `${a}### ${message.role.toUpperCase()}\n${message.content}\n\n`;
-		}, '');
-
-		const res = await generatePrompt(localStorage.token, model.name, convoText);
-
-		if (res && res.ok) {
-			const reader = res.body
-				.pipeThrough(new TextDecoderStream())
-				.pipeThrough(splitStream('\n'))
-				.getReader();
-
-			while (true) {
-				const { value, done } = await reader.read();
-				if (done) {
-					break;
-				}
-
-				try {
-					let lines = value.split('\n');
-
-					for (const line of lines) {
-						if (line !== '') {
-							console.log(line);
-							let data = JSON.parse(line);
-
-							if ('detail' in data) {
-								throw data;
-							}
-
-							if ('id' in data) {
-								console.log(data);
-							} else {
-								if (data.done == false) {
-									if (prompt == '' && data.response == '\n') {
-										continue;
-									} else {
-										prompt += data.response;
-										console.log(data.response);
-										chatInputElement.scrollTop = chatInputElement.scrollHeight;
-										await tick();
-									}
-								}
-							}
-						}
-					}
-				} catch (error) {
-					console.log(error);
-					if ('detail' in error) {
-						toast.error(error.detail);
-					}
-					break;
-				}
-			}
-		} else {
-			if (res !== null) {
-				const error = await res.json();
-				console.log(error);
-				if ('detail' in error) {
-					toast.error(error.detail);
-				} else {
-					toast.error(error.error);
-				}
-			} else {
-				toast.error(
-					$i18n.t('Uh-oh! There was an issue connecting to {{provider}}.', { provider: 'llama' })
-				);
-			}
-		}
-
-		chatInputPlaceholder = '';
-
-		console.log(user);
 	};
 </script>
 

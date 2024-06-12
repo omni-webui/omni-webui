@@ -2,9 +2,7 @@
 	import { getRAGConfig, updateRAGConfig } from '$lib/apis/rag';
 	import Switch from '$lib/components/common/Switch.svelte';
 
-	import { documents, models } from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
-	import { toast } from 'svelte-sonner';
 
 	const i18n = getContext('i18n');
 
@@ -17,7 +15,7 @@
 	let youtubeTranslation = null;
 
 	const submitHandler = async () => {
-		const res = await updateRAGConfig(localStorage.token, {
+		await updateRAGConfig(localStorage.token, {
 			web: webConfig,
 			youtube: {
 				language: youtubeLanguage.split(',').map((lang) => lang.trim()),

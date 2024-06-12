@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick, getContext } from 'svelte';
+	import { getContext } from 'svelte';
 
 	const i18n = getContext('i18n');
 

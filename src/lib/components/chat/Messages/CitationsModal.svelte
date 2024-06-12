@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getContext, onMount, tick } from 'svelte';
+	import { getContext } from 'svelte';
 
 	import Modal from '$lib/components/common/Modal.svelte';
 	const i18n = getContext('i18n');

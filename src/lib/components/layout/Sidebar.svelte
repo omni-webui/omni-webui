@@ -4,7 +4,6 @@
 		user,
 		chats,
 		settings,
-		showSettings,
 		chatId,
 		tags,
 		showSidebar,
@@ -26,22 +25,17 @@
 		cloneChatById
 	} from '$lib/apis/chats';
 	import { toast } from 'svelte-sonner';
-	import { fade, slide } from 'svelte/transition';
 	import { WEBUI_BASE_URL } from '$lib/constants';
-	import Tooltip from '../common/Tooltip.svelte';
 	import ChatMenu from './Sidebar/ChatMenu.svelte';
 	import ShareChatModal from '../chat/ShareChatModal.svelte';
-	import ArchiveBox from '../icons/ArchiveBox.svelte';
 	import ArchivedChatsModal from './Sidebar/ArchivedChatsModal.svelte';
 	import UserMenu from './Sidebar/UserMenu.svelte';
 	import { updateUserSettings } from '$lib/apis/users';
 
 	const BREAKPOINT = 768;
 
-	let show = false;
 	let navElement;
 
-	let title: string = 'UI';
 	let search = '';
 
 	let shareChatId = null;
@@ -54,7 +48,6 @@
 
 	let showShareChatModal = false;
 	let showDropdown = false;
-	let isEditing = false;
 
 	let filteredChatList = [];
 
@@ -77,13 +70,6 @@
 			return title.includes(query) || contentMatches;
 		}
 	});
-
-	mobile;
-	const onResize = () => {
-		if ($showSidebar && window.innerWidth < BREAKPOINT) {
-			showSidebar.set(false);
-		}
-	};
 
 	onMount(async () => {
 		mobile.subscribe((e) => {
@@ -138,7 +124,7 @@
 	const enrichChatsWithContent = async (chatList) => {
 		const enrichedChats = await Promise.all(
 			chatList.map(async (chat) => {
-				const chatDetails = await getChatById(localStorage.token, chat.id).catch((error) => null); // Handle error or non-existent chat gracefully
+				const chatDetails = await getChatById(localStorage.token, chat.id).catch(() => null); // Handle error or non-existent chat gracefully
 				if (chatDetails) {
 					chat.chat = chatDetails.chat; // Assuming chatDetails.chat contains the chat content
 				}
@@ -149,15 +135,10 @@
 		await chats.set(enrichedChats);
 	};
 
-	const loadChat = async (id) => {
-		goto(`/c/${id}`);
-	};
-
 	const editChatTitle = async (id, _title) => {
 		if (_title === '') {
 			toast.error($i18n.t('Title cannot be an empty string.'));
 		} else {
-			title = _title;
 
 			await updateChatById(localStorage.token, id, {
 				title: _title

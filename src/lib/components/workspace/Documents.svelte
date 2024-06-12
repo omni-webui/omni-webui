@@ -22,7 +22,6 @@
 
 	let importFiles = '';
 
-	let inputFiles = '';
 	let query = '';
 	let documentsImportInputElement: HTMLInputElement;
 	let tags = [];
@@ -41,7 +40,7 @@
 	};
 
 	const deleteDocs = async (docs) => {
-		const res = await Promise.all(
+		await Promise.all(
 			docs.map(async (doc) => {
 				return await deleteDocByName(localStorage.token, doc.name);
 			})
@@ -73,7 +72,7 @@
 
 	onMount(() => {
 		documents.subscribe((docs) => {
-			tags = docs.reduce((a, e, i, arr) => {
+			tags = docs.reduce((a, e) => {
 				return [...new Set([...a, ...(e?.content?.tags ?? []).map((tag) => tag.name)])];
 			}, []);
 		});

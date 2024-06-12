@@ -1,23 +1,10 @@
 <script lang="ts">
-	import { getDocs } from '$lib/apis/documents';
 	import {
-		getRAGConfig,
-		updateRAGConfig,
 		getQuerySettings,
-		scanDocs,
 		updateQuerySettings,
-		resetVectorDB,
-		getEmbeddingConfig,
-		updateEmbeddingConfig,
-		getRerankingConfig,
-		updateRerankingConfig
 	} from '$lib/apis/rag';
 
-	import { documents, models } from '$lib/stores';
 	import { onMount, getContext } from 'svelte';
-	import { toast } from 'svelte-sonner';
-
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
 
 	const i18n = getContext('i18n');
 

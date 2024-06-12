@@ -1,6 +1,6 @@
 <script>
 	import { WEBUI_BASE_URL } from '$lib/constants';
-	import { WEBUI_NAME, config, user, showSidebar } from '$lib/stores';
+	import { user } from '$lib/stores';
 	import { goto } from '$app/navigation';
 	import { onMount, getContext } from 'svelte';
 
@@ -11,9 +11,6 @@
 	import { toast } from 'svelte-sonner';
 
 	import { updateUserRole, getUsers, deleteUserById } from '$lib/apis/users';
-	import { getSignUpEnabledStatus, toggleSignUpEnabledStatus } from '$lib/apis/auths';
-
-	import MenuLines from '$lib/components/icons/MenuLines.svelte';
 
 	import EditUserModal from '$lib/components/admin/EditUserModal.svelte';
 	import SettingsModal from '$lib/components/admin/SettingsModal.svelte';
@@ -26,7 +23,6 @@
 	const i18n = getContext('i18n');
 
 	let loaded = false;
-	let tab = '';
 	let users = [];
 
 	let search = '';
@@ -48,17 +44,6 @@
 
 		if (res) {
 			users = await getUsers(localStorage.token);
-		}
-	};
-
-	const editUserPasswordHandler = async (id, password) => {
-		const res = await deleteUserById(localStorage.token, id).catch((error) => {
-			toast.error(error);
-			return null;
-		});
-		if (res) {
-			users = await getUsers(localStorage.token);
-			toast.success($i18n.t('Successfully updated.'));
 		}
 	};
 

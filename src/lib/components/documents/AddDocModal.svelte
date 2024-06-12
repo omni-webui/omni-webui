@@ -1,14 +1,11 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import dayjs from 'dayjs';
 	import { onMount, getContext } from 'svelte';
 
-	import { createNewDoc, getDocs, tagDocByName, updateDocByName } from '$lib/apis/documents';
+	import { createNewDoc, getDocs } from '$lib/apis/documents';
 	import Modal from '../common/Modal.svelte';
 	import { documents } from '$lib/stores';
-	import TagInput from '../common/Tags/TagInput.svelte';
 	import Tags from '../common/Tags.svelte';
-	import { addTagById } from '$lib/apis/chats';
 	import { uploadDocToVectorDB } from '$lib/apis/rag';
 	import { transformFileName } from '$lib/utils';
 	import { SUPPORTED_FILE_EXTENSIONS, SUPPORTED_FILE_TYPE } from '$lib/constants';
@@ -19,12 +16,6 @@
 	let uploadDocInputElement: HTMLInputElement;
 	let inputFiles;
 	let tags = [];
-
-	let doc = {
-		name: '',
-		title: '',
-		content: null
-	};
 
 	const uploadDoc = async (file) => {
 		const res = await uploadDocToVectorDB(localStorage.token, '', file).catch((error) => {

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { getBackendConfig, getModelFilterConfig, updateModelFilterConfig } from '$lib/apis';
-	import { getSignUpEnabledStatus, toggleSignUpEnabledStatus } from '$lib/apis/auths';
 	import { getUserPermissions, updateUserPermissions } from '$lib/apis/users';
 
 	import { onMount, getContext } from 'svelte';

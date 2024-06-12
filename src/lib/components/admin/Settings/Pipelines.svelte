@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { v4 as uuidv4 } from 'uuid';
-
 	import { toast } from 'svelte-sonner';
 	import { models } from '$lib/stores';
 	import { getContext, onMount, tick } from 'svelte';
@@ -186,7 +184,7 @@
 									>{$i18n.t('Select a pipeline url')}</option
 								>
 
-								{#each PIPELINES_LIST as pipelines, idx}
+								{#each PIPELINES_LIST as pipelines}
 									<option value={pipelines.idx.toString()} class="bg-gray-100 dark:bg-gray-700"
 										>{pipelines.url}</option
 									>
@@ -329,7 +327,7 @@
 							<div class="space-y-1">
 								{#if pipelines[selectedPipelineIdx].valves}
 									{#if valves}
-										{#each Object.keys(valves_spec.properties) as property, idx}
+										{#each Object.keys(valves_spec.properties) as property}
 											<div class=" py-0.5 w-full justify-between">
 												<div class="flex w-full justify-between">
 													<div class=" self-center text-xs font-medium">

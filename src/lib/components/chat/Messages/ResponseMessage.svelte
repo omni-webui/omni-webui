@@ -7,7 +7,6 @@
 	import 'katex/dist/katex.min.css';
 	import mermaid from 'mermaid';
 
-	import { fade } from 'svelte/transition';
 	import { createEventDispatcher } from 'svelte';
 	import { onMount, tick, getContext } from 'svelte';
 

@@ -2,14 +2,11 @@
 	import { toast } from 'svelte-sonner';
 	import dayjs from 'dayjs';
 	import { getContext, createEventDispatcher } from 'svelte';
-
-	const dispatch = createEventDispatcher();
-
+	createEventDispatcher();
 	import Modal from '$lib/components/common/Modal.svelte';
 	import AddMemoryModal from './AddMemoryModal.svelte';
 	import { deleteMemoriesByUserId, deleteMemoryById, getMemories } from '$lib/apis/memories';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import { error } from '@sveltejs/kit';
 
 	const i18n = getContext('i18n');
 

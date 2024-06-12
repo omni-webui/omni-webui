@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
 	import { onMount, tick, getContext } from 'svelte';
-	import { type Model, mobile, settings, showSidebar, models, config } from '$lib/stores';
-	import { blobToFile, calculateSHA256, findWordIndices } from '$lib/utils';
+	import { type Model, mobile, settings, showSidebar, models } from '$lib/stores';
+	import { blobToFile, findWordIndices } from '$lib/utils';
 
 	import {
 		uploadDocToVectorDB,
@@ -14,14 +14,12 @@
 	import { transcribeAudio } from '$lib/apis/audio';
 
 	import Prompts from './MessageInput/PromptCommands.svelte';
-	import Suggestions from './MessageInput/Suggestions.svelte';
 	import AddFilesPlaceholder from '../AddFilesPlaceholder.svelte';
 	import Documents from './MessageInput/Documents.svelte';
 	import Models from './MessageInput/Models.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 	import XMark from '$lib/components/icons/XMark.svelte';
 	import InputMenu from './MessageInput/InputMenu.svelte';
-	import { t } from 'i18next';
 
 	const i18n = getContext('i18n');
 
@@ -150,17 +148,6 @@
 		};
 
 		window.requestAnimationFrame(detectSound);
-	};
-
-	const saveRecording = (blob) => {
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement('a');
-		document.body.appendChild(a);
-		a.style = 'display: none';
-		a.href = url;
-		a.download = 'recording.wav';
-		a.click();
-		window.URL.revokeObjectURL(url);
 	};
 
 	const speechRecognitionHandler = () => {

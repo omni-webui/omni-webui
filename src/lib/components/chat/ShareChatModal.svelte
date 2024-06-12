@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getContext, onMount } from 'svelte';
+	import { getContext } from 'svelte';
 	import { models, config } from '$lib/stores';
 
 	import { toast } from 'svelte-sonner';
@@ -16,8 +16,6 @@
 	const i18n = getContext('i18n');
 
 	const shareLocalChat = async () => {
-		const _chat = chat;
-
 		const sharedChat = await shareChatById(localStorage.token, chatId);
 		shareUrl = `${window.location.origin}/s/${sharedChat.id}`;
 		console.log(shareUrl);

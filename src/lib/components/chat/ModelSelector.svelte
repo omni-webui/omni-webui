@@ -1,11 +1,10 @@
 <script lang="ts">
-	import { models, showSettings, settings, user, mobile } from '$lib/stores';
-	import { onMount, tick, getContext } from 'svelte';
+	import { models, settings, mobile } from '$lib/stores';
+	import { getContext } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import Selector from './ModelSelector/Selector.svelte';
 	import Tooltip from '../common/Tooltip.svelte';
 
-	import { setDefaultModels } from '$lib/apis/configs';
 	import { updateUserSettings } from '$lib/apis/users';
 
 	const i18n = getContext('i18n');

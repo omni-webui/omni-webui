@@ -78,7 +78,7 @@
 			type="file"
 			hidden
 			accept="image/*"
-			on:change={(e) => {
+			on:change={() => {
 				const files = profileImageInputElement.files ?? [];
 				let reader = new FileReader();
 				reader.onload = (event) => {

@@ -8,7 +8,7 @@
 	import Check from '../icons/Check.svelte';
 	import Search from '../icons/Search.svelte';
 
-	const dispatch = createEventDispatcher();
+	createEventDispatcher();
 
 	export let value = '';
 	export let placeholder = 'Select a model';
