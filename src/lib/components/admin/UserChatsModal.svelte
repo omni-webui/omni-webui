@@ -1,36 +1,36 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import dayjs from 'dayjs';
-	import { getContext, createEventDispatcher } from 'svelte';
+import { toast } from 'svelte-sonner';
+import dayjs from 'dayjs';
+import { getContext, createEventDispatcher } from 'svelte';
 
-	createEventDispatcher();
+createEventDispatcher();
 
-	import Modal from '$lib/components/common/Modal.svelte';
-	import { getChatListByUserId, deleteChatById } from '$lib/apis/chats';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+import Modal from '$lib/components/common/Modal.svelte';
+import { getChatListByUserId, deleteChatById } from '$lib/apis/chats';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let show = false;
-	export let user;
+export let show = false;
+export let user;
 
-	let chats = [];
+let chats = [];
 
-	const deleteChatHandler = async (chatId) => {
-		await deleteChatById(localStorage.token, chatId).catch((error) => {
-			toast.error(error);
-		});
+const deleteChatHandler = async (chatId) => {
+	await deleteChatById(localStorage.token, chatId).catch((error) => {
+		toast.error(error);
+	});
 
-		chats = await getChatListByUserId(localStorage.token, user.id);
-	};
+	chats = await getChatListByUserId(localStorage.token, user.id);
+};
 
-	$: if (show) {
-		(async () => {
-			if (user.id) {
-				chats = await getChatListByUserId(localStorage.token, user.id);
-			}
-		})();
-	}
+$: if (show) {
+	(async () => {
+		if (user.id) {
+			chats = await getChatListByUserId(localStorage.token, user.id);
+		}
+	})();
+}
 </script>
 
 <Modal size="lg" bind:show>
@@ -70,7 +70,9 @@
 								>
 									<tr>
 										<th scope="col" class="px-3 py-2"> {$i18n.t('Name')} </th>
-										<th scope="col" class="px-3 py-2 hidden md:flex"> {$i18n.t('Created at')} </th>
+										<th scope="col" class="px-3 py-2 hidden md:flex">
+											{$i18n.t('Created at')}
+										</th>
 										<th scope="col" class="px-3 py-2 text-right" />
 									</tr>
 								</thead>

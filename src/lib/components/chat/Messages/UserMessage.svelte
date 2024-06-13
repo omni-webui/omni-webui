@@ -1,59 +1,58 @@
 <script lang="ts">
-	import dayjs from 'dayjs';
+import dayjs from 'dayjs';
 
-	import { tick, createEventDispatcher, getContext } from 'svelte';
-	import Name from './Name.svelte';
-	import ProfileImage from './ProfileImage.svelte';
-	import { models, settings } from '$lib/stores';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+import { tick, createEventDispatcher, getContext } from 'svelte';
+import Name from './Name.svelte';
+import ProfileImage from './ProfileImage.svelte';
+import { models, settings, user as _user } from '$lib/stores';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
+import type { Message } from '$lib/types';
 
-	import { user as _user } from '$lib/stores';
+const i18n = getContext('i18n');
 
-	const i18n = getContext('i18n');
+const dispatch = createEventDispatcher();
 
-	const dispatch = createEventDispatcher();
+export let user;
+export let message: Message;
+export let siblings;
+export let isFirstMessage: boolean;
+export let readOnly: boolean;
 
-	export let user;
-	export let message;
-	export let siblings;
-	export let isFirstMessage: boolean;
-	export let readOnly: boolean;
+export let confirmEditMessage: (id: string, content: string) => void;
+export let showPreviousMessage: (message: Message) => Promise<void>;
+export let showNextMessage: (message: Message) => Promise<void>;
+export let copyToClipboard: (content: string) => void;
 
-	export let confirmEditMessage: Function;
-	export let showPreviousMessage: Function;
-	export let showNextMessage: Function;
-	export let copyToClipboard: Function;
+let edit = false;
+let editedContent = '';
+let messageEditTextAreaElement: HTMLTextAreaElement;
+const editMessageHandler = async () => {
+	edit = true;
+	editedContent = message.content;
 
-	let edit = false;
-	let editedContent = '';
-	let messageEditTextAreaElement: HTMLTextAreaElement;
-	const editMessageHandler = async () => {
-		edit = true;
-		editedContent = message.content;
+	await tick();
 
-		await tick();
+	messageEditTextAreaElement.style.height = '';
+	messageEditTextAreaElement.style.height = `${messageEditTextAreaElement.scrollHeight}px`;
 
-		messageEditTextAreaElement.style.height = '';
-		messageEditTextAreaElement.style.height = `${messageEditTextAreaElement.scrollHeight}px`;
+	messageEditTextAreaElement?.focus();
+};
 
-		messageEditTextAreaElement?.focus();
-	};
+const editMessageConfirmHandler = async () => {
+	confirmEditMessage(message.id, editedContent);
 
-	const editMessageConfirmHandler = async () => {
-		confirmEditMessage(message.id, editedContent);
+	edit = false;
+	editedContent = '';
+};
 
-		edit = false;
-		editedContent = '';
-	};
+const cancelEditMessage = () => {
+	edit = false;
+	editedContent = '';
+};
 
-	const cancelEditMessage = () => {
-		edit = false;
-		editedContent = '';
-	};
-
-	const deleteMessageHandler = async () => {
-		dispatch('delete', message.id);
-	};
+const deleteMessageHandler = async () => {
+	dispatch('delete', message.id);
+};
 </script>
 
 <div class=" flex w-full user-message" dir={$settings.chatDirection}>
@@ -130,7 +129,9 @@
 											{file.name}
 										</div>
 
-										<div class=" text-gray-500 text-sm">{$i18n.t('Document')}</div>
+										<div class=" text-gray-500 text-sm">
+											{$i18n.t('Document')}
+										</div>
 									</div>
 								</button>
 							{:else if file.type === 'collection'}
@@ -159,7 +160,9 @@
 											{file?.title ?? `#${file.name}`}
 										</div>
 
-										<div class=" text-gray-500 text-sm">{$i18n.t('Collection')}</div>
+										<div class=" text-gray-500 text-sm">
+											{$i18n.t('Collection')}
+										</div>
 									</div>
 								</button>
 							{/if}

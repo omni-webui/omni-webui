@@ -1,130 +1,133 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import { createEventDispatcher, onMount, getContext } from 'svelte';
-	import { getLanguages } from '$lib/i18n';
-	const dispatch = createEventDispatcher();
+import { toast } from 'svelte-sonner';
+import { createEventDispatcher, onMount, getContext } from 'svelte';
+import { getLanguages } from '$lib/i18n';
+const dispatch = createEventDispatcher();
 
-	import { settings, theme } from '$lib/stores';
+import { settings, theme } from '$lib/stores';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	import AdvancedParams from './Advanced/AdvancedParams.svelte';
+import AdvancedParams from './Advanced/AdvancedParams.svelte';
+import type { SaveSettingsFunctionType } from '$lib/types';
 
-	export let saveSettings: Function;
+export let saveSettings: SaveSettingsFunctionType;
 
-	// General
-	let themes = ['dark', 'light', 'rose-pine dark', 'rose-pine-dawn light', 'oled-dark'];
-	let selectedTheme = 'system';
+// General
+let themes = ['dark', 'light', 'rose-pine dark', 'rose-pine-dawn light', 'oled-dark'];
+let selectedTheme = 'system';
 
-	let languages = [];
-	let lang = $i18n.language;
-	let notificationEnabled = false;
-	let system = '';
+let languages = [];
+let lang = $i18n.language;
+let notificationEnabled = false;
+let system = '';
 
-	let showAdvanced = false;
+let showAdvanced = false;
 
-	const toggleNotification = async () => {
-		const permission = await Notification.requestPermission();
+const toggleNotification = async () => {
+	const permission = await Notification.requestPermission();
 
-		if (permission === 'granted') {
-			notificationEnabled = !notificationEnabled;
-			saveSettings({ notificationEnabled: notificationEnabled });
-		} else {
-			toast.error(
-				'Response notifications cannot be activated as the website permissions have been denied. Please visit your browser settings to grant the necessary access.'
-			);
-		}
-	};
+	if (permission === 'granted') {
+		notificationEnabled = !notificationEnabled;
+		saveSettings({ notificationEnabled: notificationEnabled });
+	} else {
+		toast.error(
+			'Response notifications cannot be activated as the website permissions have been denied. Please visit your browser settings to grant the necessary access.'
+		);
+	}
+};
 
+// Advanced
+let requestFormat = '';
+let keepAlive = null;
+
+let params = {
 	// Advanced
-	let requestFormat = '';
-	let keepAlive = null;
+	seed: 0,
+	temperature: '',
+	frequency_penalty: '',
+	repeat_last_n: '',
+	mirostat: '',
+	mirostat_eta: '',
+	mirostat_tau: '',
+	top_k: '',
+	top_p: '',
+	stop: null,
+	tfs_z: '',
+	num_ctx: '',
+	max_tokens: ''
+};
 
-	let params = {
-		// Advanced
-		seed: 0,
-		temperature: '',
-		frequency_penalty: '',
-		repeat_last_n: '',
-		mirostat: '',
-		mirostat_eta: '',
-		mirostat_tau: '',
-		top_k: '',
-		top_p: '',
-		stop: null,
-		tfs_z: '',
-		num_ctx: '',
-		max_tokens: ''
-	};
+const toggleRequestFormat = async () => {
+	if (requestFormat === '') {
+		requestFormat = 'json';
+	} else {
+		requestFormat = '';
+	}
 
-	const toggleRequestFormat = async () => {
-		if (requestFormat === '') {
-			requestFormat = 'json';
-		} else {
-			requestFormat = '';
-		}
-
-		saveSettings({ requestFormat: requestFormat !== '' ? requestFormat : undefined });
-	};
-
-	onMount(async () => {
-		selectedTheme = localStorage.theme ?? 'system';
-
-		languages = await getLanguages();
-
-		notificationEnabled = $settings.notificationEnabled ?? false;
-		system = $settings.system ?? '';
-
-		requestFormat = $settings.requestFormat ?? '';
-		keepAlive = $settings.keepAlive ?? null;
-
-		params.seed = $settings.seed ?? 0;
-		params.temperature = $settings.temperature ?? '';
-		params.frequency_penalty = $settings.frequency_penalty ?? '';
-		params.top_k = $settings.top_k ?? '';
-		params.top_p = $settings.top_p ?? '';
-		params.num_ctx = $settings.num_ctx ?? '';
-		params = { ...params, ...$settings.params };
-		params.stop = $settings?.params?.stop ? ($settings?.params?.stop ?? []).join(',') : null;
+	saveSettings({
+		requestFormat: requestFormat !== '' ? requestFormat : undefined
 	});
+};
 
-	const applyTheme = (_theme: string) => {
-		let themeToApply = _theme === 'oled-dark' ? 'dark' : _theme;
+onMount(async () => {
+	selectedTheme = localStorage.theme ?? 'system';
 
-		if (_theme === 'system') {
-			themeToApply = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-		}
+	languages = await getLanguages();
 
-		if (themeToApply === 'dark' && !_theme.includes('oled')) {
-			document.documentElement.style.setProperty('--color-gray-900', '#171717');
-			document.documentElement.style.setProperty('--color-gray-950', '#0d0d0d');
-		}
+	notificationEnabled = $settings.notificationEnabled ?? false;
+	system = $settings.system ?? '';
 
-		themes
-			.filter((e) => e !== themeToApply)
-			.forEach((e) => {
-				e.split(' ').forEach((e) => {
-					document.documentElement.classList.remove(e);
-				});
+	requestFormat = $settings.requestFormat ?? '';
+	keepAlive = $settings.keepAlive ?? null;
+
+	params.seed = $settings.seed ?? 0;
+	params.temperature = $settings.temperature ?? '';
+	params.frequency_penalty = $settings.frequency_penalty ?? '';
+	params.top_k = $settings.top_k ?? '';
+	params.top_p = $settings.top_p ?? '';
+	params.num_ctx = $settings.num_ctx ?? '';
+	params = { ...params, ...$settings.params };
+	params.stop = $settings?.params?.stop ? ($settings?.params?.stop ?? []).join(',') : null;
+});
+
+const applyTheme = (_theme: string) => {
+	let themeToApply = _theme === 'oled-dark' ? 'dark' : _theme;
+
+	if (_theme === 'system') {
+		themeToApply = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+	}
+
+	if (themeToApply === 'dark' && !_theme.includes('oled')) {
+		document.documentElement.style.setProperty('--color-gray-900', '#171717');
+		document.documentElement.style.setProperty('--color-gray-950', '#0d0d0d');
+	}
+
+	themes
+		.filter((e) => e !== themeToApply)
+		.forEach((e) => {
+			e.split(' ').forEach((e) => {
+				document.documentElement.classList.remove(e);
 			});
-
-		themeToApply.split(' ').forEach((e) => {
-			document.documentElement.classList.add(e);
 		});
 
-		console.log(_theme);
-	};
+	themeToApply.split(' ').forEach((e) => {
+		document.documentElement.classList.add(e);
+	});
 
-	const themeChangeHandler = (_theme: string) => {
-		theme.set(_theme);
-		localStorage.setItem('theme', _theme);
-		if (_theme.includes('oled')) {
-			document.documentElement.style.setProperty('--color-gray-900', '#000000');
-			document.documentElement.style.setProperty('--color-gray-950', '#000000');
-			document.documentElement.classList.add('dark');
-		}
-		applyTheme(_theme);
-	};
+	console.log(_theme);
+};
+
+const themeChangeHandler = (_theme: string) => {
+	theme.set(_theme);
+	localStorage.setItem('theme', _theme);
+	if (_theme.includes('oled')) {
+		document.documentElement.style.setProperty('--color-gray-900', '#000000');
+		document.documentElement.style.setProperty('--color-gray-950', '#000000');
+		document.documentElement.classList.add('dark');
+	}
+	applyTheme(_theme);
+};
 </script>
 
 <div class="flex flex-col h-full justify-between text-sm">
@@ -262,7 +265,9 @@
 
 				<div>
 					<div class=" py-1 flex w-full justify-between">
-						<div class=" self-center text-sm font-medium">{$i18n.t('Request Mode')}</div>
+						<div class=" self-center text-sm font-medium">
+							{$i18n.t('Request Mode')}
+						</div>
 
 						<button
 							class="p-1 px-3 text-xs flex rounded transition"

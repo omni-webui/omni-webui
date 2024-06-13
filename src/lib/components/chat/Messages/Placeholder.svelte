@@ -1,31 +1,31 @@
 <script lang="ts">
-	import { WEBUI_BASE_URL } from '$lib/constants';
-	import { config, user, models as _models } from '$lib/stores';
-	import { onMount, getContext } from 'svelte';
+import { WEBUI_BASE_URL } from '$lib/constants';
+import { config, user, models as _models } from '$lib/stores';
+import { onMount, getContext } from 'svelte';
 
-	import { fade } from 'svelte/transition';
+import { fade } from 'svelte/transition';
 
-	import Suggestions from '../MessageInput/Suggestions.svelte';
+import Suggestions from '../MessageInput/Suggestions.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let modelIds = [];
-	export let models = [];
+export let modelIds = [];
+export let models = [];
 
-	export let submitPrompt;
+export let submitPrompt: (prompt: string) => void;
 
-	let mounted = false;
-	let selectedModelIdx = 0;
+let mounted = false;
+let selectedModelIdx = 0;
 
-	$: if (modelIds.length > 0) {
-		selectedModelIdx = models.length - 1;
-	}
+$: if (modelIds.length > 0) {
+	selectedModelIdx = models.length - 1;
+}
 
-	$: models = modelIds.map((id) => $_models.find((m) => m.id === id));
+$: models = modelIds.map((id) => $_models.find((m) => m.id === id));
 
-	onMount(() => {
-		mounted = true;
-	});
+onMount(() => {
+	mounted = true;
+});
 </script>
 
 {#key mounted}

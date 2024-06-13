@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { DropdownMenu } from 'bits-ui';
-	import { createEventDispatcher } from 'svelte';
+import { DropdownMenu } from 'bits-ui';
+import { createEventDispatcher } from 'svelte';
 
-	import { flyAndScale } from '$lib/utils/transitions';
+import { flyAndScale } from '$lib/utils/transitions';
 
-	export let show = false;
-	const dispatch = createEventDispatcher();
+export let show = false;
+const dispatch = createEventDispatcher();
 </script>
 
 <DropdownMenu.Root

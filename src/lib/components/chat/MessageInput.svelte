@@ -1,411 +1,414 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import { onMount, tick, getContext } from 'svelte';
-	import { type Model, mobile, settings, showSidebar, models } from '$lib/stores';
-	import { blobToFile, findWordIndices } from '$lib/utils';
+import { toast } from 'svelte-sonner';
+import { onMount, tick, getContext } from 'svelte';
+import { type Model, mobile, settings, showSidebar, models } from '$lib/stores';
+import { blobToFile, findWordIndices } from '$lib/utils';
 
-	import {
-		uploadDocToVectorDB,
-		uploadWebToVectorDB,
-		uploadYoutubeTranscriptionToVectorDB
-	} from '$lib/apis/rag';
-	import { SUPPORTED_FILE_TYPE, SUPPORTED_FILE_EXTENSIONS, WEBUI_BASE_URL } from '$lib/constants';
+import {
+	uploadDocToVectorDB,
+	uploadWebToVectorDB,
+	uploadYoutubeTranscriptionToVectorDB
+} from '$lib/apis/rag';
+import { SUPPORTED_FILE_TYPE, SUPPORTED_FILE_EXTENSIONS, WEBUI_BASE_URL } from '$lib/constants';
 
-	import { transcribeAudio } from '$lib/apis/audio';
+import { transcribeAudio } from '$lib/apis/audio';
 
-	import Prompts from './MessageInput/PromptCommands.svelte';
-	import AddFilesPlaceholder from '../AddFilesPlaceholder.svelte';
-	import Documents from './MessageInput/Documents.svelte';
-	import Models from './MessageInput/Models.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
-	import XMark from '$lib/components/icons/XMark.svelte';
-	import InputMenu from './MessageInput/InputMenu.svelte';
+import Prompts from './MessageInput/PromptCommands.svelte';
+import AddFilesPlaceholder from '../AddFilesPlaceholder.svelte';
+import Documents from './MessageInput/Documents.svelte';
+import Models from './MessageInput/Models.svelte';
+import Tooltip from '../common/Tooltip.svelte';
+import XMark from '$lib/components/icons/XMark.svelte';
+import InputMenu from './MessageInput/InputMenu.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let submitPrompt: Function;
-	export let stopResponse: Function;
+export let submitPrompt: (prompt: string) => void;
+export let stopResponse: () => void;
 
-	export let autoScroll = true;
+export let autoScroll = true;
 
-	export let atSelectedModel: Model | undefined;
-	export let selectedModels: [''];
+export let atSelectedModel: Model | undefined;
+export let selectedModels: [''];
 
-	let chatTextAreaElement: HTMLTextAreaElement;
-	let filesInputElement;
+let chatTextAreaElement: HTMLTextAreaElement;
+let filesInputElement;
 
-	let promptsElement;
-	let documentsElement;
-	let modelsElement;
+let promptsElement;
+let documentsElement;
+let modelsElement;
 
-	let inputFiles;
-	let dragged = false;
+let inputFiles;
+let dragged = false;
 
-	let user = null;
-	let chatInputPlaceholder = '';
+let chatInputPlaceholder = '';
 
-	export let files = [];
+export let files = [];
 
-	export let speechRecognitionEnabled = true;
-	export let webSearchEnabled = false;
+export let speechRecognitionEnabled = true;
+export let webSearchEnabled = false;
 
-	export let prompt = '';
-	export let messages = [];
+export let prompt = '';
+export let messages = [];
 
-	let speechRecognition;
+let speechRecognition;
 
-	let visionCapableModels = [];
-	$: visionCapableModels = [...(atSelectedModel ? [atSelectedModel] : selectedModels)].filter(
-		(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.vision ?? true
-	);
+let visionCapableModels = [];
+$: visionCapableModels = [...(atSelectedModel ? [atSelectedModel] : selectedModels)].filter(
+	(model) => $models.find((m) => m.id === model)?.info?.meta?.capabilities?.vision ?? true
+);
 
-	$: if (prompt) {
-		if (chatTextAreaElement) {
-			chatTextAreaElement.style.height = '';
-			chatTextAreaElement.style.height = Math.min(chatTextAreaElement.scrollHeight, 200) + 'px';
-		}
+$: if (prompt) {
+	if (chatTextAreaElement) {
+		chatTextAreaElement.style.height = '';
+		chatTextAreaElement.style.height = Math.min(chatTextAreaElement.scrollHeight, 200) + 'px';
 	}
+}
 
-	let mediaRecorder;
-	let audioChunks = [];
-	let isRecording = false;
-	const MIN_DECIBELS = -45;
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+const MIN_DECIBELS = -45;
 
-	const scrollToBottom = () => {
-		const element = document.getElementById('messages-container');
-		element.scrollTop = element.scrollHeight;
+const scrollToBottom = () => {
+	const element = document.getElementById('messages-container');
+	element.scrollTop = element.scrollHeight;
+};
+
+const startRecording = async () => {
+	const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+	mediaRecorder = new MediaRecorder(stream);
+	mediaRecorder.onstart = () => {
+		isRecording = true;
+		console.log('Recording started');
+	};
+	mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
+	mediaRecorder.onstop = async () => {
+		isRecording = false;
+		console.log('Recording stopped');
+
+		// Create a blob from the audio chunks
+		const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+
+		const file = blobToFile(audioBlob, 'recording.wav');
+
+		const res = await transcribeAudio(localStorage.token, file).catch((error) => {
+			toast.error(error);
+			return null;
+		});
+
+		if (res) {
+			prompt = res.text;
+			await tick();
+			chatTextAreaElement?.focus();
+
+			if (prompt !== '' && $settings?.speechAutoSend === true) {
+				submitPrompt(prompt);
+			}
+		}
+
+		// saveRecording(audioBlob);
+		audioChunks = [];
 	};
 
-	const startRecording = async () => {
-		const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-		mediaRecorder = new MediaRecorder(stream);
-		mediaRecorder.onstart = () => {
-			isRecording = true;
-			console.log('Recording started');
-		};
-		mediaRecorder.ondataavailable = (event) => audioChunks.push(event.data);
-		mediaRecorder.onstop = async () => {
-			isRecording = false;
-			console.log('Recording stopped');
+	// Start recording
+	mediaRecorder.start();
 
-			// Create a blob from the audio chunks
-			const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+	// Monitor silence
+	monitorSilence(stream);
+};
 
-			const file = blobToFile(audioBlob, 'recording.wav');
+const monitorSilence = (stream) => {
+	const audioContext = new AudioContext();
+	const audioStreamSource = audioContext.createMediaStreamSource(stream);
+	const analyser = audioContext.createAnalyser();
+	analyser.minDecibels = MIN_DECIBELS;
+	audioStreamSource.connect(analyser);
 
+	const bufferLength = analyser.frequencyBinCount;
+	const domainData = new Uint8Array(bufferLength);
+
+	let lastSoundTime = Date.now();
+
+	const detectSound = () => {
+		analyser.getByteFrequencyData(domainData);
+
+		if (domainData.some((value) => value > 0)) {
+			lastSoundTime = Date.now();
+		}
+
+		if (isRecording && Date.now() - lastSoundTime > 3000) {
+			mediaRecorder.stop();
+			audioContext.close();
+			return;
+		}
+
+		window.requestAnimationFrame(detectSound);
+	};
+
+	window.requestAnimationFrame(detectSound);
+};
+
+const speechRecognitionHandler = () => {
+	// Check if SpeechRecognition is supported
+
+	if (isRecording) {
+		if (speechRecognition) {
+			speechRecognition.stop();
+		}
+
+		if (mediaRecorder) {
+			mediaRecorder.stop();
+		}
+	} else {
+		isRecording = true;
+
+		if ($settings?.audio?.STTEngine ?? '' !== '') {
+			startRecording();
+		} else {
+			if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+				// Create a SpeechRecognition object
+				speechRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
+				// Set continuous to true for continuous recognition
+				speechRecognition.continuous = true;
+
+				// Set the timeout for turning off the recognition after inactivity (in milliseconds)
+				const inactivityTimeout = 3000; // 3 seconds
+
+				let timeoutId;
+				// Start recognition
+				speechRecognition.start();
+
+				// Event triggered when speech is recognized
+				speechRecognition.onresult = async (event) => {
+					// Clear the inactivity timeout
+					clearTimeout(timeoutId);
+
+					// Handle recognized speech
+					console.log(event);
+					const transcript = event.results[Object.keys(event.results).length - 1][0].transcript;
+
+					prompt = `${prompt}${transcript}`;
+
+					await tick();
+					chatTextAreaElement?.focus();
+
+					// Restart the inactivity timeout
+					timeoutId = setTimeout(() => {
+						console.log('Speech recognition turned off due to inactivity.');
+						speechRecognition.stop();
+					}, inactivityTimeout);
+				};
+
+				// Event triggered when recognition is ended
+				speechRecognition.onend = function () {
+					// Restart recognition after it ends
+					console.log('recognition ended');
+					isRecording = false;
+					if (prompt !== '' && $settings?.speechAutoSend === true) {
+						submitPrompt(prompt);
+					}
+				};
+
+				// Event triggered when an error occurs
+				speechRecognition.onerror = function (event) {
+					console.log(event);
+					toast.error(
+						$i18n.t(`Speech recognition error: {{error}}`, {
+							error: event.error
+						})
+					);
+					isRecording = false;
+				};
+			} else {
+				toast.error($i18n.t('SpeechRecognition API is not supported in this browser.'));
+			}
+		}
+	}
+};
+
+const uploadDoc = async (file) => {
+	console.log(file);
+
+	const doc = {
+		type: 'doc',
+		name: file.name,
+		collection_name: '',
+		upload_status: false,
+		error: ''
+	};
+
+	try {
+		files = [...files, doc];
+
+		if (['audio/mpeg', 'audio/wav'].includes(file['type'])) {
 			const res = await transcribeAudio(localStorage.token, file).catch((error) => {
 				toast.error(error);
 				return null;
 			});
 
 			if (res) {
-				prompt = res.text;
-				await tick();
-				chatTextAreaElement?.focus();
-
-				if (prompt !== '' && $settings?.speechAutoSend === true) {
-					submitPrompt(prompt, user);
-				}
+				console.log(res);
+				const blob = new Blob([res.text], { type: 'text/plain' });
+				file = blobToFile(blob, `${file.name}.txt`);
 			}
+		}
 
-			// saveRecording(audioBlob);
-			audioChunks = [];
-		};
+		const res = await uploadDocToVectorDB(localStorage.token, '', file);
 
-		// Start recording
-		mediaRecorder.start();
+		if (res) {
+			doc.upload_status = true;
+			doc.collection_name = res.collection_name;
+			files = files;
+		}
+	} catch (e) {
+		// Remove the failed doc from the files array
+		files = files.filter((f) => f.name !== file.name);
+		toast.error(e);
+	}
+};
 
-		// Monitor silence
-		monitorSilence(stream);
+const uploadWeb = async (url) => {
+	console.log(url);
+
+	const doc = {
+		type: 'doc',
+		name: url,
+		collection_name: '',
+		upload_status: false,
+		url: url,
+		error: ''
 	};
 
-	const monitorSilence = (stream) => {
-		const audioContext = new AudioContext();
-		const audioStreamSource = audioContext.createMediaStreamSource(stream);
-		const analyser = audioContext.createAnalyser();
-		analyser.minDecibels = MIN_DECIBELS;
-		audioStreamSource.connect(analyser);
+	try {
+		files = [...files, doc];
+		const res = await uploadWebToVectorDB(localStorage.token, '', url);
 
-		const bufferLength = analyser.frequencyBinCount;
-		const domainData = new Uint8Array(bufferLength);
+		if (res) {
+			doc.upload_status = true;
+			doc.collection_name = res.collection_name;
+			files = files;
+		}
+	} catch (e) {
+		// Remove the failed doc from the files array
+		files = files.filter((f) => f.name !== url);
+		toast.error(e);
+	}
+};
 
-		let lastSoundTime = Date.now();
+const uploadYoutubeTranscription = async (url) => {
+	console.log(url);
 
-		const detectSound = () => {
-			analyser.getByteFrequencyData(domainData);
-
-			if (domainData.some((value) => value > 0)) {
-				lastSoundTime = Date.now();
-			}
-
-			if (isRecording && Date.now() - lastSoundTime > 3000) {
-				mediaRecorder.stop();
-				audioContext.close();
-				return;
-			}
-
-			window.requestAnimationFrame(detectSound);
-		};
-
-		window.requestAnimationFrame(detectSound);
+	const doc = {
+		type: 'doc',
+		name: url,
+		collection_name: '',
+		upload_status: false,
+		url: url,
+		error: ''
 	};
 
-	const speechRecognitionHandler = () => {
-		// Check if SpeechRecognition is supported
+	try {
+		files = [...files, doc];
+		const res = await uploadYoutubeTranscriptionToVectorDB(localStorage.token, url);
 
-		if (isRecording) {
-			if (speechRecognition) {
-				speechRecognition.stop();
-			}
+		if (res) {
+			doc.upload_status = true;
+			doc.collection_name = res.collection_name;
+			files = files;
+		}
+	} catch (e) {
+		// Remove the failed doc from the files array
+		files = files.filter((f) => f.name !== url);
+		toast.error(e);
+	}
+};
 
-			if (mediaRecorder) {
-				mediaRecorder.stop();
-			}
-		} else {
-			isRecording = true;
+onMount(() => {
+	window.setTimeout(() => chatTextAreaElement?.focus(), 0);
 
-			if ($settings?.audio?.STTEngine ?? '' !== '') {
-				startRecording();
-			} else {
-				if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-					// Create a SpeechRecognition object
-					speechRecognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+	const dropZone = document.querySelector('body');
 
-					// Set continuous to true for continuous recognition
-					speechRecognition.continuous = true;
-
-					// Set the timeout for turning off the recognition after inactivity (in milliseconds)
-					const inactivityTimeout = 3000; // 3 seconds
-
-					let timeoutId;
-					// Start recognition
-					speechRecognition.start();
-
-					// Event triggered when speech is recognized
-					speechRecognition.onresult = async (event) => {
-						// Clear the inactivity timeout
-						clearTimeout(timeoutId);
-
-						// Handle recognized speech
-						console.log(event);
-						const transcript = event.results[Object.keys(event.results).length - 1][0].transcript;
-
-						prompt = `${prompt}${transcript}`;
-
-						await tick();
-						chatTextAreaElement?.focus();
-
-						// Restart the inactivity timeout
-						timeoutId = setTimeout(() => {
-							console.log('Speech recognition turned off due to inactivity.');
-							speechRecognition.stop();
-						}, inactivityTimeout);
-					};
-
-					// Event triggered when recognition is ended
-					speechRecognition.onend = function () {
-						// Restart recognition after it ends
-						console.log('recognition ended');
-						isRecording = false;
-						if (prompt !== '' && $settings?.speechAutoSend === true) {
-							submitPrompt(prompt, user);
-						}
-					};
-
-					// Event triggered when an error occurs
-					speechRecognition.onerror = function (event) {
-						console.log(event);
-						toast.error($i18n.t(`Speech recognition error: {{error}}`, { error: event.error }));
-						isRecording = false;
-					};
-				} else {
-					toast.error($i18n.t('SpeechRecognition API is not supported in this browser.'));
-				}
-			}
+	const handleKeyDown = (event: KeyboardEvent) => {
+		if (event.key === 'Escape') {
+			console.log('Escape');
+			dragged = false;
 		}
 	};
 
-	const uploadDoc = async (file) => {
-		console.log(file);
+	const onDragOver = (e) => {
+		e.preventDefault();
+		dragged = true;
+	};
 
-		const doc = {
-			type: 'doc',
-			name: file.name,
-			collection_name: '',
-			upload_status: false,
-			error: ''
-		};
+	const onDragLeave = () => {
+		dragged = false;
+	};
 
-		try {
-			files = [...files, doc];
+	const onDrop = async (e) => {
+		e.preventDefault();
+		console.log(e);
 
-			if (['audio/mpeg', 'audio/wav'].includes(file['type'])) {
-				const res = await transcribeAudio(localStorage.token, file).catch((error) => {
-					toast.error(error);
-					return null;
+		if (e.dataTransfer?.files) {
+			const inputFiles = Array.from(e.dataTransfer?.files);
+
+			if (inputFiles && inputFiles.length > 0) {
+				inputFiles.forEach((file) => {
+					console.log(file, file.name.split('.').at(-1));
+					if (['image/gif', 'image/webp', 'image/jpeg', 'image/png'].includes(file['type'])) {
+						if (visionCapableModels.length === 0) {
+							toast.error($i18n.t('Selected model(s) do not support image inputs'));
+							return;
+						}
+						let reader = new FileReader();
+						reader.onload = (event) => {
+							files = [
+								...files,
+								{
+									type: 'image',
+									url: `${event.target.result}`
+								}
+							];
+						};
+						reader.readAsDataURL(file);
+					} else if (
+						SUPPORTED_FILE_TYPE.includes(file['type']) ||
+						SUPPORTED_FILE_EXTENSIONS.includes(file.name.split('.').at(-1))
+					) {
+						uploadDoc(file);
+					} else {
+						toast.error(
+							$i18n.t(
+								`Unknown File Type '{{file_type}}', but accepting and treating as plain text`,
+								{ file_type: file['type'] }
+							)
+						);
+						uploadDoc(file);
+					}
 				});
-
-				if (res) {
-					console.log(res);
-					const blob = new Blob([res.text], { type: 'text/plain' });
-					file = blobToFile(blob, `${file.name}.txt`);
-				}
+			} else {
+				toast.error($i18n.t(`File not found.`));
 			}
-
-			const res = await uploadDocToVectorDB(localStorage.token, '', file);
-
-			if (res) {
-				doc.upload_status = true;
-				doc.collection_name = res.collection_name;
-				files = files;
-			}
-		} catch (e) {
-			// Remove the failed doc from the files array
-			files = files.filter((f) => f.name !== file.name);
-			toast.error(e);
 		}
+
+		dragged = false;
 	};
 
-	const uploadWeb = async (url) => {
-		console.log(url);
+	window.addEventListener('keydown', handleKeyDown);
 
-		const doc = {
-			type: 'doc',
-			name: url,
-			collection_name: '',
-			upload_status: false,
-			url: url,
-			error: ''
-		};
+	dropZone?.addEventListener('dragover', onDragOver);
+	dropZone?.addEventListener('drop', onDrop);
+	dropZone?.addEventListener('dragleave', onDragLeave);
 
-		try {
-			files = [...files, doc];
-			const res = await uploadWebToVectorDB(localStorage.token, '', url);
+	return () => {
+		window.removeEventListener('keydown', handleKeyDown);
 
-			if (res) {
-				doc.upload_status = true;
-				doc.collection_name = res.collection_name;
-				files = files;
-			}
-		} catch (e) {
-			// Remove the failed doc from the files array
-			files = files.filter((f) => f.name !== url);
-			toast.error(e);
-		}
+		dropZone?.removeEventListener('dragover', onDragOver);
+		dropZone?.removeEventListener('drop', onDrop);
+		dropZone?.removeEventListener('dragleave', onDragLeave);
 	};
-
-	const uploadYoutubeTranscription = async (url) => {
-		console.log(url);
-
-		const doc = {
-			type: 'doc',
-			name: url,
-			collection_name: '',
-			upload_status: false,
-			url: url,
-			error: ''
-		};
-
-		try {
-			files = [...files, doc];
-			const res = await uploadYoutubeTranscriptionToVectorDB(localStorage.token, url);
-
-			if (res) {
-				doc.upload_status = true;
-				doc.collection_name = res.collection_name;
-				files = files;
-			}
-		} catch (e) {
-			// Remove the failed doc from the files array
-			files = files.filter((f) => f.name !== url);
-			toast.error(e);
-		}
-	};
-
-	onMount(() => {
-		window.setTimeout(() => chatTextAreaElement?.focus(), 0);
-
-		const dropZone = document.querySelector('body');
-
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === 'Escape') {
-				console.log('Escape');
-				dragged = false;
-			}
-		};
-
-		const onDragOver = (e) => {
-			e.preventDefault();
-			dragged = true;
-		};
-
-		const onDragLeave = () => {
-			dragged = false;
-		};
-
-		const onDrop = async (e) => {
-			e.preventDefault();
-			console.log(e);
-
-			if (e.dataTransfer?.files) {
-				const inputFiles = Array.from(e.dataTransfer?.files);
-
-				if (inputFiles && inputFiles.length > 0) {
-					inputFiles.forEach((file) => {
-						console.log(file, file.name.split('.').at(-1));
-						if (['image/gif', 'image/webp', 'image/jpeg', 'image/png'].includes(file['type'])) {
-							if (visionCapableModels.length === 0) {
-								toast.error($i18n.t('Selected model(s) do not support image inputs'));
-								return;
-							}
-							let reader = new FileReader();
-							reader.onload = (event) => {
-								files = [
-									...files,
-									{
-										type: 'image',
-										url: `${event.target.result}`
-									}
-								];
-							};
-							reader.readAsDataURL(file);
-						} else if (
-							SUPPORTED_FILE_TYPE.includes(file['type']) ||
-							SUPPORTED_FILE_EXTENSIONS.includes(file.name.split('.').at(-1))
-						) {
-							uploadDoc(file);
-						} else {
-							toast.error(
-								$i18n.t(
-									`Unknown File Type '{{file_type}}', but accepting and treating as plain text`,
-									{ file_type: file['type'] }
-								)
-							);
-							uploadDoc(file);
-						}
-					});
-				} else {
-					toast.error($i18n.t(`File not found.`));
-				}
-			}
-
-			dragged = false;
-		};
-
-		window.addEventListener('keydown', handleKeyDown);
-
-		dropZone?.addEventListener('dragover', onDragOver);
-		dropZone?.addEventListener('drop', onDrop);
-		dropZone?.addEventListener('dragleave', onDragLeave);
-
-		return () => {
-			window.removeEventListener('keydown', handleKeyDown);
-
-			dropZone?.removeEventListener('dragover', onDragOver);
-			dropZone?.removeEventListener('drop', onDrop);
-			dropZone?.removeEventListener('dragleave', onDragLeave);
-		};
-	});
+});
 </script>
 
 {#if dragged}
@@ -590,7 +593,7 @@
 					class=" flex flex-col relative w-full rounded-3xl px-1.5 bg-gray-50 dark:bg-gray-850 dark:text-gray-100"
 					on:submit|preventDefault={() => {
 						// check if selectedModels support image input
-						submitPrompt(prompt, user);
+						submitPrompt(prompt);
 					}}
 				>
 					{#if files.length > 0}
@@ -652,29 +655,29 @@
 														viewBox="0 0 24 24"
 														xmlns="http://www.w3.org/2000/svg"
 														><style>
-															.spinner_qM83 {
-																animation: spinner_8HQG 1.05s infinite;
+														.spinner_qM83 {
+															animation: spinner_8HQG 1.05s infinite;
+														}
+														.spinner_oXPr {
+															animation-delay: 0.1s;
+														}
+														.spinner_ZTLf {
+															animation-delay: 0.2s;
+														}
+														@keyframes spinner_8HQG {
+															0%,
+															57.14% {
+																animation-timing-function: cubic-bezier(0.33, 0.66, 0.66, 1);
+																transform: translate(0);
 															}
-															.spinner_oXPr {
-																animation-delay: 0.1s;
+															28.57% {
+																animation-timing-function: cubic-bezier(0.33, 0, 0.66, 0.33);
+																transform: translateY(-6px);
 															}
-															.spinner_ZTLf {
-																animation-delay: 0.2s;
+															100% {
+																transform: translate(0);
 															}
-															@keyframes spinner_8HQG {
-																0%,
-																57.14% {
-																	animation-timing-function: cubic-bezier(0.33, 0.66, 0.66, 1);
-																	transform: translate(0);
-																}
-																28.57% {
-																	animation-timing-function: cubic-bezier(0.33, 0, 0.66, 0.33);
-																	transform: translateY(-6px);
-																}
-																100% {
-																	transform: translate(0);
-																}
-															}
+														}
 														</style><circle class="spinner_qM83" cx="4" cy="12" r="2.5" /><circle
 															class="spinner_qM83 spinner_oXPr"
 															cx="12"
@@ -695,7 +698,9 @@
 													{file.name}
 												</div>
 
-												<div class=" text-gray-500 text-sm">{$i18n.t('Document')}</div>
+												<div class=" text-gray-500 text-sm">
+													{$i18n.t('Document')}
+												</div>
 											</div>
 										</div>
 									{:else if file.type === 'collection'}
@@ -723,7 +728,9 @@
 													{file?.title ?? `#${file.name}`}
 												</div>
 
-												<div class=" text-gray-500 text-sm">{$i18n.t('Collection')}</div>
+												<div class=" text-gray-500 text-sm">
+													{$i18n.t('Collection')}
+												</div>
 											</div>
 										</div>
 									{/if}
@@ -810,7 +817,7 @@
 
 									// Submit the prompt when Enter key is pressed
 									if (prompt !== '' && e.key === 'Enter' && !e.shiftKey) {
-										submitPrompt(prompt, user);
+										submitPrompt(prompt);
 									}
 								}
 							}}
@@ -923,7 +930,6 @@
 							on:input={(e) => {
 								e.target.style.height = '';
 								e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px';
-								user = null;
 							}}
 							on:focus={(e) => {
 								e.target.style.height = '';
@@ -974,29 +980,29 @@
 													viewBox="0 0 24 24"
 													xmlns="http://www.w3.org/2000/svg"
 													><style>
-														.spinner_qM83 {
-															animation: spinner_8HQG 1.05s infinite;
+													.spinner_qM83 {
+														animation: spinner_8HQG 1.05s infinite;
+													}
+													.spinner_oXPr {
+														animation-delay: 0.1s;
+													}
+													.spinner_ZTLf {
+														animation-delay: 0.2s;
+													}
+													@keyframes spinner_8HQG {
+														0%,
+														57.14% {
+															animation-timing-function: cubic-bezier(0.33, 0.66, 0.66, 1);
+															transform: translate(0);
 														}
-														.spinner_oXPr {
-															animation-delay: 0.1s;
+														28.57% {
+															animation-timing-function: cubic-bezier(0.33, 0, 0.66, 0.33);
+															transform: translateY(-6px);
 														}
-														.spinner_ZTLf {
-															animation-delay: 0.2s;
+														100% {
+															transform: translate(0);
 														}
-														@keyframes spinner_8HQG {
-															0%,
-															57.14% {
-																animation-timing-function: cubic-bezier(0.33, 0.66, 0.66, 1);
-																transform: translate(0);
-															}
-															28.57% {
-																animation-timing-function: cubic-bezier(0.33, 0, 0.66, 0.33);
-																transform: translateY(-6px);
-															}
-															100% {
-																transform: translate(0);
-															}
-														}
+													}
 													</style><circle class="spinner_qM83" cx="4" cy="12" r="2.5" /><circle
 														class="spinner_qM83 spinner_oXPr"
 														cx="12"
@@ -1081,12 +1087,12 @@
 </div>
 
 <style>
-	.scrollbar-hidden:active::-webkit-scrollbar-thumb,
-	.scrollbar-hidden:focus::-webkit-scrollbar-thumb,
-	.scrollbar-hidden:hover::-webkit-scrollbar-thumb {
-		visibility: visible;
-	}
-	.scrollbar-hidden::-webkit-scrollbar-thumb {
-		visibility: hidden;
-	}
+.scrollbar-hidden:active::-webkit-scrollbar-thumb,
+.scrollbar-hidden:focus::-webkit-scrollbar-thumb,
+.scrollbar-hidden:hover::-webkit-scrollbar-thumb {
+	visibility: visible;
+}
+.scrollbar-hidden::-webkit-scrollbar-thumb {
+	visibility: hidden;
+}
 </style>

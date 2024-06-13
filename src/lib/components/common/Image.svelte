@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { WEBUI_BASE_URL } from '$lib/constants';
-	import ImagePreview from './ImagePreview.svelte';
+import { WEBUI_BASE_URL } from '$lib/constants';
+import ImagePreview from './ImagePreview.svelte';
 
-	export let src = '';
-	export let alt = '';
+export let src = '';
+export let alt = '';
 
-	let _src = '';
+let _src = '';
 
-	$: _src = src.startsWith('/') ? `${WEBUI_BASE_URL}${src}` : src;
+$: _src = src.startsWith('/') ? `${WEBUI_BASE_URL}${src}` : src;
 
-	let showImagePreview = false;
+let showImagePreview = false;
 </script>
 
 <ImagePreview bind:show={showImagePreview} src={_src} {alt} />

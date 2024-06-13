@@ -1,71 +1,71 @@
 <script>
-	import { goto } from '$app/navigation';
-	import { userSignIn, userSignUp } from '$lib/apis/auths';
-	import Spinner from '$lib/components/common/Spinner.svelte';
-	import { WEBUI_BASE_URL } from '$lib/constants';
-	import { WEBUI_NAME, config, user, socket } from '$lib/stores';
-	import { onMount, getContext } from 'svelte';
-	import { toast } from 'svelte-sonner';
-	import { generateInitialsImage } from '$lib/utils';
+import { goto } from '$app/navigation';
+import { userSignIn, userSignUp } from '$lib/apis/auths';
+import Spinner from '$lib/components/common/Spinner.svelte';
+import { WEBUI_BASE_URL } from '$lib/constants';
+import { WEBUI_NAME, config, user, socket } from '$lib/stores';
+import { onMount, getContext } from 'svelte';
+import { toast } from 'svelte-sonner';
+import { generateInitialsImage } from '$lib/utils';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let loaded = false;
-	let mode = 'signin';
+let loaded = false;
+let mode = 'signin';
 
-	let name = '';
-	let email = '';
-	let password = '';
+let name = '';
+let email = '';
+let password = '';
 
-	const setSessionUser = async (sessionUser) => {
-		if (sessionUser) {
-			console.log(sessionUser);
-			toast.success($i18n.t(`You're now logged in.`));
-			localStorage.token = sessionUser.token;
+const setSessionUser = async (sessionUser) => {
+	if (sessionUser) {
+		console.log(sessionUser);
+		toast.success($i18n.t(`You're now logged in.`));
+		localStorage.token = sessionUser.token;
 
-			$socket.emit('user-join', { auth: { token: sessionUser.token } });
-			await user.set(sessionUser);
-			goto('/');
-		}
-	};
+		$socket.emit('user-join', { auth: { token: sessionUser.token } });
+		await user.set(sessionUser);
+		goto('/');
+	}
+};
 
-	const signInHandler = async () => {
-		const sessionUser = await userSignIn(email, password).catch((error) => {
+const signInHandler = async () => {
+	const sessionUser = await userSignIn(email, password).catch((error) => {
+		toast.error(error);
+		return null;
+	});
+
+	await setSessionUser(sessionUser);
+};
+
+const signUpHandler = async () => {
+	const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name)).catch(
+		(error) => {
 			toast.error(error);
 			return null;
-		});
-
-		await setSessionUser(sessionUser);
-	};
-
-	const signUpHandler = async () => {
-		const sessionUser = await userSignUp(name, email, password, generateInitialsImage(name)).catch(
-			(error) => {
-				toast.error(error);
-				return null;
-			}
-		);
-
-		await setSessionUser(sessionUser);
-	};
-
-	const submitHandler = async () => {
-		if (mode === 'signin') {
-			await signInHandler();
-		} else {
-			await signUpHandler();
 		}
-	};
+	);
 
-	onMount(async () => {
-		if ($user !== undefined) {
-			await goto('/');
-		}
-		loaded = true;
-		if (($config?.features.auth_trusted_header ?? false) || $config?.features.auth === false) {
-			await signInHandler();
-		}
-	});
+	await setSessionUser(sessionUser);
+};
+
+const submitHandler = async () => {
+	if (mode === 'signin') {
+		await signInHandler();
+	} else {
+		await signUpHandler();
+	}
+};
+
+onMount(async () => {
+	if ($user !== undefined) {
+		await goto('/');
+	}
+	loaded = true;
+	if (($config?.features.auth_trusted_header ?? false) || $config?.features.auth === false) {
+		await signInHandler();
+	}
+});
 </script>
 
 <svelte:head>
@@ -148,7 +148,9 @@
 						<div class="flex flex-col mt-4">
 							{#if mode === 'signup'}
 								<div>
-									<div class=" text-sm font-semibold text-left mb-1">{$i18n.t('Name')}</div>
+									<div class=" text-sm font-semibold text-left mb-1">
+										{$i18n.t('Name')}
+									</div>
 									<input
 										bind:value={name}
 										type="text"
@@ -163,7 +165,9 @@
 							{/if}
 
 							<div class="mb-2">
-								<div class=" text-sm font-semibold text-left mb-1">{$i18n.t('Email')}</div>
+								<div class=" text-sm font-semibold text-left mb-1">
+									{$i18n.t('Email')}
+								</div>
 								<input
 									bind:value={email}
 									type="email"
@@ -175,7 +179,9 @@
 							</div>
 
 							<div>
-								<div class=" text-sm font-semibold text-left mb-1">{$i18n.t('Password')}</div>
+								<div class=" text-sm font-semibold text-left mb-1">
+									{$i18n.t('Password')}
+								</div>
 
 								<input
 									bind:value={password}
@@ -226,9 +232,9 @@
 {/if}
 
 <style>
-	.font-mona {
-		font-family: 'Mona Sans', -apple-system, 'Arimo', ui-sans-serif, system-ui, 'Segoe UI', Roboto,
-			Ubuntu, Cantarell, 'Noto Sans', sans-serif, 'Helvetica Neue', Arial, 'Apple Color Emoji',
-			'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-	}
+.font-mona {
+	font-family: 'Mona Sans', -apple-system, 'Arimo', ui-sans-serif, system-ui, 'Segoe UI', Roboto,
+		Ubuntu, Cantarell, 'Noto Sans', sans-serif, 'Helvetica Neue', Arial, 'Apple Color Emoji',
+		'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+}
 </style>

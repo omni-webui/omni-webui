@@ -1,152 +1,140 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import fileSaver from 'file-saver';
-	const { saveAs } = fileSaver;
+import { toast } from 'svelte-sonner';
+import fileSaver from 'file-saver';
+const { saveAs } = fileSaver;
 
-	import { onMount, getContext } from 'svelte';
-	import { WEBUI_NAME, documents } from '$lib/stores';
-	import { createNewDoc, deleteDocByName, getDocs } from '$lib/apis/documents';
+import { onMount, getContext } from 'svelte';
+import { WEBUI_NAME, documents } from '$lib/stores';
+import { createNewDoc, deleteDocByName, getDocs } from '$lib/apis/documents';
 
-	import { SUPPORTED_FILE_TYPE, SUPPORTED_FILE_EXTENSIONS } from '$lib/constants';
-	import { uploadDocToVectorDB } from '$lib/apis/rag';
-	import { transformFileName } from '$lib/utils';
+import { SUPPORTED_FILE_TYPE, SUPPORTED_FILE_EXTENSIONS } from '$lib/constants';
+import { uploadDocToVectorDB } from '$lib/apis/rag';
+import { transformFileName } from '$lib/utils';
 
-	import Checkbox from '$lib/components/common/Checkbox.svelte';
+import Checkbox from '$lib/components/common/Checkbox.svelte';
 
-	import EditDocModal from '$lib/components/documents/EditDocModal.svelte';
-	import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
-	import SettingsModal from '$lib/components/documents/SettingsModal.svelte';
-	import AddDocModal from '$lib/components/documents/AddDocModal.svelte';
+import EditDocModal from '$lib/components/documents/EditDocModal.svelte';
+import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
+import SettingsModal from '$lib/components/documents/SettingsModal.svelte';
+import AddDocModal from '$lib/components/documents/AddDocModal.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let importFiles = '';
+let importFiles = '';
 
-	let query = '';
-	let documentsImportInputElement: HTMLInputElement;
-	let tags = [];
+let query = '';
+let documentsImportInputElement: HTMLInputElement;
+let tags = [];
 
-	let showSettingsModal = false;
-	let showAddDocModal = false;
-	let showEditDocModal = false;
-	let selectedDoc;
-	let selectedTag = '';
+let showSettingsModal = false;
+let showAddDocModal = false;
+let showEditDocModal = false;
+let selectedDoc;
+let selectedTag = '';
 
-	let dragged = false;
+let dragged = false;
 
-	const deleteDoc = async (name) => {
-		await deleteDocByName(localStorage.token, name);
-		await documents.set(await getDocs(localStorage.token));
-	};
+const deleteDoc = async (name) => {
+	await deleteDocByName(localStorage.token, name);
+	await documents.set(await getDocs(localStorage.token));
+};
 
-	const deleteDocs = async (docs) => {
-		await Promise.all(
-			docs.map(async (doc) => {
-				return await deleteDocByName(localStorage.token, doc.name);
-			})
-		);
+const deleteDocs = async (docs) => {
+	await Promise.all(
+		docs.map(async (doc) => {
+			return await deleteDocByName(localStorage.token, doc.name);
+		})
+	);
 
-		await documents.set(await getDocs(localStorage.token));
-	};
+	await documents.set(await getDocs(localStorage.token));
+};
 
-	const uploadDoc = async (file) => {
-		const res = await uploadDocToVectorDB(localStorage.token, '', file).catch((error) => {
+const uploadDoc = async (file) => {
+	const res = await uploadDocToVectorDB(localStorage.token, '', file).catch((error) => {
+		toast.error(error);
+		return null;
+	});
+
+	if (res) {
+		await createNewDoc(
+			localStorage.token,
+			res.collection_name,
+			res.filename,
+			transformFileName(res.filename),
+			res.filename
+		).catch((error) => {
 			toast.error(error);
 			return null;
 		});
+		await documents.set(await getDocs(localStorage.token));
+	}
+};
 
-		if (res) {
-			await createNewDoc(
-				localStorage.token,
-				res.collection_name,
-				res.filename,
-				transformFileName(res.filename),
-				res.filename
-			).catch((error) => {
-				toast.error(error);
-				return null;
-			});
-			await documents.set(await getDocs(localStorage.token));
-		}
+onMount(() => {
+	documents.subscribe((docs) => {
+		tags = docs.reduce((a, e) => {
+			return [...new Set([...a, ...(e?.content?.tags ?? []).map((tag) => tag.name)])];
+		}, []);
+	});
+	const dropZone = document.querySelector('body');
+
+	const onDragOver = (e) => {
+		e.preventDefault();
+		dragged = true;
 	};
 
-	onMount(() => {
-		documents.subscribe((docs) => {
-			tags = docs.reduce((a, e) => {
-				return [...new Set([...a, ...(e?.content?.tags ?? []).map((tag) => tag.name)])];
-			}, []);
-		});
-		const dropZone = document.querySelector('body');
+	const onDragLeave = () => {
+		dragged = false;
+	};
 
-		const onDragOver = (e) => {
-			e.preventDefault();
-			dragged = true;
-		};
+	const onDrop = async (e) => {
+		e.preventDefault();
 
-		const onDragLeave = () => {
-			dragged = false;
-		};
+		if (e.dataTransfer?.files) {
+			const inputFiles = e.dataTransfer?.files;
 
-		const onDrop = async (e) => {
-			e.preventDefault();
-
-			if (e.dataTransfer?.files) {
-				let reader = new FileReader();
-
-				reader.onload = (event) => {
-					files = [
-						...files,
-						{
-							type: 'image',
-							url: `${event.target.result}`
-						}
-					];
-				};
-
-				const inputFiles = e.dataTransfer?.files;
-
-				if (inputFiles && inputFiles.length > 0) {
-					for (const file of inputFiles) {
-						console.log(file, file.name.split('.').at(-1));
-						if (
-							SUPPORTED_FILE_TYPE.includes(file['type']) ||
-							SUPPORTED_FILE_EXTENSIONS.includes(file.name.split('.').at(-1))
-						) {
-							uploadDoc(file);
-						} else {
-							toast.error(
-								`Unknown File Type '${file['type']}', but accepting and treating as plain text`
-							);
-							uploadDoc(file);
-						}
+			if (inputFiles && inputFiles.length > 0) {
+				for (const file of inputFiles) {
+					console.log(file, file.name.split('.').at(-1));
+					if (
+						SUPPORTED_FILE_TYPE.includes(file['type']) ||
+						SUPPORTED_FILE_EXTENSIONS.includes(file.name.split('.').at(-1))
+					) {
+						uploadDoc(file);
+					} else {
+						toast.error(
+							`Unknown File Type '${file['type']}', but accepting and treating as plain text`
+						);
+						uploadDoc(file);
 					}
-				} else {
-					toast.error($i18n.t(`File not found.`));
 				}
+			} else {
+				toast.error($i18n.t(`File not found.`));
 			}
+		}
 
-			dragged = false;
-		};
+		dragged = false;
+	};
 
-		dropZone?.addEventListener('dragover', onDragOver);
-		dropZone?.addEventListener('drop', onDrop);
-		dropZone?.addEventListener('dragleave', onDragLeave);
+	dropZone?.addEventListener('dragover', onDragOver);
+	dropZone?.addEventListener('drop', onDrop);
+	dropZone?.addEventListener('dragleave', onDragLeave);
 
-		return () => {
-			dropZone?.removeEventListener('dragover', onDragOver);
-			dropZone?.removeEventListener('drop', onDrop);
-			dropZone?.removeEventListener('dragleave', onDragLeave);
-		};
-	});
+	return () => {
+		dropZone?.removeEventListener('dragover', onDragOver);
+		dropZone?.removeEventListener('drop', onDrop);
+		dropZone?.removeEventListener('dragleave', onDragLeave);
+	};
+});
 
-	let filteredDocs;
+let filteredDocs;
 
-	$: filteredDocs = $documents.filter(
-		(doc) =>
-			(selectedTag === '' ||
-				(doc?.content?.tags ?? []).map((tag) => tag.name).includes(selectedTag)) &&
-			(query === '' || doc.name.includes(query))
-	);
+$: filteredDocs = $documents.filter(
+	(doc) =>
+		(selectedTag === '' ||
+			(doc?.content?.tags ?? []).map((tag) => tag.name).includes(selectedTag)) &&
+		(query === '' || doc.name.includes(query))
+);
 </script>
 
 <svelte:head>
@@ -297,7 +285,10 @@
 					if (e.detail === 'checked') {
 						filteredDocs = filteredDocs.map((doc) => ({ ...doc, selected: 'checked' }));
 					} else if (e.detail === 'unchecked') {
-						filteredDocs = filteredDocs.map((doc) => ({ ...doc, selected: 'unchecked' }));
+						filteredDocs = filteredDocs.map((doc) => ({
+							...doc,
+							selected: 'unchecked'
+						}));
 					}
 				}}
 			/>
@@ -402,29 +393,29 @@
 								viewBox="0 0 24 24"
 								xmlns="http://www.w3.org/2000/svg"
 								><style>
-									.spinner_qM83 {
-										animation: spinner_8HQG 1.05s infinite;
+								.spinner_qM83 {
+									animation: spinner_8HQG 1.05s infinite;
+								}
+								.spinner_oXPr {
+									animation-delay: 0.1s;
+								}
+								.spinner_ZTLf {
+									animation-delay: 0.2s;
+								}
+								@keyframes spinner_8HQG {
+									0%,
+									57.14% {
+										animation-timing-function: cubic-bezier(0.33, 0.66, 0.66, 1);
+										transform: translate(0);
 									}
-									.spinner_oXPr {
-										animation-delay: 0.1s;
+									28.57% {
+										animation-timing-function: cubic-bezier(0.33, 0, 0.66, 0.33);
+										transform: translateY(-6px);
 									}
-									.spinner_ZTLf {
-										animation-delay: 0.2s;
+									100% {
+										transform: translate(0);
 									}
-									@keyframes spinner_8HQG {
-										0%,
-										57.14% {
-											animation-timing-function: cubic-bezier(0.33, 0.66, 0.66, 1);
-											transform: translate(0);
-										}
-										28.57% {
-											animation-timing-function: cubic-bezier(0.33, 0, 0.66, 0.33);
-											transform: translateY(-6px);
-										}
-										100% {
-											transform: translate(0);
-										}
-									}
+								}
 								</style><circle class="spinner_qM83" cx="4" cy="12" r="2.5" /><circle
 									class="spinner_qM83 spinner_oXPr"
 									cx="12"

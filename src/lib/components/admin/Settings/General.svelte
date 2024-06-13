@@ -1,44 +1,39 @@
 <script lang="ts">
-	import {
-		getWebhookUrl,
-		updateWebhookUrl
-	} from '$lib/apis';
-	import {
-		getAdminConfig,
-		updateAdminConfig,
-	} from '$lib/apis/auths';
-	import Switch from '$lib/components/common/Switch.svelte';
-	import { onMount, getContext } from 'svelte';
+import { getWebhookUrl, updateWebhookUrl } from '$lib/apis';
+import { getAdminConfig, updateAdminConfig } from '$lib/apis/auths';
+import Switch from '$lib/components/common/Switch.svelte';
+import { onMount, getContext } from 'svelte';
+import { toast } from 'svelte-sonner';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let saveHandler: Function;
+export let saveHandler: () => void;
 
-	let adminConfig = null;
-	let webhookUrl = '';
+let adminConfig = null;
+let webhookUrl = '';
 
-	const updateHandler = async () => {
-		webhookUrl = await updateWebhookUrl(localStorage.token, webhookUrl);
-		const res = await updateAdminConfig(localStorage.token, adminConfig);
+const updateHandler = async () => {
+	webhookUrl = await updateWebhookUrl(localStorage.token, webhookUrl);
+	const res = await updateAdminConfig(localStorage.token, adminConfig);
 
-		if (res) {
-			toast.success(i18n.t('Settings updated successfully'));
-		} else {
-			toast.error(i18n.t('Failed to update settings'));
-		}
-	};
+	if (res) {
+		toast.success(i18n.t('Settings updated successfully'));
+	} else {
+		toast.error(i18n.t('Failed to update settings'));
+	}
+};
 
-	onMount(async () => {
-		await Promise.all([
-			(async () => {
-				adminConfig = await getAdminConfig(localStorage.token);
-			})(),
+onMount(async () => {
+	await Promise.all([
+		(async () => {
+			adminConfig = await getAdminConfig(localStorage.token);
+		})(),
 
-			(async () => {
-				webhookUrl = await getWebhookUrl(localStorage.token);
-			})()
-		]);
-	});
+		(async () => {
+			webhookUrl = await getWebhookUrl(localStorage.token);
+		})()
+	]);
+});
 </script>
 
 <form
@@ -54,13 +49,17 @@
 				<div class=" mb-3 text-sm font-medium">{$i18n.t('General Settings')}</div>
 
 				<div class="  flex w-full justify-between pr-2">
-					<div class=" self-center text-xs font-medium">{$i18n.t('Enable New Sign Ups')}</div>
+					<div class=" self-center text-xs font-medium">
+						{$i18n.t('Enable New Sign Ups')}
+					</div>
 
 					<Switch bind:state={adminConfig.ENABLE_SIGNUP} />
 				</div>
 
 				<div class="  my-3 flex w-full justify-between">
-					<div class=" self-center text-xs font-medium">{$i18n.t('Default User Role')}</div>
+					<div class=" self-center text-xs font-medium">
+						{$i18n.t('Default User Role')}
+					</div>
 					<div class="flex items-center relative">
 						<select
 							class="dark:bg-gray-900 w-fit pr-8 rounded px-2 text-xs bg-transparent outline-none text-right"
@@ -85,7 +84,9 @@
 				</div>
 
 				<div class="my-3 flex w-full items-center justify-between pr-2">
-					<div class=" self-center text-xs font-medium">{$i18n.t('Enable Community Sharing')}</div>
+					<div class=" self-center text-xs font-medium">
+						{$i18n.t('Enable Community Sharing')}
+					</div>
 
 					<Switch bind:state={adminConfig.ENABLE_COMMUNITY_SHARING} />
 				</div>
@@ -94,7 +95,9 @@
 
 				<div class=" w-full justify-between">
 					<div class="flex w-full justify-between">
-						<div class=" self-center text-xs font-medium">{$i18n.t('JWT Expiration')}</div>
+						<div class=" self-center text-xs font-medium">
+							{$i18n.t('JWT Expiration')}
+						</div>
 					</div>
 
 					<div class="flex mt-2 space-x-2">

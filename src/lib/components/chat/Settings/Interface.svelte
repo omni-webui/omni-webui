@@ -1,127 +1,128 @@
 <script lang="ts">
-	import { getBackendConfig } from '$lib/apis';
-	import { setDefaultPromptSuggestions } from '$lib/apis/configs';
-	import { config, models, settings, user } from '$lib/stores';
-	import { createEventDispatcher, onMount, getContext } from 'svelte';
-	import { toast } from 'svelte-sonner';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	const dispatch = createEventDispatcher();
+import { getBackendConfig } from '$lib/apis';
+import { setDefaultPromptSuggestions } from '$lib/apis/configs';
+import { config, models, settings, user } from '$lib/stores';
+import { createEventDispatcher, onMount, getContext } from 'svelte';
+import { toast } from 'svelte-sonner';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
+import type { SaveSettingsFunctionType } from '$lib/types';
+const dispatch = createEventDispatcher();
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let saveSettings: Function;
+export let saveSettings: SaveSettingsFunctionType;
 
-	// Addons
-	let titleAutoGenerate = true;
-	let responseAutoCopy = false;
-	let titleAutoGenerateModel = '';
-	let titleAutoGenerateModelExternal = '';
-	let widescreenMode = false;
-	let titleGenerationPrompt = '';
-	let splitLargeChunks = false;
+// Addons
+let titleAutoGenerate = true;
+let responseAutoCopy = false;
+let titleAutoGenerateModel = '';
+let titleAutoGenerateModelExternal = '';
+let widescreenMode = false;
+let titleGenerationPrompt = '';
+let splitLargeChunks = false;
 
-	// Interface
-	let defaultModelId = '';
-	let promptSuggestions = [];
-	let showUsername = false;
-	let chatBubble = true;
-	let chatDirection: 'LTR' | 'RTL' = 'LTR';
+// Interface
+let defaultModelId = '';
+let promptSuggestions = [];
+let showUsername = false;
+let chatBubble = true;
+let chatDirection: 'LTR' | 'RTL' = 'LTR';
 
-	const toggleSplitLargeChunks = async () => {
-		splitLargeChunks = !splitLargeChunks;
-		saveSettings({ splitLargeChunks: splitLargeChunks });
-	};
+const toggleSplitLargeChunks = async () => {
+	splitLargeChunks = !splitLargeChunks;
+	saveSettings({ splitLargeChunks: splitLargeChunks });
+};
 
-	const togglewidescreenMode = async () => {
-		widescreenMode = !widescreenMode;
-		saveSettings({ widescreenMode: widescreenMode });
-	};
+const togglewidescreenMode = async () => {
+	widescreenMode = !widescreenMode;
+	saveSettings({ widescreenMode: widescreenMode });
+};
 
-	const toggleChatBubble = async () => {
-		chatBubble = !chatBubble;
-		saveSettings({ chatBubble: chatBubble });
-	};
+const toggleChatBubble = async () => {
+	chatBubble = !chatBubble;
+	saveSettings({ chatBubble: chatBubble });
+};
 
-	const toggleShowUsername = async () => {
-		showUsername = !showUsername;
-		saveSettings({ showUsername: showUsername });
-	};
+const toggleShowUsername = async () => {
+	showUsername = !showUsername;
+	saveSettings({ showUsername: showUsername });
+};
 
-	const toggleTitleAutoGenerate = async () => {
-		titleAutoGenerate = !titleAutoGenerate;
-		saveSettings({
-			title: {
-				...$settings.title,
-				auto: titleAutoGenerate
-			}
-		});
-	};
-
-	const toggleResponseAutoCopy = async () => {
-		const permission = await navigator.clipboard
-			.readText()
-			.then(() => {
-				return 'granted';
-			})
-			.catch(() => {
-				return '';
-			});
-
-		console.log(permission);
-
-		if (permission === 'granted') {
-			responseAutoCopy = !responseAutoCopy;
-			saveSettings({ responseAutoCopy: responseAutoCopy });
-		} else {
-			toast.error(
-				'Clipboard write permission denied. Please check your browser settings to grant the necessary access.'
-			);
+const toggleTitleAutoGenerate = async () => {
+	titleAutoGenerate = !titleAutoGenerate;
+	saveSettings({
+		title: {
+			...$settings.title,
+			auto: titleAutoGenerate
 		}
-	};
-
-	const toggleChangeChatDirection = async () => {
-		chatDirection = chatDirection === 'LTR' ? 'RTL' : 'LTR';
-		saveSettings({ chatDirection });
-	};
-
-	const updateInterfaceHandler = async () => {
-		if ($user.role === 'admin') {
-			promptSuggestions = await setDefaultPromptSuggestions(localStorage.token, promptSuggestions);
-			await config.set(await getBackendConfig());
-		}
-
-		saveSettings({
-			title: {
-				...$settings.title,
-				model: titleAutoGenerateModel !== '' ? titleAutoGenerateModel : undefined,
-				modelExternal:
-					titleAutoGenerateModelExternal !== '' ? titleAutoGenerateModelExternal : undefined,
-				prompt: titleGenerationPrompt ? titleGenerationPrompt : undefined
-			},
-			models: [defaultModelId]
-		});
-	};
-
-	onMount(async () => {
-		if ($user.role === 'admin') {
-			promptSuggestions = $config?.default_prompt_suggestions;
-		}
-
-		titleAutoGenerate = $settings?.title?.auto ?? true;
-		titleAutoGenerateModel = $settings?.title?.model ?? '';
-		titleAutoGenerateModelExternal = $settings?.title?.modelExternal ?? '';
-		titleGenerationPrompt =
-			$settings?.title?.prompt ??
-			`Create a concise, 3-5 word phrase as a header for the following query, strictly adhering to the 3-5 word limit and avoiding the use of the word 'title': {{prompt}}`;
-		responseAutoCopy = $settings.responseAutoCopy ?? false;
-		showUsername = $settings.showUsername ?? false;
-		chatBubble = $settings.chatBubble ?? true;
-		widescreenMode = $settings.widescreenMode ?? false;
-		splitLargeChunks = $settings.splitLargeChunks ?? false;
-		chatDirection = $settings.chatDirection ?? 'LTR';
-
-		defaultModelId = ($settings?.models ?? ['']).at(0);
 	});
+};
+
+const toggleResponseAutoCopy = async () => {
+	const permission = await navigator.clipboard
+		.readText()
+		.then(() => {
+			return 'granted';
+		})
+		.catch(() => {
+			return '';
+		});
+
+	console.log(permission);
+
+	if (permission === 'granted') {
+		responseAutoCopy = !responseAutoCopy;
+		saveSettings({ responseAutoCopy: responseAutoCopy });
+	} else {
+		toast.error(
+			'Clipboard write permission denied. Please check your browser settings to grant the necessary access.'
+		);
+	}
+};
+
+const toggleChangeChatDirection = async () => {
+	chatDirection = chatDirection === 'LTR' ? 'RTL' : 'LTR';
+	saveSettings({ chatDirection });
+};
+
+const updateInterfaceHandler = async () => {
+	if ($user.role === 'admin') {
+		promptSuggestions = await setDefaultPromptSuggestions(localStorage.token, promptSuggestions);
+		await config.set(await getBackendConfig());
+	}
+
+	saveSettings({
+		title: {
+			...$settings.title,
+			model: titleAutoGenerateModel !== '' ? titleAutoGenerateModel : undefined,
+			modelExternal:
+				titleAutoGenerateModelExternal !== '' ? titleAutoGenerateModelExternal : undefined,
+			prompt: titleGenerationPrompt ? titleGenerationPrompt : undefined
+		},
+		models: [defaultModelId]
+	});
+};
+
+onMount(async () => {
+	if ($user.role === 'admin') {
+		promptSuggestions = $config?.default_prompt_suggestions;
+	}
+
+	titleAutoGenerate = $settings?.title?.auto ?? true;
+	titleAutoGenerateModel = $settings?.title?.model ?? '';
+	titleAutoGenerateModelExternal = $settings?.title?.modelExternal ?? '';
+	titleGenerationPrompt =
+		$settings?.title?.prompt ??
+		`Create a concise, 3-5 word phrase as a header for the following query, strictly adhering to the 3-5 word limit and avoiding the use of the word 'title': {{prompt}}`;
+	responseAutoCopy = $settings.responseAutoCopy ?? false;
+	showUsername = $settings.showUsername ?? false;
+	chatBubble = $settings.chatBubble ?? true;
+	widescreenMode = $settings.widescreenMode ?? false;
+	splitLargeChunks = $settings.splitLargeChunks ?? false;
+	chatDirection = $settings.chatDirection ?? 'LTR';
+
+	defaultModelId = ($settings?.models ?? ['']).at(0);
+});
 </script>
 
 <form
@@ -157,7 +158,9 @@
 
 			<div>
 				<div class=" py-0.5 flex w-full justify-between">
-					<div class=" self-center text-xs font-medium">{$i18n.t('Title Auto-Generation')}</div>
+					<div class=" self-center text-xs font-medium">
+						{$i18n.t('Title Auto-Generation')}
+					</div>
 
 					<button
 						class="p-1 px-3 text-xs flex rounded transition"

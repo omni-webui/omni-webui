@@ -1,175 +1,85 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
+import { toast } from 'svelte-sonner';
 
-	import {
-		createModel,
-		deleteModel,
-		downloadModel,
-		getOllamaUrls,
-		getOllamaVersion,
-		pullModel,
-		uploadModel,
-		getOllamaConfig
-	} from '$lib/apis/ollama';
+import {
+	createModel,
+	deleteModel,
+	downloadModel,
+	getOllamaUrls,
+	getOllamaVersion,
+	pullModel,
+	uploadModel,
+	getOllamaConfig
+} from '$lib/apis/ollama';
 
-	import { models, MODEL_DOWNLOAD_POOL } from '$lib/stores';
-	import { splitStream } from '$lib/utils';
-	import { onMount, getContext } from 'svelte';
+import { models, MODEL_DOWNLOAD_POOL } from '$lib/stores';
+import { splitStream } from '$lib/utils';
+import { onMount, getContext } from 'svelte';
 
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import Spinner from '$lib/components/common/Spinner.svelte';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
+import Spinner from '$lib/components/common/Spinner.svelte';
+import type { GetModelsFunctionType } from '$lib/types';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let getModels: Function;
+export let getModels: GetModelsFunctionType;
 
-	let modelUploadInputElement: HTMLInputElement;
+let modelUploadInputElement: HTMLInputElement;
 
-	// Models
+// Models
 
-	let ollamaEnabled = null;
+let ollamaEnabled = null;
 
-	let OLLAMA_URLS = [];
-	let selectedOllamaUrlIdx: string | null = null;
+let OLLAMA_URLS = [];
+let selectedOllamaUrlIdx: string | null = null;
 
-	let updateModelId = null;
-	let updateProgress = null;
+let updateModelId = null;
+let updateProgress = null;
 
-	let showExperimentalOllama = false;
+let showExperimentalOllama = false;
 
-	let ollamaVersion = null;
-	const MAX_PARALLEL_DOWNLOADS = 3;
+let ollamaVersion = null;
+const MAX_PARALLEL_DOWNLOADS = 3;
 
-	let modelTransferring = false;
-	let modelTag = '';
+let modelTransferring = false;
+let modelTag = '';
 
-	let createModelLoading = false;
-	let createModelTag = '';
-	let createModelContent = '';
-	let createModelDigest = '';
-	let createModelPullProgress = null;
+let createModelLoading = false;
+let createModelTag = '';
+let createModelContent = '';
+let createModelDigest = '';
+let createModelPullProgress = null;
 
-	let modelUploadMode = 'file';
-	let modelInputFile: File[] | null = null;
-	let modelFileUrl = '';
-	let modelFileContent = `TEMPLATE """{{ .System }}\nUSER: {{ .Prompt }}\nASSISTANT: """\nPARAMETER num_ctx 4096\nPARAMETER stop "</s>"\nPARAMETER stop "USER:"\nPARAMETER stop "ASSISTANT:"`;
-	let modelFileDigest = '';
+let modelUploadMode = 'file';
+let modelInputFile: File[] | null = null;
+let modelFileUrl = '';
+let modelFileContent = `TEMPLATE """{{ .System }}\nUSER: {{ .Prompt }}\nASSISTANT: """\nPARAMETER num_ctx 4096\nPARAMETER stop "</s>"\nPARAMETER stop "USER:"\nPARAMETER stop "ASSISTANT:"`;
+let modelFileDigest = '';
 
-	let uploadProgress = null;
-	let uploadMessage = '';
+let uploadProgress = null;
+let uploadMessage = '';
 
-	let deleteModelTag = '';
+let deleteModelTag = '';
 
-	const updateModelsHandler = async () => {
-		for (const model of $models.filter(
-			(m) =>
-				!(m?.preset ?? false) &&
-				m.owned_by === 'ollama' &&
-				(selectedOllamaUrlIdx === null
-					? true
-					: (m?.ollama?.urls ?? []).includes(selectedOllamaUrlIdx))
-		)) {
-			console.log(model);
+const updateModelsHandler = async () => {
+	for (const model of $models.filter(
+		(m) =>
+			!(m?.preset ?? false) &&
+			m.owned_by === 'ollama' &&
+			(selectedOllamaUrlIdx === null
+				? true
+				: (m?.ollama?.urls ?? []).includes(selectedOllamaUrlIdx))
+	)) {
+		console.log(model);
 
-			updateModelId = model.id;
-			const [res, controller] = await pullModel(
-				localStorage.token,
-				model.id,
-				selectedOllamaUrlIdx
-			).catch((error) => {
-				toast.error(error);
-				return null;
-			});
-
-			if (res) {
-				const reader = res.body
-					.pipeThrough(new TextDecoderStream())
-					.pipeThrough(splitStream('\n'))
-					.getReader();
-
-				while (true) {
-					try {
-						const { value, done } = await reader.read();
-						if (done) break;
-
-						let lines = value.split('\n');
-
-						for (const line of lines) {
-							if (line !== '') {
-								let data = JSON.parse(line);
-
-								console.log(data);
-								if (data.error) {
-									throw data.error;
-								}
-								if (data.detail) {
-									throw data.detail;
-								}
-								if (data.status) {
-									if (data.digest) {
-										updateProgress = 0;
-										if (data.completed) {
-											updateProgress = Math.round((data.completed / data.total) * 1000) / 10;
-										} else {
-											updateProgress = 100;
-										}
-									} else {
-										toast.success(data.status);
-									}
-								}
-							}
-						}
-					} catch (error) {
-						console.log(error);
-					}
-				}
-			}
-		}
-
-		updateModelId = null;
-		updateProgress = null;
-	};
-
-	const pullModelHandler = async () => {
-		const sanitizedModelTag = modelTag.trim().replace(/^ollama\s+(run|pull)\s+/, '');
-		console.log($MODEL_DOWNLOAD_POOL);
-		if ($MODEL_DOWNLOAD_POOL[sanitizedModelTag]) {
-			toast.error(
-				$i18n.t(`Model '{{modelTag}}' is already in queue for downloading.`, {
-					modelTag: sanitizedModelTag
-				})
-			);
-			return;
-		}
-		if (Object.keys($MODEL_DOWNLOAD_POOL).length === MAX_PARALLEL_DOWNLOADS) {
-			toast.error(
-				$i18n.t('Maximum of 3 models can be downloaded simultaneously. Please try again later.')
-			);
-			return;
-		}
-
-		const [res, controller] = await pullModel(localStorage.token, sanitizedModelTag, '0').catch(
-			(error) => {
-				toast.error(error);
-				return null;
-			}
-		);
+		updateModelId = model.id;
+		const [res] = await pullModel(localStorage.token, model.id, selectedOllamaUrlIdx);
 
 		if (res) {
 			const reader = res.body
 				.pipeThrough(new TextDecoderStream())
 				.pipeThrough(splitStream('\n'))
 				.getReader();
-
-			MODEL_DOWNLOAD_POOL.set({
-				...$MODEL_DOWNLOAD_POOL,
-				[sanitizedModelTag]: {
-					...$MODEL_DOWNLOAD_POOL[sanitizedModelTag],
-					abortController: controller,
-					reader,
-					done: false
-				}
-			});
 
 			while (true) {
 				try {
@@ -181,6 +91,7 @@
 					for (const line of lines) {
 						if (line !== '') {
 							let data = JSON.parse(line);
+
 							console.log(data);
 							if (data.error) {
 								throw data.error;
@@ -188,256 +99,238 @@
 							if (data.detail) {
 								throw data.detail;
 							}
-
 							if (data.status) {
 								if (data.digest) {
-									let downloadProgress = 0;
+									updateProgress = 0;
 									if (data.completed) {
-										downloadProgress = Math.round((data.completed / data.total) * 1000) / 10;
+										updateProgress = Math.round((data.completed / data.total) * 1000) / 10;
 									} else {
-										downloadProgress = 100;
+										updateProgress = 100;
 									}
-
-									MODEL_DOWNLOAD_POOL.set({
-										...$MODEL_DOWNLOAD_POOL,
-										[sanitizedModelTag]: {
-											...$MODEL_DOWNLOAD_POOL[sanitizedModelTag],
-											pullProgress: downloadProgress,
-											digest: data.digest
-										}
-									});
 								} else {
 									toast.success(data.status);
-
-									MODEL_DOWNLOAD_POOL.set({
-										...$MODEL_DOWNLOAD_POOL,
-										[sanitizedModelTag]: {
-											...$MODEL_DOWNLOAD_POOL[sanitizedModelTag],
-											done: data.status === 'success'
-										}
-									});
 								}
 							}
 						}
 					}
 				} catch (error) {
 					console.log(error);
-					if (typeof error !== 'string') {
-						error = error.message;
-					}
-
-					toast.error(error);
-					// opts.callback({ success: false, error, modelName: opts.modelName });
 				}
 			}
-
-			console.log($MODEL_DOWNLOAD_POOL[sanitizedModelTag]);
-
-			if ($MODEL_DOWNLOAD_POOL[sanitizedModelTag].done) {
-				toast.success(
-					$i18n.t(`Model '{{modelName}}' has been successfully downloaded.`, {
-						modelName: sanitizedModelTag
-					})
-				);
-
-				models.set(await getModels(localStorage.token));
-			} else {
-				toast.error($i18n.t('Download canceled'));
-			}
-
-			delete $MODEL_DOWNLOAD_POOL[sanitizedModelTag];
-
-			MODEL_DOWNLOAD_POOL.set({
-				...$MODEL_DOWNLOAD_POOL
-			});
 		}
+	}
 
-		modelTag = '';
-		modelTransferring = false;
-	};
+	updateModelId = null;
+	updateProgress = null;
+};
 
-	const uploadModelHandler = async () => {
-		modelTransferring = true;
+const pullModelHandler = async () => {
+	const sanitizedModelTag = modelTag.trim().replace(/^ollama\s+(run|pull)\s+/, '');
+	console.log($MODEL_DOWNLOAD_POOL);
+	if ($MODEL_DOWNLOAD_POOL[sanitizedModelTag]) {
+		toast.error(
+			$i18n.t(`Model '{{modelTag}}' is already in queue for downloading.`, {
+				modelTag: sanitizedModelTag
+			})
+		);
+		return;
+	}
+	if (Object.keys($MODEL_DOWNLOAD_POOL).length === MAX_PARALLEL_DOWNLOADS) {
+		toast.error(
+			$i18n.t('Maximum of 3 models can be downloaded simultaneously. Please try again later.')
+		);
+		return;
+	}
 
-		let uploaded = false;
-		let fileResponse = null;
-		let name = '';
-
-		if (modelUploadMode === 'file') {
-			const file = modelInputFile ? modelInputFile[0] : null;
-
-			if (file) {
-				uploadMessage = 'Uploading...';
-
-				fileResponse = await uploadModel(localStorage.token, file, selectedOllamaUrlIdx).catch(
-					(error) => {
-						toast.error(error);
-						return null;
-					}
-				);
-			}
-		} else {
-			uploadProgress = 0;
-			fileResponse = await downloadModel(
-				localStorage.token,
-				modelFileUrl,
-				selectedOllamaUrlIdx
-			).catch((error) => {
-				toast.error(error);
-				return null;
-			});
+	const [res, controller] = await pullModel(localStorage.token, sanitizedModelTag, '0').catch(
+		(error) => {
+			toast.error(error);
+			return null;
 		}
+	);
 
-		if (fileResponse && fileResponse.ok) {
-			const reader = fileResponse.body
-				.pipeThrough(new TextDecoderStream())
-				.pipeThrough(splitStream('\n'))
-				.getReader();
+	if (res) {
+		const reader = res.body
+			.pipeThrough(new TextDecoderStream())
+			.pipeThrough(splitStream('\n'))
+			.getReader();
 
-			while (true) {
+		MODEL_DOWNLOAD_POOL.set({
+			...$MODEL_DOWNLOAD_POOL,
+			[sanitizedModelTag]: {
+				...$MODEL_DOWNLOAD_POOL[sanitizedModelTag],
+				abortController: controller,
+				reader,
+				done: false
+			}
+		});
+
+		while (true) {
+			try {
 				const { value, done } = await reader.read();
 				if (done) break;
 
-				try {
-					let lines = value.split('\n');
+				let lines = value.split('\n');
 
-					for (const line of lines) {
-						if (line !== '') {
-							let data = JSON.parse(line.replace(/^data: /, ''));
+				for (const line of lines) {
+					if (line !== '') {
+						let data = JSON.parse(line);
+						console.log(data);
+						if (data.error) {
+							throw data.error;
+						}
+						if (data.detail) {
+							throw data.detail;
+						}
 
-							if (data.progress) {
-								if (uploadMessage) {
-									uploadMessage = '';
+						if (data.status) {
+							if (data.digest) {
+								let downloadProgress = 0;
+								if (data.completed) {
+									downloadProgress = Math.round((data.completed / data.total) * 1000) / 10;
+								} else {
+									downloadProgress = 100;
 								}
-								uploadProgress = data.progress;
-							}
 
-							if (data.error) {
-								throw data.error;
-							}
+								MODEL_DOWNLOAD_POOL.set({
+									...$MODEL_DOWNLOAD_POOL,
+									[sanitizedModelTag]: {
+										...$MODEL_DOWNLOAD_POOL[sanitizedModelTag],
+										pullProgress: downloadProgress,
+										digest: data.digest
+									}
+								});
+							} else {
+								toast.success(data.status);
 
-							if (data.done) {
-								modelFileDigest = data.blob;
-								name = data.name;
-								uploaded = true;
+								MODEL_DOWNLOAD_POOL.set({
+									...$MODEL_DOWNLOAD_POOL,
+									[sanitizedModelTag]: {
+										...$MODEL_DOWNLOAD_POOL[sanitizedModelTag],
+										done: data.status === 'success'
+									}
+								});
 							}
 						}
 					}
-				} catch (error) {
-					console.log(error);
+				}
+			} catch (error) {
+				console.log(error);
+				if (typeof error === 'string') {
+					toast.error(error);
+				} else {
+					toast.error(error.message);
 				}
 			}
-		} else {
-			const error = await fileResponse?.json();
-			toast.error(error?.detail ?? error);
 		}
 
-		if (uploaded) {
-			const res = await createModel(
-				localStorage.token,
-				`${name}:latest`,
-				`FROM @${modelFileDigest}\n${modelFileContent}`
+		console.log($MODEL_DOWNLOAD_POOL[sanitizedModelTag]);
+
+		if ($MODEL_DOWNLOAD_POOL[sanitizedModelTag].done) {
+			toast.success(
+				$i18n.t(`Model '{{modelName}}' has been successfully downloaded.`, {
+					modelName: sanitizedModelTag
+				})
 			);
 
-			if (res && res.ok) {
-				const reader = res.body
-					.pipeThrough(new TextDecoderStream())
-					.pipeThrough(splitStream('\n'))
-					.getReader();
+			models.set(await getModels(localStorage.token));
+		} else {
+			toast.error($i18n.t('Download canceled'));
+		}
 
-				while (true) {
-					const { value, done } = await reader.read();
-					if (done) break;
+		delete $MODEL_DOWNLOAD_POOL[sanitizedModelTag];
 
-					try {
-						let lines = value.split('\n');
+		MODEL_DOWNLOAD_POOL.set({
+			...$MODEL_DOWNLOAD_POOL
+		});
+	}
 
-						for (const line of lines) {
-							if (line !== '') {
-								console.log(line);
-								let data = JSON.parse(line);
-								console.log(data);
+	modelTag = '';
+	modelTransferring = false;
+};
 
-								if (data.error) {
-									throw data.error;
-								}
-								if (data.detail) {
-									throw data.detail;
-								}
+const uploadModelHandler = async () => {
+	modelTransferring = true;
 
-								if (data.status) {
-									if (
-										!data.digest &&
-										!data.status.includes('writing') &&
-										!data.status.includes('sha256')
-									) {
-										toast.success(data.status);
-									}
-								}
-							}
-						}
-					} catch (error) {
-						console.log(error);
-						toast.error(error);
-					}
+	let uploaded = false;
+	let fileResponse = null;
+	let name = '';
+
+	if (modelUploadMode === 'file') {
+		const file = modelInputFile ? modelInputFile[0] : null;
+
+		if (file) {
+			uploadMessage = 'Uploading...';
+
+			fileResponse = await uploadModel(localStorage.token, file, selectedOllamaUrlIdx).catch(
+				(error) => {
+					toast.error(error);
+					return null;
 				}
-			}
+			);
 		}
-
-		modelFileUrl = '';
-
-		if (modelUploadInputElement) {
-			modelUploadInputElement.value = '';
-		}
-		modelInputFile = null;
-		modelTransferring = false;
-		uploadProgress = null;
-
-		models.set(await getModels());
-	};
-
-	const deleteModelHandler = async () => {
-		const res = await deleteModel(localStorage.token, deleteModelTag, selectedOllamaUrlIdx).catch(
-			(error) => {
-				toast.error(error);
-			}
-		);
-
-		if (res) {
-			toast.success($i18n.t(`Deleted {{deleteModelTag}}`, { deleteModelTag }));
-		}
-
-		deleteModelTag = '';
-		models.set(await getModels());
-	};
-
-	const cancelModelPullHandler = async (model: string) => {
-		const { reader, abortController } = $MODEL_DOWNLOAD_POOL[model];
-		if (abortController) {
-			abortController.abort();
-		}
-		if (reader) {
-			await reader.cancel();
-			delete $MODEL_DOWNLOAD_POOL[model];
-			MODEL_DOWNLOAD_POOL.set({
-				...$MODEL_DOWNLOAD_POOL
-			});
-			await deleteModel(localStorage.token, model);
-			toast.success(`${model} download has been canceled`);
-		}
-	};
-
-	const createModelHandler = async () => {
-		createModelLoading = true;
-		const res = await createModel(
+	} else {
+		uploadProgress = 0;
+		fileResponse = await downloadModel(
 			localStorage.token,
-			createModelTag,
-			createModelContent,
+			modelFileUrl,
 			selectedOllamaUrlIdx
 		).catch((error) => {
 			toast.error(error);
 			return null;
 		});
+	}
+
+	if (fileResponse && fileResponse.ok) {
+		const reader = fileResponse.body
+			.pipeThrough(new TextDecoderStream())
+			.pipeThrough(splitStream('\n'))
+			.getReader();
+
+		while (true) {
+			const { value, done } = await reader.read();
+			if (done) break;
+
+			try {
+				let lines = value.split('\n');
+
+				for (const line of lines) {
+					if (line !== '') {
+						let data = JSON.parse(line.replace(/^data: /, ''));
+
+						if (data.progress) {
+							if (uploadMessage) {
+								uploadMessage = '';
+							}
+							uploadProgress = data.progress;
+						}
+
+						if (data.error) {
+							throw data.error;
+						}
+
+						if (data.done) {
+							modelFileDigest = data.blob;
+							name = data.name;
+							uploaded = true;
+						}
+					}
+				}
+			} catch (error) {
+				console.log(error);
+			}
+		}
+	} else {
+		const error = await fileResponse?.json();
+		toast.error(error?.detail ?? error);
+	}
+
+	if (uploaded) {
+		const res = await createModel(
+			localStorage.token,
+			`${name}:latest`,
+			`FROM @${modelFileDigest}\n${modelFileContent}`
+		);
 
 		if (res && res.ok) {
 			const reader = res.body
@@ -472,17 +365,6 @@
 									!data.status.includes('sha256')
 								) {
 									toast.success(data.status);
-								} else {
-									if (data.digest) {
-										createModelDigest = data.digest;
-
-										if (data.completed) {
-											createModelPullProgress =
-												Math.round((data.completed / data.total) * 1000) / 10;
-										} else {
-											createModelPullProgress = 100;
-										}
-									}
 								}
 							}
 						}
@@ -493,43 +375,153 @@
 				}
 			}
 		}
+	}
 
-		models.set(await getModels());
+	modelFileUrl = '';
 
-		createModelLoading = false;
+	if (modelUploadInputElement) {
+		modelUploadInputElement.value = '';
+	}
+	modelInputFile = null;
+	modelTransferring = false;
+	uploadProgress = null;
 
-		createModelTag = '';
-		createModelContent = '';
-		createModelDigest = '';
-		createModelPullProgress = null;
-	};
+	models.set(await getModels());
+};
 
-	onMount(async () => {
-		const ollamaConfig = await getOllamaConfig(localStorage.token);
-
-		if (ollamaConfig.ENABLE_OLLAMA_API) {
-			ollamaEnabled = true;
-
-			await Promise.all([
-				(async () => {
-					OLLAMA_URLS = await getOllamaUrls(localStorage.token).catch((error) => {
-						toast.error(error);
-						return [];
-					});
-
-					if (OLLAMA_URLS.length > 0) {
-						selectedOllamaUrlIdx = 0;
-					}
-				})(),
-				(async () => {
-					ollamaVersion = await getOllamaVersion(localStorage.token).catch(() => false);
-				})()
-			]);
-		} else {
-			ollamaEnabled = false;
-			toast.error('Ollama API is disabled');
+const deleteModelHandler = async () => {
+	const res = await deleteModel(localStorage.token, deleteModelTag, selectedOllamaUrlIdx).catch(
+		(error) => {
+			toast.error(error);
 		}
+	);
+
+	if (res) {
+		toast.success($i18n.t(`Deleted {{deleteModelTag}}`, { deleteModelTag }));
+	}
+
+	deleteModelTag = '';
+	models.set(await getModels());
+};
+
+const cancelModelPullHandler = async (model: string) => {
+	const { reader, abortController } = $MODEL_DOWNLOAD_POOL[model];
+	if (abortController) {
+		abortController.abort();
+	}
+	if (reader) {
+		await reader.cancel();
+		delete $MODEL_DOWNLOAD_POOL[model];
+		MODEL_DOWNLOAD_POOL.set({
+			...$MODEL_DOWNLOAD_POOL
+		});
+		await deleteModel(localStorage.token, model);
+		toast.success(`${model} download has been canceled`);
+	}
+};
+
+const createModelHandler = async () => {
+	createModelLoading = true;
+	const res = await createModel(
+		localStorage.token,
+		createModelTag,
+		createModelContent,
+		selectedOllamaUrlIdx
+	).catch((error) => {
+		toast.error(error);
+		return null;
 	});
+
+	if (res && res.ok) {
+		const reader = res.body
+			.pipeThrough(new TextDecoderStream())
+			.pipeThrough(splitStream('\n'))
+			.getReader();
+
+		while (true) {
+			const { value, done } = await reader.read();
+			if (done) break;
+
+			try {
+				let lines = value.split('\n');
+
+				for (const line of lines) {
+					if (line !== '') {
+						console.log(line);
+						let data = JSON.parse(line);
+						console.log(data);
+
+						if (data.error) {
+							throw data.error;
+						}
+						if (data.detail) {
+							throw data.detail;
+						}
+
+						if (data.status) {
+							if (
+								!data.digest &&
+								!data.status.includes('writing') &&
+								!data.status.includes('sha256')
+							) {
+								toast.success(data.status);
+							} else {
+								if (data.digest) {
+									createModelDigest = data.digest;
+
+									if (data.completed) {
+										createModelPullProgress = Math.round((data.completed / data.total) * 1000) / 10;
+									} else {
+										createModelPullProgress = 100;
+									}
+								}
+							}
+						}
+					}
+				}
+			} catch (error) {
+				console.log(error);
+				toast.error(error);
+			}
+		}
+	}
+
+	models.set(await getModels());
+
+	createModelLoading = false;
+
+	createModelTag = '';
+	createModelContent = '';
+	createModelDigest = '';
+	createModelPullProgress = null;
+};
+
+onMount(async () => {
+	const ollamaConfig = await getOllamaConfig(localStorage.token);
+
+	if (ollamaConfig.ENABLE_OLLAMA_API) {
+		ollamaEnabled = true;
+
+		await Promise.all([
+			(async () => {
+				OLLAMA_URLS = await getOllamaUrls(localStorage.token).catch((error) => {
+					toast.error(error);
+					return [];
+				});
+
+				if (OLLAMA_URLS.length > 0) {
+					selectedOllamaUrlIdx = 0;
+				}
+			})(),
+			(async () => {
+				ollamaVersion = await getOllamaVersion(localStorage.token).catch(() => false);
+			})()
+		]);
+	} else {
+		ollamaEnabled = false;
+		toast.error('Ollama API is disabled');
+	}
+});
 </script>
 
 <div class="flex flex-col h-full justify-between text-sm">
@@ -588,7 +580,9 @@
 
 					<div class="space-y-2">
 						<div>
-							<div class=" mb-2 text-sm font-medium">{$i18n.t('Pull a model from Ollama.com')}</div>
+							<div class=" mb-2 text-sm font-medium">
+								{$i18n.t('Pull a model from Ollama.com')}
+							</div>
 							<div class="flex w-full">
 								<div class="flex-1 mr-2">
 									<input
@@ -615,16 +609,16 @@
 												xmlns="http://www.w3.org/2000/svg"
 											>
 												<style>
-													.spinner_ajPY {
-														transform-origin: center;
-														animation: spinner_AtaB 0.75s infinite linear;
-													}
+												.spinner_ajPY {
+													transform-origin: center;
+													animation: spinner_AtaB 0.75s infinite linear;
+												}
 
-													@keyframes spinner_AtaB {
-														100% {
-															transform: rotate(360deg);
-														}
+												@keyframes spinner_AtaB {
+													100% {
+														transform: rotate(360deg);
 													}
+												}
 												</style>
 												<path
 													d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
@@ -856,7 +850,9 @@
 								}}
 							>
 								<div class=" mb-2 flex w-full justify-between">
-									<div class="  text-sm font-medium">{$i18n.t('Upload a GGUF model')}</div>
+									<div class="  text-sm font-medium">
+										{$i18n.t('Upload a GGUF model')}
+									</div>
 
 									<button
 										class="p-1 px-3 text-xs flex rounded transition"
@@ -941,16 +937,16 @@
 														xmlns="http://www.w3.org/2000/svg"
 													>
 														<style>
-															.spinner_ajPY {
-																transform-origin: center;
-																animation: spinner_AtaB 0.75s infinite linear;
-															}
+														.spinner_ajPY {
+															transform-origin: center;
+															animation: spinner_AtaB 0.75s infinite linear;
+														}
 
-															@keyframes spinner_AtaB {
-																100% {
-																	transform: rotate(360deg);
-																}
+														@keyframes spinner_AtaB {
+															100% {
+																transform: rotate(360deg);
 															}
+														}
 														</style>
 														<path
 															d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
@@ -984,7 +980,9 @@
 								{#if (modelUploadMode === 'file' && modelInputFile && modelInputFile.length > 0) || (modelUploadMode === 'url' && modelFileUrl !== '')}
 									<div>
 										<div>
-											<div class=" my-2.5 text-sm font-medium">{$i18n.t('Modelfile Content')}</div>
+											<div class=" my-2.5 text-sm font-medium">
+												{$i18n.t('Modelfile Content')}
+											</div>
 											<textarea
 												bind:value={modelFileContent}
 												class="w-full rounded-lg py-2 px-4 text-sm bg-gray-100 dark:text-gray-100 dark:bg-gray-850 outline-none resize-none"
@@ -1004,7 +1002,9 @@
 
 								{#if uploadMessage}
 									<div class="mt-2">
-										<div class=" mb-2 text-xs">{$i18n.t('Upload Progress')}</div>
+										<div class=" mb-2 text-xs">
+											{$i18n.t('Upload Progress')}
+										</div>
 
 										<div class="w-full rounded-full dark:bg-gray-800">
 											<div
@@ -1020,7 +1020,9 @@
 									</div>
 								{:else if uploadProgress !== null}
 									<div class="mt-2">
-										<div class=" mb-2 text-xs">{$i18n.t('Upload Progress')}</div>
+										<div class=" mb-2 text-xs">
+											{$i18n.t('Upload Progress')}
+										</div>
 
 										<div class="w-full rounded-full dark:bg-gray-800">
 											<div

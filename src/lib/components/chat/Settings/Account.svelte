@@ -1,73 +1,73 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import { onMount, getContext } from 'svelte';
+import { toast } from 'svelte-sonner';
+import { onMount, getContext } from 'svelte';
 
-	import { user } from '$lib/stores';
-	import { updateUserProfile, createAPIKey, getAPIKey } from '$lib/apis/auths';
+import { user } from '$lib/stores';
+import { updateUserProfile, createAPIKey, getAPIKey } from '$lib/apis/auths';
 
-	import UpdatePassword from './Account/UpdatePassword.svelte';
-	import { getGravatarUrl } from '$lib/apis/utils';
-	import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
-	import { copyToClipboard } from '$lib/utils';
-	import Plus from '$lib/components/icons/Plus.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+import UpdatePassword from './Account/UpdatePassword.svelte';
+import { getGravatarUrl } from '$lib/apis/utils';
+import { generateInitialsImage, canvasPixelTest } from '$lib/utils';
+import { copyToClipboard } from '$lib/utils';
+import Plus from '$lib/components/icons/Plus.svelte';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let saveHandler: Function;
+export let saveHandler: () => void;
 
-	let profileImageUrl = '';
-	let name = '';
+let profileImageUrl = '';
+let name = '';
 
-	let showAPIKeys = false;
+let showAPIKeys = false;
 
-	let showJWTToken = false;
-	let JWTTokenCopied = false;
+let showJWTToken = false;
+let JWTTokenCopied = false;
 
-	let APIKey = '';
-	let showAPIKey = false;
-	let APIKeyCopied = false;
+let APIKey = '';
+let showAPIKey = false;
+let APIKeyCopied = false;
 
-	let profileImageInputElement: HTMLInputElement;
+let profileImageInputElement: HTMLInputElement;
 
-	const submitHandler = async () => {
-		if (name !== $user.name) {
-			if (profileImageUrl === generateInitialsImage($user.name) || profileImageUrl === '') {
-				profileImageUrl = generateInitialsImage(name);
-			}
+const submitHandler = async () => {
+	if (name !== $user.name) {
+		if (profileImageUrl === generateInitialsImage($user.name) || profileImageUrl === '') {
+			profileImageUrl = generateInitialsImage(name);
 		}
+	}
 
-		const updatedUser = await updateUserProfile(localStorage.token, name, profileImageUrl).catch(
-			(error) => {
-				toast.error(error);
-			}
-		);
-
-		if (updatedUser) {
-			await user.set(updatedUser);
-			return true;
+	const updatedUser = await updateUserProfile(localStorage.token, name, profileImageUrl).catch(
+		(error) => {
+			toast.error(error);
 		}
-		return false;
-	};
+	);
 
-	const createAPIKeyHandler = async () => {
-		APIKey = await createAPIKey(localStorage.token);
-		if (APIKey) {
-			toast.success($i18n.t('API Key created.'));
-		} else {
-			toast.error($i18n.t('Failed to create API Key.'));
-		}
-	};
+	if (updatedUser) {
+		await user.set(updatedUser);
+		return true;
+	}
+	return false;
+};
 
-	onMount(async () => {
-		name = $user.name;
-		profileImageUrl = $user.profile_image_url;
+const createAPIKeyHandler = async () => {
+	APIKey = await createAPIKey(localStorage.token);
+	if (APIKey) {
+		toast.success($i18n.t('API Key created.'));
+	} else {
+		toast.error($i18n.t('Failed to create API Key.'));
+	}
+};
 
-		APIKey = await getAPIKey(localStorage.token).catch((error) => {
-			console.log(error);
-			return '';
-		});
+onMount(async () => {
+	name = $user.name;
+	profileImageUrl = $user.profile_image_url;
+
+	APIKey = await getAPIKey(localStorage.token).catch((error) => {
+		console.log(error);
+		return '';
 	});
+});
 </script>
 
 <div class="flex flex-col h-full justify-between text-sm">

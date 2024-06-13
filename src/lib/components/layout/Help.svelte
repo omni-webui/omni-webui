@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+import { getContext } from 'svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	import ShortcutsModal from '../chat/ShortcutsModal.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
-	import HelpMenu from './Help/HelpMenu.svelte';
+import ShortcutsModal from '../chat/ShortcutsModal.svelte';
+import Tooltip from '../common/Tooltip.svelte';
+import HelpMenu from './Help/HelpMenu.svelte';
 
-	let showShortcuts = false;
+let showShortcuts = false;
 </script>
 
 <div class=" hidden lg:flex fixed bottom-0 right-0 px-2 py-2 z-10">

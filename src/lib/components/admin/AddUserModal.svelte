@@ -1,119 +1,119 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import { createEventDispatcher } from 'svelte';
-	import { getContext } from 'svelte';
-	import { addUser } from '$lib/apis/auths';
+import { toast } from 'svelte-sonner';
+import { createEventDispatcher } from 'svelte';
+import { getContext } from 'svelte';
+import { addUser } from '$lib/apis/auths';
 
-	import Modal from '../common/Modal.svelte';
-	import { WEBUI_BASE_URL } from '$lib/constants';
+import Modal from '../common/Modal.svelte';
+import { WEBUI_BASE_URL } from '$lib/constants';
 
-	const i18n = getContext('i18n');
-	const dispatch = createEventDispatcher();
+const i18n = getContext('i18n');
+const dispatch = createEventDispatcher();
 
-	export let show = false;
+export let show = false;
 
-	let loading = false;
-	let tab = '';
-	let inputFiles;
+let loading = false;
+let tab = '';
+let inputFiles;
 
-	let _user = {
+let _user = {
+	name: '',
+	email: '',
+	password: '',
+	role: 'user'
+};
+
+$: if (show) {
+	_user = {
 		name: '',
 		email: '',
 		password: '',
 		role: 'user'
 	};
+}
 
-	$: if (show) {
-		_user = {
-			name: '',
-			email: '',
-			password: '',
-			role: 'user'
-		};
-	}
+const submitHandler = async () => {
+	const stopLoading = () => {
+		dispatch('save');
+		loading = false;
+	};
 
-	const submitHandler = async () => {
-		const stopLoading = () => {
-			dispatch('save');
-			loading = false;
-		};
+	if (tab === '') {
+		loading = true;
 
-		if (tab === '') {
+		const res = await addUser(
+			localStorage.token,
+			_user.name,
+			_user.email,
+			_user.password,
+			_user.role
+		).catch((error) => {
+			toast.error(error);
+		});
+
+		if (res) {
+			stopLoading();
+			show = false;
+		}
+	} else {
+		if (inputFiles) {
 			loading = true;
 
-			const res = await addUser(
-				localStorage.token,
-				_user.name,
-				_user.email,
-				_user.password,
-				_user.role
-			).catch((error) => {
-				toast.error(error);
-			});
+			const file = inputFiles[0];
+			const reader = new FileReader();
 
-			if (res) {
-				stopLoading();
-				show = false;
-			}
-		} else {
-			if (inputFiles) {
-				loading = true;
+			reader.onload = async (e) => {
+				const csv = e.target.result;
+				const rows = csv.split('\n');
 
-				const file = inputFiles[0];
-				const reader = new FileReader();
+				let userCount = 0;
 
-				reader.onload = async (e) => {
-					const csv = e.target.result;
-					const rows = csv.split('\n');
+				for (const [idx, row] of rows.entries()) {
+					const columns = row.split(',').map((col) => col.trim());
+					console.log(idx, columns);
 
-					let userCount = 0;
+					if (idx > 0) {
+						if (
+							columns.length === 4 &&
+							['admin', 'user', 'pending'].includes(columns[3].toLowerCase())
+						) {
+							const res = await addUser(
+								localStorage.token,
+								columns[0],
+								columns[1],
+								columns[2],
+								columns[3].toLowerCase()
+							).catch((error) => {
+								toast.error(`Row ${idx + 1}: ${error}`);
+								return null;
+							});
 
-					for (const [idx, row] of rows.entries()) {
-						const columns = row.split(',').map((col) => col.trim());
-						console.log(idx, columns);
-
-						if (idx > 0) {
-							if (
-								columns.length === 4 &&
-								['admin', 'user', 'pending'].includes(columns[3].toLowerCase())
-							) {
-								const res = await addUser(
-									localStorage.token,
-									columns[0],
-									columns[1],
-									columns[2],
-									columns[3].toLowerCase()
-								).catch((error) => {
-									toast.error(`Row ${idx + 1}: ${error}`);
-									return null;
-								});
-
-								if (res) {
-									userCount = userCount + 1;
-								}
-							} else {
-								toast.error(`Row ${idx + 1}: invalid format.`);
+							if (res) {
+								userCount = userCount + 1;
 							}
+						} else {
+							toast.error(`Row ${idx + 1}: invalid format.`);
 						}
 					}
+				}
 
-					toast.success(`Successfully imported ${userCount} users.`);
-					inputFiles = null;
-					const uploadInputElement = document.getElementById('upload-user-csv-input');
+				toast.success(`Successfully imported ${userCount} users.`);
+				inputFiles = null;
+				const uploadInputElement = document.getElementById('upload-user-csv-input');
 
-					if (uploadInputElement) {
-						uploadInputElement.value = null;
-					}
+				if (uploadInputElement) {
+					uploadInputElement.value = null;
+				}
 
-					stopLoading();
-				};
+				stopLoading();
+			};
 
-				reader.readAsText(file);
-			} else {
-				toast.error($i18n.t('File not found.'));
-			}
+			reader.readAsText(file);
+		} else {
+			toast.error($i18n.t('File not found.'));
 		}
-	};
+	}
+};
 </script>
 
 <Modal size="sm" bind:show>
@@ -287,15 +287,15 @@
 										fill="currentColor"
 										xmlns="http://www.w3.org/2000/svg"
 										><style>
-											.spinner_ajPY {
-												transform-origin: center;
-												animation: spinner_AtaB 0.75s infinite linear;
+										.spinner_ajPY {
+											transform-origin: center;
+											animation: spinner_AtaB 0.75s infinite linear;
+										}
+										@keyframes spinner_AtaB {
+											100% {
+												transform: rotate(360deg);
 											}
-											@keyframes spinner_AtaB {
-												100% {
-													transform: rotate(360deg);
-												}
-											}
+										}
 										</style><path
 											d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
 											opacity=".25"
@@ -315,10 +315,10 @@
 </Modal>
 
 <style>
-	input::-webkit-outer-spin-button,
-	input::-webkit-inner-spin-button {
-		/* display: none; <- Crashes Chrome on hover */
-		-webkit-appearance: none;
-		margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
-	}
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+	/* display: none; <- Crashes Chrome on hover */
+	-webkit-appearance: none;
+	margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
 </style>

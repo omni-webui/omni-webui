@@ -151,7 +151,7 @@ export const generateInitialsImage = (name) => {
 	const initials =
 		sanitizedName.length > 0
 			? sanitizedName[0] +
-			  (sanitizedName.split(' ').length > 1
+				(sanitizedName.split(' ').length > 1
 					? sanitizedName[sanitizedName.lastIndexOf(' ') + 1]
 					: '')
 			: '';
@@ -161,7 +161,7 @@ export const generateInitialsImage = (name) => {
 	return canvas.toDataURL();
 };
 
-export const copyToClipboard = async (text) => {
+export const copyToClipboard = async (text: string) => {
 	let result = false;
 	if (!navigator.clipboard) {
 		const textArea = document.createElement('textarea');
@@ -210,7 +210,7 @@ export const compareVersion = (latest, current) => {
 				numeric: true,
 				sensitivity: 'case',
 				caseFirst: 'upper'
-		  }) < 0;
+			}) < 0;
 };
 
 export const findWordIndices = (text) => {

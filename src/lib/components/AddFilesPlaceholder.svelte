@@ -1,6 +1,6 @@
 <script>
-	import { getContext } from 'svelte';
-	const i18n = getContext('i18n');
+import { getContext } from 'svelte';
+const i18n = getContext('i18n');
 </script>
 
 <div class="  text-center text-6xl mb-3">📄</div>

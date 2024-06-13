@@ -1,81 +1,81 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
-	import { models, config } from '$lib/stores';
+import { getContext } from 'svelte';
+import { models, config } from '$lib/stores';
 
-	import { toast } from 'svelte-sonner';
-	import { deleteSharedChatById, getChatById, shareChatById } from '$lib/apis/chats';
-	import { copyToClipboard } from '$lib/utils';
+import { toast } from 'svelte-sonner';
+import { deleteSharedChatById, getChatById, shareChatById } from '$lib/apis/chats';
+import { copyToClipboard } from '$lib/utils';
 
-	import Modal from '../common/Modal.svelte';
-	import Link from '../icons/Link.svelte';
+import Modal from '../common/Modal.svelte';
+import Link from '../icons/Link.svelte';
 
-	export let chatId;
+export let chatId;
 
-	let chat = null;
-	let shareUrl = null;
-	const i18n = getContext('i18n');
+let chat = null;
+let shareUrl = null;
+const i18n = getContext('i18n');
 
-	const shareLocalChat = async () => {
-		const sharedChat = await shareChatById(localStorage.token, chatId);
-		shareUrl = `${window.location.origin}/s/${sharedChat.id}`;
-		console.log(shareUrl);
-		chat = await getChatById(localStorage.token, chatId);
+const shareLocalChat = async () => {
+	const sharedChat = await shareChatById(localStorage.token, chatId);
+	shareUrl = `${window.location.origin}/s/${sharedChat.id}`;
+	console.log(shareUrl);
+	chat = await getChatById(localStorage.token, chatId);
 
-		return shareUrl;
-	};
+	return shareUrl;
+};
 
-	const shareChat = async () => {
-		const _chat = chat.chat;
-		console.log('share', _chat);
+const shareChat = async () => {
+	const _chat = chat.chat;
+	console.log('share', _chat);
 
-		toast.success($i18n.t('Redirecting you to OmniWebUI Community'));
-		const url = 'https://omni-webui.com';
-		// const url = 'http://localhost:5173';
+	toast.success($i18n.t('Redirecting you to OmniWebUI Community'));
+	const url = 'https://omni-webui.com';
+	// const url = 'http://localhost:5173';
 
-		const tab = await window.open(`${url}/chats/upload`, '_blank');
-		window.addEventListener(
-			'message',
-			(event) => {
-				if (event.origin !== url) return;
-				if (event.data === 'loaded') {
-					tab.postMessage(
-						JSON.stringify({
-							chat: _chat,
-							models: $models.filter((m) => _chat.models.includes(m.id))
-						}),
-						'*'
-					);
-				}
-			},
-			false
-		);
-	};
-
-	export let show = false;
-
-	const isDifferentChat = (_chat) => {
-		if (!chat) {
-			return true;
-		}
-		if (!_chat) {
-			return false;
-		}
-		return chat.id !== _chat.id || chat.share_id !== _chat.share_id;
-	};
-
-	$: if (show) {
-		(async () => {
-			if (chatId) {
-				const _chat = await getChatById(localStorage.token, chatId);
-				if (isDifferentChat(_chat)) {
-					chat = _chat;
-				}
-			} else {
-				chat = null;
-				console.log(chat);
+	const tab = await window.open(`${url}/chats/upload`, '_blank');
+	window.addEventListener(
+		'message',
+		(event) => {
+			if (event.origin !== url) return;
+			if (event.data === 'loaded') {
+				tab.postMessage(
+					JSON.stringify({
+						chat: _chat,
+						models: $models.filter((m) => _chat.models.includes(m.id))
+					}),
+					'*'
+				);
 			}
-		})();
+		},
+		false
+	);
+};
+
+export let show = false;
+
+const isDifferentChat = (_chat) => {
+	if (!chat) {
+		return true;
 	}
+	if (!_chat) {
+		return false;
+	}
+	return chat.id !== _chat.id || chat.share_id !== _chat.share_id;
+};
+
+$: if (show) {
+	(async () => {
+		if (chatId) {
+			const _chat = await getChatById(localStorage.token, chatId);
+			if (isDifferentChat(_chat)) {
+				chat = _chat;
+			}
+		} else {
+			chat = null;
+			console.log(chat);
+		}
+	})();
+}
 </script>
 
 <Modal bind:show size="sm">

@@ -1,53 +1,51 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+import { onMount } from 'svelte';
 
-	export let show = false;
-	export let src = '';
-	export let alt = '';
+export let show = false;
+export let src = '';
+export let alt = '';
 
-	let mounted = false;
+let mounted = false;
 
-	const downloadImage = (url, filename) => {
-		fetch(url)
-			.then((response) => response.blob())
-			.then((blob) => {
-				const objectUrl = window.URL.createObjectURL(blob);
-				const link = document.createElement('a');
-				link.href = objectUrl;
-				link.download = filename;
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
-				window.URL.revokeObjectURL(objectUrl);
-			})
-			.catch((error) => console.error('Error downloading image:', error));
-	};
+const downloadImage = (url, filename) => {
+	fetch(url)
+		.then((response) => response.blob())
+		.then((blob) => {
+			const objectUrl = window.URL.createObjectURL(blob);
+			const link = document.createElement('a');
+			link.href = objectUrl;
+			link.download = filename;
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+			window.URL.revokeObjectURL(objectUrl);
+		})
+		.catch((error) => console.error('Error downloading image:', error));
+};
 
-	const handleKeyDown = (event: KeyboardEvent) => {
-		if (event.key === 'Escape') {
-			console.log('Escape');
-			show = false;
-		}
-	};
-
-	onMount(() => {
-		mounted = true;
-	});
-
-	$: if (mounted) {
-		if (show) {
-			window.addEventListener('keydown', handleKeyDown);
-			document.body.style.overflow = 'hidden';
-		} else {
-			window.removeEventListener('keydown', handleKeyDown);
-			document.body.style.overflow = 'unset';
-		}
+const handleKeyDown = (event: KeyboardEvent) => {
+	if (event.key === 'Escape') {
+		console.log('Escape');
+		show = false;
 	}
+};
+
+onMount(() => {
+	mounted = true;
+});
+
+$: if (mounted) {
+	if (show) {
+		window.addEventListener('keydown', handleKeyDown);
+		document.body.style.overflow = 'hidden';
+	} else {
+		window.removeEventListener('keydown', handleKeyDown);
+		document.body.style.overflow = 'unset';
+	}
+}
 </script>
 
 {#if show}
-	<!-- svelte-ignore a11y-click-events-have-key-events -->
-	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div
 		class="fixed top-0 right-0 left-0 bottom-0 bg-black text-white w-full min-h-screen h-screen flex justify-center z-50 overflow-hidden overscroll-contain"
 	>

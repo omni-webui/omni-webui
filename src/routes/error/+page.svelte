@@ -1,19 +1,19 @@
 <script>
-	import { goto } from '$app/navigation';
-	import { WEBUI_NAME, config } from '$lib/stores';
-	import { onMount, getContext } from 'svelte';
+import { goto } from '$app/navigation';
+import { WEBUI_NAME, config } from '$lib/stores';
+import { onMount, getContext } from 'svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let loaded = false;
+let loaded = false;
 
-	onMount(async () => {
-		if ($config) {
-			await goto('/');
-		}
+onMount(async () => {
+	if ($config) {
+		await goto('/');
+	}
 
-		loaded = true;
-	});
+	loaded = true;
+});
 </script>
 
 {#if loaded}

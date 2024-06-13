@@ -1,34 +1,27 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+import { getContext } from 'svelte';
 
-	import {
-		WEBUI_NAME,
-		chatId,
-		showArchivedChats,
-		showSidebar,
-		user
-	} from '$lib/stores';
+import { WEBUI_NAME, chatId, showArchivedChats, showSidebar, user } from '$lib/stores';
 
-	import ShareChatModal from '../chat/ShareChatModal.svelte';
-	import ModelSelector from '../chat/ModelSelector.svelte';
-	import Tooltip from '../common/Tooltip.svelte';
-	import Menu from './Navbar/Menu.svelte';
-	import UserMenu from './Sidebar/UserMenu.svelte';
-	import MenuLines from '../icons/MenuLines.svelte';
+import ShareChatModal from '../chat/ShareChatModal.svelte';
+import ModelSelector from '../chat/ModelSelector.svelte';
+import Tooltip from '../common/Tooltip.svelte';
+import Menu from './Navbar/Menu.svelte';
+import UserMenu from './Sidebar/UserMenu.svelte';
+import MenuLines from '../icons/MenuLines.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let initNewChat: Function;
-	export const title: string = $WEBUI_NAME;
-	export let shareEnabled: boolean = false;
+export let initNewChat: () => void;
+export const title: string = $WEBUI_NAME;
+export let shareEnabled: boolean = false;
 
-	export let chat;
-	export let selectedModels;
+export let chat;
+export let selectedModels;
 
-	export let showModelSelector = true;
+export let showModelSelector = true;
 
-	let showShareChatModal = false;
-	let showDownloadChatModal = false;
+let showShareChatModal = false;
 </script>
 
 <ShareChatModal bind:show={showShareChatModal} chatId={$chatId} />

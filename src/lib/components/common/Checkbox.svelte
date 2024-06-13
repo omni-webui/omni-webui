@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-	const dispatch = createEventDispatcher();
+import { createEventDispatcher } from 'svelte';
+const dispatch = createEventDispatcher();
 
-	export let state = 'unchecked';
-	export let indeterminate = false;
+export let state = 'unchecked';
+export let indeterminate = false;
 
-	let _state = 'unchecked';
+let _state = 'unchecked';
 
-	$: _state = state;
+$: _state = state;
 </script>
 
 <button

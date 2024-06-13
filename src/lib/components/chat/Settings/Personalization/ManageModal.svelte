@@ -1,26 +1,26 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import dayjs from 'dayjs';
-	import { getContext, createEventDispatcher } from 'svelte';
-	createEventDispatcher();
-	import Modal from '$lib/components/common/Modal.svelte';
-	import AddMemoryModal from './AddMemoryModal.svelte';
-	import { deleteMemoriesByUserId, deleteMemoryById, getMemories } from '$lib/apis/memories';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+import { toast } from 'svelte-sonner';
+import dayjs from 'dayjs';
+import { getContext, createEventDispatcher } from 'svelte';
+createEventDispatcher();
+import Modal from '$lib/components/common/Modal.svelte';
+import AddMemoryModal from './AddMemoryModal.svelte';
+import { deleteMemoriesByUserId, deleteMemoryById, getMemories } from '$lib/apis/memories';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let show = false;
+export let show = false;
 
-	let memories = [];
+let memories = [];
 
-	let showAddMemoryModal = false;
+let showAddMemoryModal = false;
 
-	$: if (show) {
-		(async () => {
-			memories = await getMemories(localStorage.token);
-		})();
-	}
+$: if (show) {
+	(async () => {
+		memories = await getMemories(localStorage.token);
+	})();
+}
 </script>
 
 <Modal size="xl" bind:show>
@@ -59,7 +59,9 @@
 								>
 									<tr>
 										<th scope="col" class="px-3 py-2"> {$i18n.t('Name')} </th>
-										<th scope="col" class="px-3 py-2 hidden md:flex"> {$i18n.t('Created At')} </th>
+										<th scope="col" class="px-3 py-2 hidden md:flex">
+											{$i18n.t('Created At')}
+										</th>
 										<th scope="col" class="px-3 py-2 text-right" />
 									</tr>
 								</thead>

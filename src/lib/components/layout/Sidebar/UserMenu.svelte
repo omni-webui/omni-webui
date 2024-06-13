@@ -1,20 +1,20 @@
 <script lang="ts">
-	import { DropdownMenu } from 'bits-ui';
-	import { createEventDispatcher, getContext } from 'svelte';
+import { DropdownMenu } from 'bits-ui';
+import { createEventDispatcher, getContext } from 'svelte';
 
-	import { goto } from '$app/navigation';
-	import ArchiveBox from '$lib/components/icons/ArchiveBox.svelte';
-	import { showSettings, activeUserCount, USAGE_POOL } from '$lib/stores';
-	import { fade } from 'svelte/transition';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+import { goto } from '$app/navigation';
+import ArchiveBox from '$lib/components/icons/ArchiveBox.svelte';
+import { showSettings, activeUserCount, USAGE_POOL } from '$lib/stores';
+import { fade } from 'svelte/transition';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let show = false;
-	export let role = '';
-	export let className = 'max-w-[240px]';
+export let show = false;
+export let role = '';
+export let className = 'max-w-[240px]';
 
-	const dispatch = createEventDispatcher();
+const dispatch = createEventDispatcher();
 </script>
 
 <DropdownMenu.Root

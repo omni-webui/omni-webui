@@ -1,35 +1,35 @@
 <script lang="ts">
-	import Bolt from '$lib/components/icons/Bolt.svelte';
-	import { onMount, getContext } from 'svelte';
+import Bolt from '$lib/components/icons/Bolt.svelte';
+import { onMount, getContext } from 'svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let submitPrompt: Function;
-	export let suggestionPrompts = [];
+export let submitPrompt: (prompt: string) => void;
+export let suggestionPrompts = [];
 
-	let prompts = [];
+let prompts = [];
 
-	$: prompts = suggestionPrompts
-		.reduce((acc, current) => [...acc, ...[current]], [])
-		.sort(() => Math.random() - 0.5);
-	// suggestionPrompts.length <= 4
-	// 	? suggestionPrompts
-	// 	: suggestionPrompts.sort(() => Math.random() - 0.5).slice(0, 4);
+$: prompts = suggestionPrompts
+	.reduce((acc, current) => [...acc, ...[current]], [])
+	.sort(() => Math.random() - 0.5);
+// suggestionPrompts.length <= 4
+// 	? suggestionPrompts
+// 	: suggestionPrompts.sort(() => Math.random() - 0.5).slice(0, 4);
 
-	onMount(() => {
-		const containerElement = document.getElementById('suggestions-container');
+onMount(() => {
+	const containerElement = document.getElementById('suggestions-container');
 
-		if (containerElement) {
-			containerElement.addEventListener('wheel', function (event) {
-				if (event.deltaY !== 0) {
-					// If scrolling vertically, prevent default behavior
-					event.preventDefault();
-					// Adjust horizontal scroll position based on vertical scroll
-					containerElement.scrollLeft += event.deltaY;
-				}
-			});
-		}
-	});
+	if (containerElement) {
+		containerElement.addEventListener('wheel', function (event) {
+			if (event.deltaY !== 0) {
+				// If scrolling vertically, prevent default behavior
+				event.preventDefault();
+				// Adjust horizontal scroll position based on vertical scroll
+				containerElement.scrollLeft += event.deltaY;
+			}
+		});
+	}
+});
 </script>
 
 {#if prompts.length > 0}
@@ -59,7 +59,9 @@
 							>
 								{prompt.title[0]}
 							</div>
-							<div class="text-sm text-gray-600 font-normal line-clamp-2">{prompt.title[1]}</div>
+							<div class="text-sm text-gray-600 font-normal line-clamp-2">
+								{prompt.title[1]}
+							</div>
 						{:else}
 							<div
 								class=" self-center text-sm font-medium dark:text-gray-300 dark:group-hover:text-gray-100 transition line-clamp-2"
@@ -107,12 +109,12 @@
 </div>
 
 <style>
-	.tabs::-webkit-scrollbar {
-		display: none; /* for Chrome, Safari and Opera */
-	}
+.tabs::-webkit-scrollbar {
+	display: none; /* for Chrome, Safari and Opera */
+}
 
-	.tabs {
-		-ms-overflow-style: none; /* IE and Edge */
-		scrollbar-width: none; /* Firefox */
-	}
+.tabs {
+	-ms-overflow-style: none; /* IE and Edge */
+	scrollbar-width: none; /* Firefox */
+}
 </style>

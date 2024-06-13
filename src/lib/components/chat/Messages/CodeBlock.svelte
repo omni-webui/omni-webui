@@ -1,216 +1,216 @@
 <script lang="ts">
-	import { copyToClipboard } from '$lib/utils';
-	import hljs from 'highlight.js';
-	import 'highlight.js/styles/github-dark.min.css';
-	import { loadPyodide } from 'pyodide';
-	import PyodideWorker from '$lib/workers/pyodide.worker?worker';
+import { copyToClipboard } from '$lib/utils';
+import hljs from 'highlight.js';
+import 'highlight.js/styles/github-dark.min.css';
+import { loadPyodide } from 'pyodide';
+import PyodideWorker from '$lib/workers/pyodide.worker?worker';
 
-	export let id = '';
+export let id = '';
 
-	export let lang = '';
-	export let code = '';
+export let lang = '';
+export let code = '';
 
-	let highlightedCode = null;
-	let executing = false;
+let highlightedCode = null;
+let executing = false;
 
-	let stdout = null;
-	let stderr = null;
-	let result = null;
+let stdout = null;
+let stderr = null;
+let result = null;
 
-	let copied = false;
+let copied = false;
 
-	const copyCode = async () => {
-		copied = true;
-		await copyToClipboard(code);
+const copyCode = async () => {
+	copied = true;
+	await copyToClipboard(code);
 
-		setTimeout(() => {
-			copied = false;
-		}, 1000);
-	};
+	setTimeout(() => {
+		copied = false;
+	}, 1000);
+};
 
-	const checkPythonCode = (str) => {
-		// Check if the string contains typical Python syntax characters
-		const pythonSyntax = [
-			'def ',
-			'else:',
-			'elif ',
-			'try:',
-			'except:',
-			'finally:',
-			'yield ',
-			'lambda ',
-			'assert ',
-			'nonlocal ',
-			'del ',
-			'True',
-			'False',
-			'None',
-			' and ',
-			' or ',
-			' not ',
-			' in ',
-			' is ',
-			' with '
-		];
+const checkPythonCode = (str) => {
+	// Check if the string contains typical Python syntax characters
+	const pythonSyntax = [
+		'def ',
+		'else:',
+		'elif ',
+		'try:',
+		'except:',
+		'finally:',
+		'yield ',
+		'lambda ',
+		'assert ',
+		'nonlocal ',
+		'del ',
+		'True',
+		'False',
+		'None',
+		' and ',
+		' or ',
+		' not ',
+		' in ',
+		' is ',
+		' with '
+	];
 
-		for (let syntax of pythonSyntax) {
-			if (str.includes(syntax)) {
-				return true;
-			}
+	for (let syntax of pythonSyntax) {
+		if (str.includes(syntax)) {
+			return true;
 		}
+	}
 
-		// If none of the above conditions met, it's probably not Python code
-		return false;
-	};
+	// If none of the above conditions met, it's probably not Python code
+	return false;
+};
 
-	const executePython = async (code) => {
-		if (!code.includes('input') && !code.includes('matplotlib')) {
-			executePythonAsWorker(code);
-		} else {
-			result = null;
-			stdout = null;
-			stderr = null;
-
-			executing = true;
-
-			document.pyodideMplTarget = document.getElementById(`plt-canvas-${id}`);
-
-			let pyodide = await loadPyodide({
-				indexURL: '/pyodide/',
-				stdout: (text) => {
-					console.log('Python output:', text);
-
-					if (stdout) {
-						stdout += `${text}\n`;
-					} else {
-						stdout = `${text}\n`;
-					}
-				},
-				stderr: (text) => {
-					console.log('An error occured:', text);
-					if (stderr) {
-						stderr += `${text}\n`;
-					} else {
-						stderr = `${text}\n`;
-					}
-				},
-				packages: ['micropip']
-			});
-
-			try {
-				const micropip = pyodide.pyimport('micropip');
-
-				// await micropip.set_index_urls('https://pypi.org/pypi/{package_name}/json');
-
-				let packages = [
-					code.includes('requests') ? 'requests' : null,
-					code.includes('bs4') ? 'beautifulsoup4' : null,
-					code.includes('numpy') ? 'numpy' : null,
-					code.includes('pandas') ? 'pandas' : null,
-					code.includes('matplotlib') ? 'matplotlib' : null,
-					code.includes('sklearn') ? 'scikit-learn' : null,
-					code.includes('scipy') ? 'scipy' : null,
-					code.includes('re') ? 'regex' : null,
-					code.includes('seaborn') ? 'seaborn' : null
-				].filter(Boolean);
-
-				console.log(packages);
-				await micropip.install(packages);
-
-				result = await pyodide.runPythonAsync(`from js import prompt
-def input(p):
-    return prompt(p)
-__builtins__.input = input`);
-
-				result = await pyodide.runPython(code);
-
-				if (!result) {
-					result = '[NO OUTPUT]';
-				}
-
-				console.log(result);
-				console.log(stdout);
-				console.log(stderr);
-
-				const pltCanvasElement = document.getElementById(`plt-canvas-${id}`);
-
-				if (pltCanvasElement?.innerHTML !== '') {
-					pltCanvasElement.classList.add('pt-4');
-				}
-			} catch (error) {
-				console.error('Error:', error);
-				stderr = error;
-			}
-
-			executing = false;
-		}
-	};
-
-	const executePythonAsWorker = async (code) => {
+const executePython = async (code) => {
+	if (!code.includes('input') && !code.includes('matplotlib')) {
+		executePythonAsWorker(code);
+	} else {
 		result = null;
 		stdout = null;
 		stderr = null;
 
 		executing = true;
 
-		let packages = [
-			code.includes('requests') ? 'requests' : null,
-			code.includes('bs4') ? 'beautifulsoup4' : null,
-			code.includes('numpy') ? 'numpy' : null,
-			code.includes('pandas') ? 'pandas' : null,
-			code.includes('sklearn') ? 'scikit-learn' : null,
-			code.includes('scipy') ? 'scipy' : null,
-			code.includes('re') ? 'regex' : null,
-			code.includes('seaborn') ? 'seaborn' : null
-		].filter(Boolean);
+		document.pyodideMplTarget = document.getElementById(`plt-canvas-${id}`);
 
-		console.log(packages);
+		let pyodide = await loadPyodide({
+			indexURL: '/pyodide/',
+			stdout: (text) => {
+				console.log('Python output:', text);
 
-		const pyodideWorker = new PyodideWorker();
-
-		pyodideWorker.postMessage({
-			id: id,
-			code: code,
-			packages: packages
+				if (stdout) {
+					stdout += `${text}\n`;
+				} else {
+					stdout = `${text}\n`;
+				}
+			},
+			stderr: (text) => {
+				console.log('An error occured:', text);
+				if (stderr) {
+					stderr += `${text}\n`;
+				} else {
+					stderr = `${text}\n`;
+				}
+			},
+			packages: ['micropip']
 		});
 
-		setTimeout(() => {
-			if (executing) {
-				executing = false;
-				stderr = 'Execution Time Limit Exceeded';
-				pyodideWorker.terminate();
+		try {
+			const micropip = pyodide.pyimport('micropip');
+
+			// await micropip.set_index_urls('https://pypi.org/pypi/{package_name}/json');
+
+			let packages = [
+				code.includes('requests') ? 'requests' : null,
+				code.includes('bs4') ? 'beautifulsoup4' : null,
+				code.includes('numpy') ? 'numpy' : null,
+				code.includes('pandas') ? 'pandas' : null,
+				code.includes('matplotlib') ? 'matplotlib' : null,
+				code.includes('sklearn') ? 'scikit-learn' : null,
+				code.includes('scipy') ? 'scipy' : null,
+				code.includes('re') ? 'regex' : null,
+				code.includes('seaborn') ? 'seaborn' : null
+			].filter(Boolean);
+
+			console.log(packages);
+			await micropip.install(packages);
+
+			result = await pyodide.runPythonAsync(`from js import prompt
+def input(p):
+    return prompt(p)
+__builtins__.input = input`);
+
+			result = await pyodide.runPython(code);
+
+			if (!result) {
+				result = '[NO OUTPUT]';
 			}
-		}, 60000);
 
-		pyodideWorker.onmessage = (event) => {
-			console.log('pyodideWorker.onmessage', event);
-			const { id, ...data } = event.data;
+			console.log(result);
+			console.log(stdout);
+			console.log(stderr);
 
-			console.log(id, data);
+			const pltCanvasElement = document.getElementById(`plt-canvas-${id}`);
 
-			data['stdout'] && (stdout = data['stdout']);
-			data['stderr'] && (stderr = data['stderr']);
-			data['result'] && (result = data['result']);
+			if (pltCanvasElement?.innerHTML !== '') {
+				pltCanvasElement.classList.add('pt-4');
+			}
+		} catch (error) {
+			console.error('Error:', error);
+			stderr = error;
+		}
 
+		executing = false;
+	}
+};
+
+const executePythonAsWorker = async (code) => {
+	result = null;
+	stdout = null;
+	stderr = null;
+
+	executing = true;
+
+	let packages = [
+		code.includes('requests') ? 'requests' : null,
+		code.includes('bs4') ? 'beautifulsoup4' : null,
+		code.includes('numpy') ? 'numpy' : null,
+		code.includes('pandas') ? 'pandas' : null,
+		code.includes('sklearn') ? 'scikit-learn' : null,
+		code.includes('scipy') ? 'scipy' : null,
+		code.includes('re') ? 'regex' : null,
+		code.includes('seaborn') ? 'seaborn' : null
+	].filter(Boolean);
+
+	console.log(packages);
+
+	const pyodideWorker = new PyodideWorker();
+
+	pyodideWorker.postMessage({
+		id: id,
+		code: code,
+		packages: packages
+	});
+
+	setTimeout(() => {
+		if (executing) {
 			executing = false;
-		};
+			stderr = 'Execution Time Limit Exceeded';
+			pyodideWorker.terminate();
+		}
+	}, 60000);
 
-		pyodideWorker.onerror = (event) => {
-			console.log('pyodideWorker.onerror', event);
-			executing = false;
-		};
+	pyodideWorker.onmessage = (event) => {
+		console.log('pyodideWorker.onmessage', event);
+		const { id, ...data } = event.data;
+
+		console.log(id, data);
+
+		data['stdout'] && (stdout = data['stdout']);
+		data['stderr'] && (stderr = data['stderr']);
+		data['result'] && (result = data['result']);
+
+		executing = false;
 	};
 
-	$: if (code) {
-		highlightedCode = hljs.highlightAuto(code, hljs.getLanguage(lang)?.aliases).value || code;
-	}
+	pyodideWorker.onerror = (event) => {
+		console.log('pyodideWorker.onerror', event);
+		executing = false;
+	};
+};
+
+$: if (code) {
+	highlightedCode = hljs.highlightAuto(code, hljs.getLanguage(lang)?.aliases).value || code;
+}
 </script>
 
 <div class="mb-4" dir="ltr">
 	<div
 		class="flex justify-between bg-[#202123] text-white text-xs px-4 pt-1 pb-0.5 rounded-t-lg overflow-x-auto"
 	>
-		<div class="p-1">{@html lang}</div>
+		<div class="p-1">{lang}</div>
 
 		<div class="flex items-center">
 			{#if lang.toLowerCase() === 'python' || lang.toLowerCase() === 'py' || (lang === '' && checkPythonCode(code))}
@@ -238,7 +238,7 @@ __builtins__.input = input`);
 			stderr ||
 			result) &&
 			'border-bottom-left-radius: 0px; border-bottom-right-radius: 0px;'}"><code
-			class="language-{lang} rounded-t-none whitespace-pre">{@html highlightedCode || code}</code
+			class="language-{lang} rounded-t-none whitespace-pre">{highlightedCode || code}</code
 		></pre>
 
 	<div

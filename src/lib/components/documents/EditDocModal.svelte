@@ -1,57 +1,43 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import { onMount, getContext } from 'svelte';
+import { toast } from 'svelte-sonner';
+import { onMount, getContext } from 'svelte';
 
-	import { getDocs, tagDocByName, updateDocByName } from '$lib/apis/documents';
-	import Modal from '../common/Modal.svelte';
-	import { documents } from '$lib/stores';
-	import Tags from '../common/Tags.svelte';
+import { getDocs, tagDocByName, updateDocByName } from '$lib/apis/documents';
+import Modal from '../common/Modal.svelte';
+import { documents } from '$lib/stores';
+import Tags from '../common/Tags.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let show = false;
-	export let selectedDoc;
+export let show = false;
+export let selectedDoc;
 
-	let tags = [];
+let tags = [];
 
-	let doc = {
-		name: '',
-		title: '',
-		content: null
-	};
+let doc = {
+	name: '',
+	title: '',
+	content: null
+};
 
-	const submitHandler = async () => {
-		const res = await updateDocByName(localStorage.token, selectedDoc.name, {
-			title: doc.title,
-			name: doc.name
-		}).catch((error) => {
-			toast.error(error);
-		});
+const submitHandler = async () => {
+	const res = await updateDocByName(localStorage.token, selectedDoc.name, {
+		title: doc.title,
+		name: doc.name
+	}).catch((error) => {
+		toast.error(error);
+	});
 
-		if (res) {
-			show = false;
+	if (res) {
+		show = false;
 
-			documents.set(await getDocs(localStorage.token));
-		}
-	};
+		documents.set(await getDocs(localStorage.token));
+	}
+};
 
-	const addTagHandler = async (tagName) => {
-		if (!tags.find((tag) => tag.name === tagName) && tagName !== '') {
-			tags = [...tags, { name: tagName }];
-
-			await tagDocByName(localStorage.token, doc.name, {
-				name: doc.name,
-				tags: tags
-			});
-
-			documents.set(await getDocs(localStorage.token));
-		} else {
-			console.log('tag already exists');
-		}
-	};
-
-	const deleteTagHandler = async (tagName) => {
-		tags = tags.filter((tag) => tag.name !== tagName);
+const addTagHandler = async (tagName) => {
+	if (!tags.find((tag) => tag.name === tagName) && tagName !== '') {
+		tags = [...tags, { name: tagName }];
 
 		await tagDocByName(localStorage.token, doc.name, {
 			name: doc.name,
@@ -59,15 +45,29 @@
 		});
 
 		documents.set(await getDocs(localStorage.token));
-	};
+	} else {
+		console.log('tag already exists');
+	}
+};
 
-	onMount(() => {
-		if (selectedDoc) {
-			doc = JSON.parse(JSON.stringify(selectedDoc));
+const deleteTagHandler = async (tagName) => {
+	tags = tags.filter((tag) => tag.name !== tagName);
 
-			tags = doc?.content?.tags ?? [];
-		}
+	await tagDocByName(localStorage.token, doc.name, {
+		name: doc.name,
+		tags: tags
 	});
+
+	documents.set(await getDocs(localStorage.token));
+};
+
+onMount(() => {
+	if (selectedDoc) {
+		doc = JSON.parse(JSON.stringify(selectedDoc));
+
+		tags = doc?.content?.tags ?? [];
+	}
+});
 </script>
 
 <Modal size="sm" bind:show>
@@ -156,10 +156,10 @@
 </Modal>
 
 <style>
-	input::-webkit-outer-spin-button,
-	input::-webkit-inner-spin-button {
-		/* display: none; <- Crashes Chrome on hover */
-		-webkit-appearance: none;
-		margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
-	}
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+	/* display: none; <- Crashes Chrome on hover */
+	-webkit-appearance: none;
+	margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
 </style>

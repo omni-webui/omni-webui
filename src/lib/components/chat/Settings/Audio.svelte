@@ -1,136 +1,137 @@
 <script lang="ts">
-	import { getAudioConfig, updateAudioConfig } from '$lib/apis/audio';
-	import { user, settings } from '$lib/stores';
-	import { createEventDispatcher, onMount, getContext } from 'svelte';
-	import { toast } from 'svelte-sonner';
-	import Switch from '$lib/components/common/Switch.svelte';
-	const dispatch = createEventDispatcher();
+import { getAudioConfig, updateAudioConfig } from '$lib/apis/audio';
+import { user, settings } from '$lib/stores';
+import { createEventDispatcher, onMount, getContext } from 'svelte';
+import { toast } from 'svelte-sonner';
+import Switch from '$lib/components/common/Switch.svelte';
+import type { SaveSettingsFunctionType } from '$lib/types';
+const dispatch = createEventDispatcher();
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let saveSettings: Function;
+export let saveSettings: SaveSettingsFunctionType;
 
-	// Audio
+// Audio
 
-	let OpenAIUrl = '';
-	let OpenAIKey = '';
-	let OpenAISpeaker = '';
+let OpenAIUrl = '';
+let OpenAIKey = '';
+let OpenAISpeaker = '';
 
-	let STTEngine = '';
+let STTEngine = '';
 
-	let conversationMode = false;
-	let speechAutoSend = false;
-	let responseAutoPlayback = false;
-	let nonLocalVoices = false;
+let conversationMode = false;
+let speechAutoSend = false;
+let responseAutoPlayback = false;
+let nonLocalVoices = false;
 
-	let TTSEngine = '';
+let TTSEngine = '';
 
-	let voices = [];
-	let speaker = '';
-	let models = [];
-	let model = '';
+let voices = [];
+let speaker = '';
+let models = [];
+let model = '';
 
-	const getOpenAIVoices = () => {
-		voices = [
-			{ name: 'alloy' },
-			{ name: 'echo' },
-			{ name: 'fable' },
-			{ name: 'onyx' },
-			{ name: 'nova' },
-			{ name: 'shimmer' }
-		];
-	};
+const getOpenAIVoices = () => {
+	voices = [
+		{ name: 'alloy' },
+		{ name: 'echo' },
+		{ name: 'fable' },
+		{ name: 'onyx' },
+		{ name: 'nova' },
+		{ name: 'shimmer' }
+	];
+};
 
-	const getOpenAIVoicesModel = () => {
-		models = [{ name: 'tts-1' }, { name: 'tts-1-hd' }];
-	};
+const getOpenAIVoicesModel = () => {
+	models = [{ name: 'tts-1' }, { name: 'tts-1-hd' }];
+};
 
-	const getWebAPIVoices = () => {
-		const getVoicesLoop = setInterval(async () => {
-			voices = await speechSynthesis.getVoices();
+const getWebAPIVoices = () => {
+	const getVoicesLoop = setInterval(async () => {
+		voices = await speechSynthesis.getVoices();
 
-			// do your loop
-			if (voices.length > 0) {
-				clearInterval(getVoicesLoop);
-			}
-		}, 100);
-	};
-
-	const toggleConversationMode = async () => {
-		conversationMode = !conversationMode;
-
-		if (conversationMode) {
-			responseAutoPlayback = true;
-			speechAutoSend = true;
+		// do your loop
+		if (voices.length > 0) {
+			clearInterval(getVoicesLoop);
 		}
+	}, 100);
+};
 
-		saveSettings({
-			conversationMode: conversationMode,
-			responseAutoPlayback: responseAutoPlayback,
-			speechAutoSend: speechAutoSend
-		});
-	};
+const toggleConversationMode = async () => {
+	conversationMode = !conversationMode;
 
-	const toggleResponseAutoPlayback = async () => {
-		responseAutoPlayback = !responseAutoPlayback;
-		saveSettings({ responseAutoPlayback: responseAutoPlayback });
-	};
+	if (conversationMode) {
+		responseAutoPlayback = true;
+		speechAutoSend = true;
+	}
 
-	const toggleSpeechAutoSend = async () => {
-		speechAutoSend = !speechAutoSend;
-		saveSettings({ speechAutoSend: speechAutoSend });
-	};
-
-	const updateConfigHandler = async () => {
-		if (TTSEngine === 'openai') {
-			const res = await updateAudioConfig(localStorage.token, {
-				url: OpenAIUrl,
-				key: OpenAIKey,
-				model: model,
-				speaker: OpenAISpeaker
-			});
-
-			if (res) {
-				OpenAIUrl = res.OPENAI_API_BASE_URL;
-				OpenAIKey = res.OPENAI_API_KEY;
-				model = res.OPENAI_API_MODEL;
-				OpenAISpeaker = res.OPENAI_API_VOICE;
-			}
-		}
-	};
-
-	onMount(async () => {
-		conversationMode = $settings.conversationMode ?? false;
-		speechAutoSend = $settings.speechAutoSend ?? false;
-		responseAutoPlayback = $settings.responseAutoPlayback ?? false;
-
-		STTEngine = $settings?.audio?.STTEngine ?? '';
-		TTSEngine = $settings?.audio?.TTSEngine ?? '';
-		nonLocalVoices = $settings.audio?.nonLocalVoices ?? false;
-		speaker = $settings?.audio?.speaker ?? '';
-		model = $settings?.audio?.model ?? '';
-
-		if (TTSEngine === 'openai') {
-			getOpenAIVoices();
-			getOpenAIVoicesModel();
-		} else {
-			getWebAPIVoices();
-		}
-
-		if ($user.role === 'admin') {
-			const res = await getAudioConfig(localStorage.token);
-
-			if (res) {
-				OpenAIUrl = res.OPENAI_API_BASE_URL;
-				OpenAIKey = res.OPENAI_API_KEY;
-				model = res.OPENAI_API_MODEL;
-				OpenAISpeaker = res.OPENAI_API_VOICE;
-				if (TTSEngine === 'openai') {
-					speaker = OpenAISpeaker;
-				}
-			}
-		}
+	saveSettings({
+		conversationMode: conversationMode,
+		responseAutoPlayback: responseAutoPlayback,
+		speechAutoSend: speechAutoSend
 	});
+};
+
+const toggleResponseAutoPlayback = async () => {
+	responseAutoPlayback = !responseAutoPlayback;
+	saveSettings({ responseAutoPlayback: responseAutoPlayback });
+};
+
+const toggleSpeechAutoSend = async () => {
+	speechAutoSend = !speechAutoSend;
+	saveSettings({ speechAutoSend: speechAutoSend });
+};
+
+const updateConfigHandler = async () => {
+	if (TTSEngine === 'openai') {
+		const res = await updateAudioConfig(localStorage.token, {
+			url: OpenAIUrl,
+			key: OpenAIKey,
+			model: model,
+			speaker: OpenAISpeaker
+		});
+
+		if (res) {
+			OpenAIUrl = res.OPENAI_API_BASE_URL;
+			OpenAIKey = res.OPENAI_API_KEY;
+			model = res.OPENAI_API_MODEL;
+			OpenAISpeaker = res.OPENAI_API_VOICE;
+		}
+	}
+};
+
+onMount(async () => {
+	conversationMode = $settings.conversationMode ?? false;
+	speechAutoSend = $settings.speechAutoSend ?? false;
+	responseAutoPlayback = $settings.responseAutoPlayback ?? false;
+
+	STTEngine = $settings?.audio?.STTEngine ?? '';
+	TTSEngine = $settings?.audio?.TTSEngine ?? '';
+	nonLocalVoices = $settings.audio?.nonLocalVoices ?? false;
+	speaker = $settings?.audio?.speaker ?? '';
+	model = $settings?.audio?.model ?? '';
+
+	if (TTSEngine === 'openai') {
+		getOpenAIVoices();
+		getOpenAIVoicesModel();
+	} else {
+		getWebAPIVoices();
+	}
+
+	if ($user.role === 'admin') {
+		const res = await getAudioConfig(localStorage.token);
+
+		if (res) {
+			OpenAIUrl = res.OPENAI_API_BASE_URL;
+			OpenAIKey = res.OPENAI_API_KEY;
+			model = res.OPENAI_API_MODEL;
+			OpenAISpeaker = res.OPENAI_API_VOICE;
+			if (TTSEngine === 'openai') {
+				speaker = OpenAISpeaker;
+			}
+		}
+	}
+});
 </script>
 
 <form
@@ -161,7 +162,9 @@
 			<div class=" mb-1 text-sm font-medium">{$i18n.t('STT Settings')}</div>
 
 			<div class=" py-0.5 flex w-full justify-between">
-				<div class=" self-center text-xs font-medium">{$i18n.t('Speech-to-Text Engine')}</div>
+				<div class=" self-center text-xs font-medium">
+					{$i18n.t('Speech-to-Text Engine')}
+				</div>
 				<div class="flex items-center relative">
 					<select
 						class="dark:bg-gray-900 w-fit pr-8 rounded px-2 p-1 text-xs bg-transparent outline-none text-right"
@@ -229,7 +232,9 @@
 			<div class=" mb-1 text-sm font-medium">{$i18n.t('TTS Settings')}</div>
 
 			<div class=" py-0.5 flex w-full justify-between">
-				<div class=" self-center text-xs font-medium">{$i18n.t('Text-to-Speech Engine')}</div>
+				<div class=" self-center text-xs font-medium">
+					{$i18n.t('Text-to-Speech Engine')}
+				</div>
 				<div class="flex items-center relative">
 					<select
 						class=" dark:bg-gray-900 w-fit pr-8 rounded px-2 p-1 text-xs bg-transparent outline-none text-right"
@@ -273,7 +278,9 @@
 			{/if}
 
 			<div class=" py-0.5 flex w-full justify-between">
-				<div class=" self-center text-xs font-medium">{$i18n.t('Auto-playback response')}</div>
+				<div class=" self-center text-xs font-medium">
+					{$i18n.t('Auto-playback response')}
+				</div>
 
 				<button
 					class="p-1 px-3 text-xs flex rounded transition"

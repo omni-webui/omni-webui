@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { settings } from '$lib/stores';
-	import { WEBUI_BASE_URL } from '$lib/constants';
+import { settings } from '$lib/stores';
+import { WEBUI_BASE_URL } from '$lib/constants';
 
-	export let src = '/user.png';
+export let src = '/user.png';
 </script>
 
 <div class={($settings?.chatDirection ?? 'LTR') === 'LTR' ? 'mr-3' : 'ml-3'}>

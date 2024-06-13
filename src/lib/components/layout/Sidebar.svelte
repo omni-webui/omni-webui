@@ -1,195 +1,195 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import {
-		user,
-		chats,
-		settings,
-		chatId,
-		tags,
-		showSidebar,
-		mobile,
-		showArchivedChats
-	} from '$lib/stores';
-	import { onMount, getContext } from 'svelte';
+import { goto } from '$app/navigation';
+import {
+	user,
+	chats,
+	settings,
+	chatId,
+	tags,
+	showSidebar,
+	mobile,
+	showArchivedChats,
+	type Settings
+} from '$lib/stores';
+import { onMount, getContext } from 'svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	import {
-		deleteChatById,
-		getChatList,
-		getChatById,
-		getChatListByTagName,
-		updateChatById,
-		getAllChatTags,
-		archiveChatById,
-		cloneChatById
-	} from '$lib/apis/chats';
-	import { toast } from 'svelte-sonner';
-	import { WEBUI_BASE_URL } from '$lib/constants';
-	import ChatMenu from './Sidebar/ChatMenu.svelte';
-	import ShareChatModal from '../chat/ShareChatModal.svelte';
-	import ArchivedChatsModal from './Sidebar/ArchivedChatsModal.svelte';
-	import UserMenu from './Sidebar/UserMenu.svelte';
-	import { updateUserSettings } from '$lib/apis/users';
+import {
+	deleteChatById,
+	getChatList,
+	getChatById,
+	getChatListByTagName,
+	updateChatById,
+	getAllChatTags,
+	archiveChatById,
+	cloneChatById
+} from '$lib/apis/chats';
+import { toast } from 'svelte-sonner';
+import { WEBUI_BASE_URL } from '$lib/constants';
+import ChatMenu from './Sidebar/ChatMenu.svelte';
+import ShareChatModal from '../chat/ShareChatModal.svelte';
+import ArchivedChatsModal from './Sidebar/ArchivedChatsModal.svelte';
+import UserMenu from './Sidebar/UserMenu.svelte';
+import { updateUserSettings } from '$lib/apis/users';
 
-	const BREAKPOINT = 768;
+const BREAKPOINT = 768;
 
-	let navElement;
+let navElement;
 
-	let search = '';
+let search = '';
 
-	let shareChatId = null;
+let shareChatId = null;
 
-	let selectedChatId = null;
+let selectedChatId = null;
 
-	let chatDeleteId = null;
-	let chatTitleEditId = null;
-	let chatTitle = '';
+let chatDeleteId = null;
+let chatTitleEditId = null;
+let chatTitle = '';
 
-	let showShareChatModal = false;
-	let showDropdown = false;
+let showShareChatModal = false;
+let showDropdown = false;
 
-	let filteredChatList = [];
+let filteredChatList = [];
 
-	$: filteredChatList = $chats.filter((chat) => {
-		if (search === '') {
-			return true;
-		} else {
-			let title = chat.title.toLowerCase();
-			const query = search.toLowerCase();
+$: filteredChatList = $chats.filter((chat) => {
+	if (search === '') {
+		return true;
+	} else {
+		let title = chat.title.toLowerCase();
+		const query = search.toLowerCase();
 
-			let contentMatches = false;
-			// Access the messages within chat.chat.messages
-			if (chat.chat && chat.chat.messages && Array.isArray(chat.chat.messages)) {
-				contentMatches = chat.chat.messages.some((message) => {
-					// Check if message.content exists and includes the search query
-					return message.content && message.content.toLowerCase().includes(query);
-				});
-			}
+		let contentMatches = false;
+		// Access the messages within chat.chat.messages
+		if (chat.chat && chat.chat.messages && Array.isArray(chat.chat.messages)) {
+			contentMatches = chat.chat.messages.some((message) => {
+				// Check if message.content exists and includes the search query
+				return message.content && message.content.toLowerCase().includes(query);
+			});
+		}
 
-			return title.includes(query) || contentMatches;
+		return title.includes(query) || contentMatches;
+	}
+});
+
+onMount(async () => {
+	mobile.subscribe((e) => {
+		if ($showSidebar && e) {
+			showSidebar.set(false);
+		}
+
+		if (!$showSidebar && !e) {
+			showSidebar.set(true);
 		}
 	});
 
-	onMount(async () => {
-		mobile.subscribe((e) => {
-			if ($showSidebar && e) {
+	showSidebar.set(window.innerWidth > BREAKPOINT);
+	await chats.set(await getChatList(localStorage.token));
+
+	let touchstart;
+	let touchend;
+
+	function checkDirection() {
+		const screenWidth = window.innerWidth;
+		const swipeDistance = Math.abs(touchend.screenX - touchstart.screenX);
+		if (touchstart.clientX < 40 && swipeDistance >= screenWidth / 8) {
+			if (touchend.screenX < touchstart.screenX) {
 				showSidebar.set(false);
 			}
-
-			if (!$showSidebar && !e) {
+			if (touchend.screenX > touchstart.screenX) {
 				showSidebar.set(true);
 			}
-		});
-
-		showSidebar.set(window.innerWidth > BREAKPOINT);
-		await chats.set(await getChatList(localStorage.token));
-
-		let touchstart;
-		let touchend;
-
-		function checkDirection() {
-			const screenWidth = window.innerWidth;
-			const swipeDistance = Math.abs(touchend.screenX - touchstart.screenX);
-			if (touchstart.clientX < 40 && swipeDistance >= screenWidth / 8) {
-				if (touchend.screenX < touchstart.screenX) {
-					showSidebar.set(false);
-				}
-				if (touchend.screenX > touchstart.screenX) {
-					showSidebar.set(true);
-				}
-			}
 		}
+	}
 
-		const onTouchStart = (e) => {
-			touchstart = e.changedTouches[0];
-			console.log(touchstart.clientX);
-		};
+	const onTouchStart = (e) => {
+		touchstart = e.changedTouches[0];
+		console.log(touchstart.clientX);
+	};
 
-		const onTouchEnd = (e) => {
-			touchend = e.changedTouches[0];
-			checkDirection();
-		};
+	const onTouchEnd = (e) => {
+		touchend = e.changedTouches[0];
+		checkDirection();
+	};
 
-		window.addEventListener('touchstart', onTouchStart);
-		window.addEventListener('touchend', onTouchEnd);
+	window.addEventListener('touchstart', onTouchStart);
+	window.addEventListener('touchend', onTouchEnd);
 
-		return () => {
-			window.removeEventListener('touchstart', onTouchStart);
-			window.removeEventListener('touchend', onTouchEnd);
-		};
+	return () => {
+		window.removeEventListener('touchstart', onTouchStart);
+		window.removeEventListener('touchend', onTouchEnd);
+	};
+});
+
+// Helper function to fetch and add chat content to each chat
+const enrichChatsWithContent = async (chatList) => {
+	const enrichedChats = await Promise.all(
+		chatList.map(async (chat) => {
+			const chatDetails = await getChatById(localStorage.token, chat.id).catch(() => null); // Handle error or non-existent chat gracefully
+			if (chatDetails) {
+				chat.chat = chatDetails.chat; // Assuming chatDetails.chat contains the chat content
+			}
+			return chat;
+		})
+	);
+
+	await chats.set(enrichedChats);
+};
+
+const editChatTitle = async (id, _title) => {
+	if (_title === '') {
+		toast.error($i18n.t('Title cannot be an empty string.'));
+	} else {
+		await updateChatById(localStorage.token, id, {
+			title: _title
+		});
+		await chats.set(await getChatList(localStorage.token));
+	}
+};
+
+const deleteChat = async (id) => {
+	const res = await deleteChatById(localStorage.token, id).catch((error) => {
+		toast.error(error);
+		chatDeleteId = null;
+
+		return null;
 	});
 
-	// Helper function to fetch and add chat content to each chat
-	const enrichChatsWithContent = async (chatList) => {
-		const enrichedChats = await Promise.all(
-			chatList.map(async (chat) => {
-				const chatDetails = await getChatById(localStorage.token, chat.id).catch(() => null); // Handle error or non-existent chat gracefully
-				if (chatDetails) {
-					chat.chat = chatDetails.chat; // Assuming chatDetails.chat contains the chat content
-				}
-				return chat;
-			})
-		);
-
-		await chats.set(enrichedChats);
-	};
-
-	const editChatTitle = async (id, _title) => {
-		if (_title === '') {
-			toast.error($i18n.t('Title cannot be an empty string.'));
-		} else {
-
-			await updateChatById(localStorage.token, id, {
-				title: _title
-			});
-			await chats.set(await getChatList(localStorage.token));
+	if (res) {
+		if ($chatId === id) {
+			goto('/');
 		}
-	};
 
-	const deleteChat = async (id) => {
-		const res = await deleteChatById(localStorage.token, id).catch((error) => {
-			toast.error(error);
-			chatDeleteId = null;
-
-			return null;
-		});
-
-		if (res) {
-			if ($chatId === id) {
-				goto('/');
-			}
-
-			await chats.set(await getChatList(localStorage.token));
-		}
-	};
-
-	const cloneChatHandler = async (id) => {
-		const res = await cloneChatById(localStorage.token, id).catch((error) => {
-			toast.error(error);
-			return null;
-		});
-
-		if (res) {
-			goto(`/c/${res.id}`);
-			await chats.set(await getChatList(localStorage.token));
-		}
-	};
-
-	const saveSettings = async (updated) => {
-		await settings.set({ ...$settings, ...updated });
-		await updateUserSettings(localStorage.token, { ui: $settings });
-		location.href = '/';
-	};
-
-	const archiveChatHandler = async (id) => {
-		await archiveChatById(localStorage.token, id);
 		await chats.set(await getChatList(localStorage.token));
-	};
+	}
+};
 
-	const focusEdit = async (node: HTMLInputElement) => {
-		node.focus();
-	};
+const cloneChatHandler = async (id) => {
+	const res = await cloneChatById(localStorage.token, id).catch((error) => {
+		toast.error(error);
+		return null;
+	});
+
+	if (res) {
+		goto(`/c/${res.id}`);
+		await chats.set(await getChatList(localStorage.token));
+	}
+};
+
+const saveSettings = async (updated: Partial<Settings>) => {
+	await settings.set({ ...$settings, ...updated });
+	await updateUserSettings(localStorage.token, { ui: $settings });
+	location.href = '/';
+};
+
+const archiveChatHandler = async (id) => {
+	await archiveChatById(localStorage.token, id);
+	await chats.set(await getChatList(localStorage.token));
+};
+
+const focusEdit = async (node: HTMLInputElement) => {
+	node.focus();
+};
 </script>
 
 <ShareChatModal bind:show={showShareChatModal} chatId={shareChatId} />
@@ -337,7 +337,9 @@
 			{#if !($settings.saveChatHistory ?? true)}
 				<div class="absolute z-40 w-full h-full bg-gray-50/90 dark:bg-black/90 flex justify-center">
 					<div class=" text-left px-5 py-2">
-						<div class=" font-medium">{$i18n.t('Chat History is off for this browser.')}</div>
+						<div class=" font-medium">
+							{$i18n.t('Chat History is off for this browser.')}
+						</div>
 						<div class="text-xs mt-2">
 							{$i18n.t(
 								"When history is turned off, new chats on this browser won't appear in your history on any of your devices."
@@ -749,12 +751,12 @@
 </div>
 
 <style>
-	.scrollbar-hidden:active::-webkit-scrollbar-thumb,
-	.scrollbar-hidden:focus::-webkit-scrollbar-thumb,
-	.scrollbar-hidden:hover::-webkit-scrollbar-thumb {
-		visibility: visible;
-	}
-	.scrollbar-hidden::-webkit-scrollbar-thumb {
-		visibility: hidden;
-	}
+.scrollbar-hidden:active::-webkit-scrollbar-thumb,
+.scrollbar-hidden:focus::-webkit-scrollbar-thumb,
+.scrollbar-hidden:hover::-webkit-scrollbar-thumb {
+	visibility: visible;
+}
+.scrollbar-hidden::-webkit-scrollbar-thumb {
+	visibility: hidden;
+}
 </style>

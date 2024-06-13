@@ -1,29 +1,29 @@
 <script lang="ts">
-	import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 
-	import { getContext, onMount } from 'svelte';
-	import { banners as _banners } from '$lib/stores';
-	import type { Banner } from '$lib/types';
+import { getContext, onMount } from 'svelte';
+import { banners as _banners } from '$lib/stores';
+import type { Banner } from '$lib/types';
 
-	import { getBanners, setBanners } from '$lib/apis/configs';
+import { getBanners, setBanners } from '$lib/apis/configs';
 
-	import type { Writable } from 'svelte/store';
-	import type { i18n as i18nType } from 'i18next';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import Switch from '$lib/components/common/Switch.svelte';
-	const i18n: Writable<i18nType> = getContext('i18n');
+import type { Writable } from 'svelte/store';
+import type { i18n as i18nType } from 'i18next';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
+import Switch from '$lib/components/common/Switch.svelte';
+const i18n: Writable<i18nType> = getContext('i18n');
 
-	export let saveHandler: Function;
+export let saveHandler: () => void;
 
-	let banners: Banner[] = [];
+let banners: Banner[] = [];
 
-	onMount(async () => {
-		banners = await getBanners(localStorage.token);
-	});
+onMount(async () => {
+	banners = await getBanners(localStorage.token);
+});
 
-	const updateBanners = async () => {
-		_banners.set(await setBanners(localStorage.token, banners));
-	};
+const updateBanners = async () => {
+	_banners.set(await setBanners(localStorage.token, banners));
+};
 </script>
 
 <form

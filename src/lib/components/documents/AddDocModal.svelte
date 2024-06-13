@@ -1,88 +1,88 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import { onMount, getContext } from 'svelte';
+import { toast } from 'svelte-sonner';
+import { onMount, getContext } from 'svelte';
 
-	import { createNewDoc, getDocs } from '$lib/apis/documents';
-	import Modal from '../common/Modal.svelte';
-	import { documents } from '$lib/stores';
-	import Tags from '../common/Tags.svelte';
-	import { uploadDocToVectorDB } from '$lib/apis/rag';
-	import { transformFileName } from '$lib/utils';
-	import { SUPPORTED_FILE_EXTENSIONS, SUPPORTED_FILE_TYPE } from '$lib/constants';
+import { createNewDoc, getDocs } from '$lib/apis/documents';
+import Modal from '../common/Modal.svelte';
+import { documents } from '$lib/stores';
+import Tags from '../common/Tags.svelte';
+import { uploadDocToVectorDB } from '$lib/apis/rag';
+import { transformFileName } from '$lib/utils';
+import { SUPPORTED_FILE_EXTENSIONS, SUPPORTED_FILE_TYPE } from '$lib/constants';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let show = false;
-	let uploadDocInputElement: HTMLInputElement;
-	let inputFiles;
-	let tags = [];
+export let show = false;
+let uploadDocInputElement: HTMLInputElement;
+let inputFiles;
+let tags = [];
 
-	const uploadDoc = async (file) => {
-		const res = await uploadDocToVectorDB(localStorage.token, '', file).catch((error) => {
+const uploadDoc = async (file) => {
+	const res = await uploadDocToVectorDB(localStorage.token, '', file).catch((error) => {
+		toast.error(error);
+		return null;
+	});
+
+	if (res) {
+		await createNewDoc(
+			localStorage.token,
+			res.collection_name,
+			res.filename,
+			transformFileName(res.filename),
+			res.filename,
+			tags.length > 0
+				? {
+						tags: tags
+					}
+				: null
+		).catch((error) => {
 			toast.error(error);
 			return null;
 		});
+		await documents.set(await getDocs(localStorage.token));
+	}
+};
 
-		if (res) {
-			await createNewDoc(
-				localStorage.token,
-				res.collection_name,
-				res.filename,
-				transformFileName(res.filename),
-				res.filename,
-				tags.length > 0
-					? {
-							tags: tags
-					  }
-					: null
-			).catch((error) => {
-				toast.error(error);
-				return null;
-			});
-			await documents.set(await getDocs(localStorage.token));
-		}
-	};
-
-	const submitHandler = async () => {
-		if (inputFiles && inputFiles.length > 0) {
-			for (const file of inputFiles) {
-				console.log(file, file.name.split('.').at(-1));
-				if (
-					SUPPORTED_FILE_TYPE.includes(file['type']) ||
-					SUPPORTED_FILE_EXTENSIONS.includes(file.name.split('.').at(-1))
-				) {
-					uploadDoc(file);
-				} else {
-					toast.error(
-						`Unknown File Type '${file['type']}', but accepting and treating as plain text`
-					);
-					uploadDoc(file);
-				}
+const submitHandler = async () => {
+	if (inputFiles && inputFiles.length > 0) {
+		for (const file of inputFiles) {
+			console.log(file, file.name.split('.').at(-1));
+			if (
+				SUPPORTED_FILE_TYPE.includes(file['type']) ||
+				SUPPORTED_FILE_EXTENSIONS.includes(file.name.split('.').at(-1))
+			) {
+				uploadDoc(file);
+			} else {
+				toast.error(
+					`Unknown File Type '${file['type']}', but accepting and treating as plain text`
+				);
+				uploadDoc(file);
 			}
-
-			inputFiles = null;
-			uploadDocInputElement.value = '';
-		} else {
-			toast.error($i18n.t(`File not found.`));
 		}
 
-		show = false;
-		documents.set(await getDocs(localStorage.token));
-	};
+		inputFiles = null;
+		uploadDocInputElement.value = '';
+	} else {
+		toast.error($i18n.t(`File not found.`));
+	}
 
-	const addTagHandler = async (tagName) => {
-		if (!tags.find((tag) => tag.name === tagName) && tagName !== '') {
-			tags = [...tags, { name: tagName }];
-		} else {
-			console.log('tag already exists');
-		}
-	};
+	show = false;
+	documents.set(await getDocs(localStorage.token));
+};
 
-	const deleteTagHandler = async (tagName) => {
-		tags = tags.filter((tag) => tag.name !== tagName);
-	};
+const addTagHandler = async (tagName) => {
+	if (!tags.find((tag) => tag.name === tagName) && tagName !== '') {
+		tags = [...tags, { name: tagName }];
+	} else {
+		console.log('tag already exists');
+	}
+};
 
-	onMount(() => {});
+const deleteTagHandler = async (tagName) => {
+	tags = tags.filter((tag) => tag.name !== tagName);
+};
+
+onMount(() => {});
 </script>
 
 <Modal size="sm" bind:show>
@@ -163,10 +163,10 @@
 </Modal>
 
 <style>
-	input::-webkit-outer-spin-button,
-	input::-webkit-inner-spin-button {
-		/* display: none; <- Crashes Chrome on hover */
-		-webkit-appearance: none;
-		margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
-	}
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+	/* display: none; <- Crashes Chrome on hover */
+	-webkit-appearance: none;
+	margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
 </style>

@@ -1,235 +1,229 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+import { goto } from '$app/navigation';
 
-	import { onMount, tick, getContext } from 'svelte';
+import { onMount, tick, getContext } from 'svelte';
 
-	import { OLLAMA_API_BASE_URL, OPENAI_API_BASE_URL } from '$lib/constants';
-	import { WEBUI_NAME, config, user, models, settings } from '$lib/stores';
+import { OLLAMA_API_BASE_URL, OPENAI_API_BASE_URL } from '$lib/constants';
+import { WEBUI_NAME, config, user, models, settings } from '$lib/stores';
 
-	import { generateOpenAIChatCompletion } from '$lib/apis/openai';
+import { generateOpenAIChatCompletion } from '$lib/apis/openai';
 
-	import { splitStream } from '$lib/utils';
-	import ChatCompletion from '$lib/components/playground/ChatCompletion.svelte';
-	import Selector from '$lib/components/chat/ModelSelector/Selector.svelte';
+import { splitStream } from '$lib/utils';
+import ChatCompletion from '$lib/components/playground/ChatCompletion.svelte';
+import Selector from '$lib/components/chat/ModelSelector/Selector.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let mode = 'chat';
-	let text = '';
+let mode = 'chat';
+let text = '';
 
-	let selectedModelId = '';
+let selectedModelId = '';
 
-	let loading = false;
-	let stopResponseFlag = false;
+let loading = false;
+let stopResponseFlag = false;
 
-	let messagesContainerElement: HTMLDivElement;
-	let textCompletionAreaElement: HTMLTextAreaElement;
+let messagesContainerElement: HTMLDivElement;
+let textCompletionAreaElement: HTMLTextAreaElement;
 
-	let system = '';
-	let messages = [
+let system = '';
+let messages = [
+	{
+		role: 'user',
+		content: ''
+	}
+];
+
+const scrollToBottom = () => {
+	const element = mode === 'chat' ? messagesContainerElement : textCompletionAreaElement;
+
+	if (element) {
+		element.scrollTop = element?.scrollHeight;
+	}
+};
+
+const stopResponse = () => {
+	stopResponseFlag = true;
+	console.log('stopResponse');
+};
+
+const textCompletionHandler = async () => {
+	const model = $models.find((model) => model.id === selectedModelId);
+
+	const [res, controller] = await generateOpenAIChatCompletion(
+		localStorage.token,
 		{
-			role: 'user',
+			model: model.id,
+			stream: true,
+			messages: [
+				{
+					role: 'assistant',
+					content: text
+				}
+			]
+		},
+		model?.owned_by === 'openai' ? `${OPENAI_API_BASE_URL}` : `${OLLAMA_API_BASE_URL}/v1`
+	);
+
+	if (res && res.ok) {
+		const reader = res.body
+			.pipeThrough(new TextDecoderStream())
+			.pipeThrough(splitStream('\n'))
+			.getReader();
+
+		while (true) {
+			const { value, done } = await reader.read();
+			if (done || stopResponseFlag) {
+				if (stopResponseFlag) {
+					controller.abort('User: Stop Response');
+				}
+				break;
+			}
+
+			try {
+				let lines = value.split('\n');
+
+				for (const line of lines) {
+					if (line !== '') {
+						if (line === 'data: [DONE]') {
+							// responseMessage.done = true;
+							console.log('done');
+						} else {
+							let data = JSON.parse(line.replace(/^data: /, ''));
+							console.log(data);
+
+							if (!('request_id' in data)) {
+								text += data.choices[0].delta.content ?? '';
+							}
+						}
+					}
+				}
+			} catch (error) {
+				console.log(error);
+			}
+
+			scrollToBottom();
+		}
+	}
+};
+
+const chatCompletionHandler = async () => {
+	const model = $models.find((model) => model.id === selectedModelId);
+
+	const [res, controller] = await generateOpenAIChatCompletion(
+		localStorage.token,
+		{
+			model: model.id,
+			stream: true,
+			messages: [
+				system
+					? {
+							role: 'system',
+							content: system
+						}
+					: undefined,
+				...messages
+			].filter((message) => message)
+		},
+		model?.owned_by === 'openai' ? `${OPENAI_API_BASE_URL}` : `${OLLAMA_API_BASE_URL}/v1`
+	);
+
+	let responseMessage;
+	if (messages.at(-1)?.role === 'assistant') {
+		responseMessage = messages.at(-1);
+	} else {
+		responseMessage = {
+			role: 'assistant',
 			content: ''
-		}
-	];
+		};
+		messages.push(responseMessage);
+		messages = messages;
+	}
 
-	const scrollToBottom = () => {
-		const element = mode === 'chat' ? messagesContainerElement : textCompletionAreaElement;
+	await tick();
+	const textareaElement = document.getElementById(`assistant-${messages.length - 1}-textarea`);
 
-		if (element) {
-			element.scrollTop = element?.scrollHeight;
-		}
-	};
+	if (res && res.ok) {
+		const reader = res.body
+			.pipeThrough(new TextDecoderStream())
+			.pipeThrough(splitStream('\n'))
+			.getReader();
 
-	const stopResponse = () => {
-		stopResponseFlag = true;
-		console.log('stopResponse');
-	};
-
-	const textCompletionHandler = async () => {
-		const model = $models.find((model) => model.id === selectedModelId);
-
-		const [res, controller] = await generateOpenAIChatCompletion(
-			localStorage.token,
-			{
-				model: model.id,
-				stream: true,
-				messages: [
-					{
-						role: 'assistant',
-						content: text
-					}
-				]
-			},
-			model?.owned_by === 'openai' ? `${OPENAI_API_BASE_URL}` : `${OLLAMA_API_BASE_URL}/v1`
-		);
-
-		if (res && res.ok) {
-			const reader = res.body
-				.pipeThrough(new TextDecoderStream())
-				.pipeThrough(splitStream('\n'))
-				.getReader();
-
-			while (true) {
-				const { value, done } = await reader.read();
-				if (done || stopResponseFlag) {
-					if (stopResponseFlag) {
-						controller.abort('User: Stop Response');
-					}
-
-					currentRequestId = null;
-					break;
+		while (true) {
+			const { value, done } = await reader.read();
+			if (done || stopResponseFlag) {
+				if (stopResponseFlag) {
+					controller.abort('User: Stop Response');
 				}
+				break;
+			}
 
-				try {
-					let lines = value.split('\n');
+			try {
+				let lines = value.split('\n');
 
-					for (const line of lines) {
-						if (line !== '') {
-							if (line === 'data: [DONE]') {
-								// responseMessage.done = true;
-								console.log('done');
-							} else {
-								let data = JSON.parse(line.replace(/^data: /, ''));
-								console.log(data);
+				for (const line of lines) {
+					if (line !== '') {
+						console.log(line);
+						if (line === 'data: [DONE]') {
+							// responseMessage.done = true;
+							messages = messages;
+						} else {
+							let data = JSON.parse(line.replace(/^data: /, ''));
+							console.log(data);
 
-								if ('request_id' in data) {
-									currentRequestId = data.request_id;
+							if (!('request_id' in data)) {
+								if (responseMessage.content == '' && data.choices[0].delta.content == '\n') {
+									continue;
 								} else {
-									text += data.choices[0].delta.content ?? '';
+									textareaElement.style.height = textareaElement.scrollHeight + 'px';
+
+									responseMessage.content += data.choices[0].delta.content ?? '';
+									messages = messages;
+
+									textareaElement.style.height = textareaElement.scrollHeight + 'px';
+
+									await tick();
 								}
 							}
 						}
 					}
-				} catch (error) {
-					console.log(error);
 				}
-
-				scrollToBottom();
-			}
-		}
-	};
-
-	const chatCompletionHandler = async () => {
-		const model = $models.find((model) => model.id === selectedModelId);
-
-		const [res, controller] = await generateOpenAIChatCompletion(
-			localStorage.token,
-			{
-				model: model.id,
-				stream: true,
-				messages: [
-					system
-						? {
-								role: 'system',
-								content: system
-						  }
-						: undefined,
-					...messages
-				].filter((message) => message)
-			},
-			model?.owned_by === 'openai' ? `${OPENAI_API_BASE_URL}` : `${OLLAMA_API_BASE_URL}/v1`
-		);
-
-		let responseMessage;
-		if (messages.at(-1)?.role === 'assistant') {
-			responseMessage = messages.at(-1);
-		} else {
-			responseMessage = {
-				role: 'assistant',
-				content: ''
-			};
-			messages.push(responseMessage);
-			messages = messages;
-		}
-
-		await tick();
-		const textareaElement = document.getElementById(`assistant-${messages.length - 1}-textarea`);
-
-		if (res && res.ok) {
-			const reader = res.body
-				.pipeThrough(new TextDecoderStream())
-				.pipeThrough(splitStream('\n'))
-				.getReader();
-
-			while (true) {
-				const { value, done } = await reader.read();
-				if (done || stopResponseFlag) {
-					if (stopResponseFlag) {
-						controller.abort('User: Stop Response');
-					}
-					break;
-				}
-
-				try {
-					let lines = value.split('\n');
-
-					for (const line of lines) {
-						if (line !== '') {
-							console.log(line);
-							if (line === 'data: [DONE]') {
-								// responseMessage.done = true;
-								messages = messages;
-							} else {
-								let data = JSON.parse(line.replace(/^data: /, ''));
-								console.log(data);
-
-								if ('request_id' in data) {
-									currentRequestId = data.request_id;
-								} else {
-									if (responseMessage.content == '' && data.choices[0].delta.content == '\n') {
-										continue;
-									} else {
-										textareaElement.style.height = textareaElement.scrollHeight + 'px';
-
-										responseMessage.content += data.choices[0].delta.content ?? '';
-										messages = messages;
-
-										textareaElement.style.height = textareaElement.scrollHeight + 'px';
-
-										await tick();
-									}
-								}
-							}
-						}
-					}
-				} catch (error) {
-					console.log(error);
-				}
-
-				scrollToBottom();
-			}
-		}
-	};
-
-	const submitHandler = async () => {
-		if (selectedModelId) {
-			loading = true;
-
-			if (mode === 'complete') {
-				await textCompletionHandler();
-			} else if (mode === 'chat') {
-				await chatCompletionHandler();
+			} catch (error) {
+				console.log(error);
 			}
 
-			loading = false;
-			stopResponseFlag = false;
+			scrollToBottom();
 		}
-	};
+	}
+};
 
-	onMount(async () => {
-		if ($user?.role !== 'admin') {
-			await goto('/');
+const submitHandler = async () => {
+	if (selectedModelId) {
+		loading = true;
+
+		if (mode === 'complete') {
+			await textCompletionHandler();
+		} else if (mode === 'chat') {
+			await chatCompletionHandler();
 		}
 
-		if ($settings?.models) {
-			selectedModelId = $settings?.models[0];
-		} else if ($config?.default_models) {
-			selectedModelId = $config?.default_models.split(',')[0];
-		} else {
-			selectedModelId = '';
-		}
-	});
+		loading = false;
+		stopResponseFlag = false;
+	}
+};
+
+onMount(async () => {
+	if ($user?.role !== 'admin') {
+		await goto('/');
+	}
+
+	if ($settings?.models) {
+		selectedModelId = $settings?.models[0];
+	} else if ($config?.default_models) {
+		selectedModelId = $config?.default_models.split(',')[0];
+	} else {
+		selectedModelId = '';
+	}
+});
 </script>
 
 <svelte:head>
@@ -380,9 +374,7 @@
 				{:else}
 					<button
 						class="px-3 py-1.5 text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-900 transition rounded-lg"
-						on:click={() => {
-							stopResponse();
-						}}
+						on:click={stopResponse}
 					>
 						{$i18n.t('Cancel')}
 					</button>
@@ -393,12 +385,12 @@
 </div>
 
 <style>
-	.scrollbar-hidden::-webkit-scrollbar {
-		display: none; /* for Chrome, Safari and Opera */
-	}
+.scrollbar-hidden::-webkit-scrollbar {
+	display: none; /* for Chrome, Safari and Opera */
+}
 
-	.scrollbar-hidden {
-		-ms-overflow-style: none; /* IE and Edge */
-		scrollbar-width: none; /* Firefox */
-	}
+.scrollbar-hidden {
+	-ms-overflow-style: none; /* IE and Edge */
+	scrollbar-width: none; /* Firefox */
+}
 </style>

@@ -1,98 +1,99 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+import { createEventDispatcher } from 'svelte';
 
-	import { updateChatById } from '$lib/apis/chats';
-	import { onMount, tick } from 'svelte';
-	import ResponseMessage from './ResponseMessage.svelte';
+import { updateChatById } from '$lib/apis/chats';
+import { onMount, tick } from 'svelte';
+import ResponseMessage from './ResponseMessage.svelte';
+import type { Message } from '$lib/types';
 
-	export let chatId;
+export let chatId;
 
-	export let history;
-	export let messages = [];
-	export let messageIdx;
+export let history;
+export let messages: Message[] = [];
+export let messageIdx;
 
-	export let parentMessage;
+export let parentMessage;
 
-	export let readOnly = false;
+export let readOnly = false;
 
-	export let updateChatMessages: Function;
-	export let confirmEditResponseMessage: Function;
-	export let rateMessage: Function;
+export let updateChatMessages: () => void;
+export let confirmEditResponseMessage: (id: string, content: string) => void;
+export let rateMessage: (id: string, rating: 1 | -1) => Promise<void>;
 
-	export let copyToClipboard: Function;
-	export let continueGeneration: Function;
-	export let regenerateResponse: Function;
+export let copyToClipboard: (text: string) => Promise<void>;
+export let continueGeneration: () => Promise<void>;
+export let regenerateResponse: (message: Message) => Promise<void>;
 
-	const dispatch = createEventDispatcher();
+const dispatch = createEventDispatcher();
 
-	let currentMessageId;
+let currentMessageId;
 
-	let groupedMessagesIdx = {};
-	let groupedMessages = {};
+let groupedMessagesIdx = {};
+let groupedMessages = {};
 
-	$: groupedMessages = parentMessage?.models.reduce((a, model) => {
-		const modelMessages = parentMessage?.childrenIds
-			.map((id) => history.messages[id])
-			.filter((m) => m.model === model);
+$: groupedMessages = parentMessage?.models.reduce((a, model) => {
+	const modelMessages = parentMessage?.childrenIds
+		.map((id) => history.messages[id])
+		.filter((m) => m.model === model);
 
-		return {
-			...a,
-			[model]: { messages: modelMessages }
-		};
-	}, {});
-
-	const showPreviousMessage = (model) => {
-		groupedMessagesIdx[model] = Math.max(0, groupedMessagesIdx[model] - 1);
-		let messageId = groupedMessages[model].messages[groupedMessagesIdx[model]].id;
-
-		console.log(messageId);
-		let messageChildrenIds = history.messages[messageId].childrenIds;
-
-		while (messageChildrenIds.length !== 0) {
-			messageId = messageChildrenIds.at(-1);
-			messageChildrenIds = history.messages[messageId].childrenIds;
-		}
-
-		history.currentId = messageId;
-
-		dispatch('change');
+	return {
+		...a,
+		[model]: { messages: modelMessages }
 	};
+}, {});
 
-	const showNextMessage = (model) => {
-		groupedMessagesIdx[model] = Math.min(
-			groupedMessages[model].messages.length - 1,
-			groupedMessagesIdx[model] + 1
-		);
+const showPreviousMessage = (model) => {
+	groupedMessagesIdx[model] = Math.max(0, groupedMessagesIdx[model] - 1);
+	let messageId = groupedMessages[model].messages[groupedMessagesIdx[model]].id;
 
-		let messageId = groupedMessages[model].messages[groupedMessagesIdx[model]].id;
-		console.log(messageId);
+	console.log(messageId);
+	let messageChildrenIds = history.messages[messageId].childrenIds;
 
-		let messageChildrenIds = history.messages[messageId].childrenIds;
+	while (messageChildrenIds.length !== 0) {
+		messageId = messageChildrenIds.at(-1);
+		messageChildrenIds = history.messages[messageId].childrenIds;
+	}
 
-		while (messageChildrenIds.length !== 0) {
-			messageId = messageChildrenIds.at(-1);
-			messageChildrenIds = history.messages[messageId].childrenIds;
+	history.currentId = messageId;
+
+	dispatch('change');
+};
+
+const showNextMessage = (model) => {
+	groupedMessagesIdx[model] = Math.min(
+		groupedMessages[model].messages.length - 1,
+		groupedMessagesIdx[model] + 1
+	);
+
+	let messageId = groupedMessages[model].messages[groupedMessagesIdx[model]].id;
+	console.log(messageId);
+
+	let messageChildrenIds = history.messages[messageId].childrenIds;
+
+	while (messageChildrenIds.length !== 0) {
+		messageId = messageChildrenIds.at(-1);
+		messageChildrenIds = history.messages[messageId].childrenIds;
+	}
+
+	history.currentId = messageId;
+
+	dispatch('change');
+};
+
+onMount(async () => {
+	await tick();
+	currentMessageId = messages[messageIdx].id;
+
+	for (const model of parentMessage?.models ?? []) {
+		const idx = groupedMessages[model].messages.findIndex((m) => m.id === currentMessageId);
+
+		if (idx !== -1) {
+			groupedMessagesIdx[model] = idx;
+		} else {
+			groupedMessagesIdx[model] = 0;
 		}
-
-		history.currentId = messageId;
-
-		dispatch('change');
-	};
-
-	onMount(async () => {
-		await tick();
-		currentMessageId = messages[messageIdx].id;
-
-		for (const model of parentMessage?.models) {
-			const idx = groupedMessages[model].messages.findIndex((m) => m.id === currentMessageId);
-
-			if (idx !== -1) {
-				groupedMessagesIdx[model] = idx;
-			} else {
-				groupedMessagesIdx[model] = 0;
-			}
-		}
-	});
+	}
+});
 </script>
 
 <div>

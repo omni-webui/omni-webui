@@ -1,39 +1,36 @@
 <script lang="ts">
-	import {
-		getRAGConfig,
-		updateRAGConfig,
-	} from '$lib/apis/rag';
+import { getRAGConfig, updateRAGConfig } from '$lib/apis/rag';
 
-	import { onMount, getContext } from 'svelte';
+import { onMount, getContext } from 'svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let saveHandler: Function;
+export let saveHandler: () => void;
 
-	let chunkSize = 0;
-	let chunkOverlap = 0;
-	let pdfExtractImages = true;
+let chunkSize = 0;
+let chunkOverlap = 0;
+let pdfExtractImages = true;
 
-	const submitHandler = async () => {
-		await updateRAGConfig(localStorage.token, {
-			pdf_extract_images: pdfExtractImages,
-			chunk: {
-				chunk_overlap: chunkOverlap,
-				chunk_size: chunkSize
-			}
-		});
-	};
-
-	onMount(async () => {
-		const res = await getRAGConfig(localStorage.token);
-
-		if (res) {
-			pdfExtractImages = res.pdf_extract_images;
-
-			chunkSize = res.chunk.chunk_size;
-			chunkOverlap = res.chunk.chunk_overlap;
+const submitHandler = async () => {
+	await updateRAGConfig(localStorage.token, {
+		pdf_extract_images: pdfExtractImages,
+		chunk: {
+			chunk_overlap: chunkOverlap,
+			chunk_size: chunkSize
 		}
 	});
+};
+
+onMount(async () => {
+	const res = await getRAGConfig(localStorage.token);
+
+	if (res) {
+		pdfExtractImages = res.pdf_extract_images;
+
+		chunkSize = res.chunk.chunk_size;
+		chunkOverlap = res.chunk.chunk_overlap;
+	}
+});
 </script>
 
 <form
@@ -49,7 +46,9 @@
 
 			<div class=" flex">
 				<div class="  flex w-full justify-between">
-					<div class="self-center text-xs font-medium min-w-fit">{$i18n.t('Chunk Size')}</div>
+					<div class="self-center text-xs font-medium min-w-fit">
+						{$i18n.t('Chunk Size')}
+					</div>
 
 					<div class="self-center p-3">
 						<input

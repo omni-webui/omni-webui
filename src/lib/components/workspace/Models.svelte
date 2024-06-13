@@ -1,191 +1,191 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import Sortable from 'sortablejs';
+import { toast } from 'svelte-sonner';
+import Sortable from 'sortablejs';
 
-	import fileSaver from 'file-saver';
-	const { saveAs } = fileSaver;
+import fileSaver from 'file-saver';
+const { saveAs } = fileSaver;
 
-	import { onMount, getContext, tick } from 'svelte';
+import { onMount, getContext, tick } from 'svelte';
 
-	import { WEBUI_NAME, mobile, models } from '$lib/stores';
-	import { addNewModel, deleteModelById, updateModelById } from '$lib/apis/models';
+import { WEBUI_NAME, mobile, models } from '$lib/stores';
+import { addNewModel, deleteModelById, updateModelById } from '$lib/apis/models';
 
-	import { goto } from '$app/navigation';
+import { goto } from '$app/navigation';
 
-	import { getModels } from '$lib/apis';
+import { getModels } from '$lib/apis';
 
-	import EllipsisHorizontal from '../icons/EllipsisHorizontal.svelte';
-	import ModelMenu from './Models/ModelMenu.svelte';
+import EllipsisHorizontal from '../icons/EllipsisHorizontal.svelte';
+import ModelMenu from './Models/ModelMenu.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let localModelfiles = [];
+let localModelfiles = [];
 
-	let importFiles;
-	let modelsImportInputElement: HTMLInputElement;
+let importFiles;
+let modelsImportInputElement: HTMLInputElement;
 
-	let _models = [];
+let _models = [];
 
-	let searchValue = '';
+let searchValue = '';
 
-	const deleteModelHandler = async (model) => {
-		console.log(model.info);
-		if (!model?.info) {
-			toast.error(
-				$i18n.t('{{ owner }}: You cannot delete a base model', {
-					owner: model.owned_by.toUpperCase()
-				})
-			);
-			return null;
-		}
-
-		const res = await deleteModelById(localStorage.token, model.id);
-
-		if (res) {
-			toast.success($i18n.t(`Deleted {{name}}`, { name: model.id }));
-		}
-
-		await models.set(await getModels(localStorage.token));
-		_models = $models;
-	};
-
-	const cloneModelHandler = async (model) => {
-		if ((model?.info?.base_model_id ?? null) === null) {
-			toast.error($i18n.t('You cannot clone a base model'));
-			return;
-		} else {
-			sessionStorage.model = JSON.stringify({
-				...model,
-				id: `${model.id}-clone`,
-				name: `${model.name} (Clone)`
-			});
-			goto('/workspace/models/create');
-		}
-	};
-
-	const shareModelHandler = async (model) => {
-		toast.success($i18n.t('Redirecting you to OmniWebUI Community'));
-
-		const url = 'https://omni-webui.com';
-
-		const tab = await window.open(`${url}/models/create`, '_blank');
-		window.addEventListener(
-			'message',
-			(event) => {
-				if (event.origin !== url) return;
-				if (event.data === 'loaded') {
-					tab.postMessage(JSON.stringify(model), '*');
-				}
-			},
-			false
+const deleteModelHandler = async (model) => {
+	console.log(model.info);
+	if (!model?.info) {
+		toast.error(
+			$i18n.t('{{ owner }}: You cannot delete a base model', {
+				owner: model.owned_by.toUpperCase()
+			})
 		);
-	};
+		return null;
+	}
 
-	const hideModelHandler = async (model) => {
-		let info = model.info;
+	const res = await deleteModelById(localStorage.token, model.id);
 
-		if (!info) {
-			info = {
-				id: model.id,
-				name: model.name,
-				meta: {
-					suggestion_prompts: null
-				},
-				params: {}
-			};
-		}
+	if (res) {
+		toast.success($i18n.t(`Deleted {{name}}`, { name: model.id }));
+	}
 
-		info.meta = {
-			...info.meta,
-			hidden: !(info?.meta?.hidden ?? false)
-		};
+	await models.set(await getModels(localStorage.token));
+	_models = $models;
+};
 
-		console.log(info);
-
-		const res = await updateModelById(localStorage.token, info.id, info);
-
-		if (res) {
-			toast.success(
-				$i18n.t(`Model {{name}} is now {{status}}`, {
-					name: info.id,
-					status: info.meta.hidden ? 'hidden' : 'visible'
-				})
-			);
-		}
-
-		await models.set(await getModels(localStorage.token));
-		_models = $models;
-	};
-
-	const downloadModels = async (models) => {
-		let blob = new Blob([JSON.stringify(models)], {
-			type: 'application/json'
+const cloneModelHandler = async (model) => {
+	if ((model?.info?.base_model_id ?? null) === null) {
+		toast.error($i18n.t('You cannot clone a base model'));
+		return;
+	} else {
+		sessionStorage.model = JSON.stringify({
+			...model,
+			id: `${model.id}-clone`,
+			name: `${model.name} (Clone)`
 		});
-		saveAs(blob, `models-export-${Date.now()}.json`);
-	};
+		goto('/workspace/models/create');
+	}
+};
 
-	const exportModelHandler = async (model) => {
-		let blob = new Blob([JSON.stringify([model])], {
-			type: 'application/json'
-		});
-		saveAs(blob, `${model.id}-${Date.now()}.json`);
-	};
+const shareModelHandler = async (model) => {
+	toast.success($i18n.t('Redirecting you to OmniWebUI Community'));
 
-	const positionChangeHanlder = async () => {
-		// Get the new order of the models
-		const modelIds = Array.from(document.getElementById('model-list').children).map((child) =>
-			child.id.replace('model-item-', '')
-		);
+	const url = 'https://omni-webui.com';
 
-		// Update the position of the models
-		for (const [index, id] of modelIds.entries()) {
-			const model = $models.find((m) => m.id === id);
-			if (model) {
-				let info = model.info;
-
-				if (!info) {
-					info = {
-						id: model.id,
-						name: model.name,
-						meta: {
-							position: index
-						},
-						params: {}
-					};
-				}
-
-				info.meta = {
-					...info.meta,
-					position: index
-				};
-				await updateModelById(localStorage.token, info.id, info);
+	const tab = await window.open(`${url}/models/create`, '_blank');
+	window.addEventListener(
+		'message',
+		(event) => {
+			if (event.origin !== url) return;
+			if (event.data === 'loaded') {
+				tab.postMessage(JSON.stringify(model), '*');
 			}
-		}
+		},
+		false
+	);
+};
 
-		await tick();
-		await models.set(await getModels(localStorage.token));
+const hideModelHandler = async (model) => {
+	let info = model.info;
+
+	if (!info) {
+		info = {
+			id: model.id,
+			name: model.name,
+			meta: {
+				suggestion_prompts: null
+			},
+			params: {}
+		};
+	}
+
+	info.meta = {
+		...info.meta,
+		hidden: !(info?.meta?.hidden ?? false)
 	};
 
-	onMount(async () => {
-		// Legacy code to sync localModelfiles with models
-		_models = $models;
-		localModelfiles = JSON.parse(localStorage.getItem('modelfiles') ?? '[]');
+	console.log(info);
 
-		if (localModelfiles) {
-			console.log(localModelfiles);
-		}
+	const res = await updateModelById(localStorage.token, info.id, info);
 
-		if (!$mobile) {
-			// SortableJS
-			new Sortable(document.getElementById('model-list'), {
-				animation: 150,
-				onUpdate: async (event) => {
-					console.log(event);
-					positionChangeHanlder();
-				}
-			});
-		}
+	if (res) {
+		toast.success(
+			$i18n.t(`Model {{name}} is now {{status}}`, {
+				name: info.id,
+				status: info.meta.hidden ? 'hidden' : 'visible'
+			})
+		);
+	}
+
+	await models.set(await getModels(localStorage.token));
+	_models = $models;
+};
+
+const downloadModels = async (models) => {
+	let blob = new Blob([JSON.stringify(models)], {
+		type: 'application/json'
 	});
+	saveAs(blob, `models-export-${Date.now()}.json`);
+};
+
+const exportModelHandler = async (model) => {
+	let blob = new Blob([JSON.stringify([model])], {
+		type: 'application/json'
+	});
+	saveAs(blob, `${model.id}-${Date.now()}.json`);
+};
+
+const positionChangeHanlder = async () => {
+	// Get the new order of the models
+	const modelIds = Array.from(document.getElementById('model-list').children).map((child) =>
+		child.id.replace('model-item-', '')
+	);
+
+	// Update the position of the models
+	for (const [index, id] of modelIds.entries()) {
+		const model = $models.find((m) => m.id === id);
+		if (model) {
+			let info = model.info;
+
+			if (!info) {
+				info = {
+					id: model.id,
+					name: model.name,
+					meta: {
+						position: index
+					},
+					params: {}
+				};
+			}
+
+			info.meta = {
+				...info.meta,
+				position: index
+			};
+			await updateModelById(localStorage.token, info.id, info);
+		}
+	}
+
+	await tick();
+	await models.set(await getModels(localStorage.token));
+};
+
+onMount(async () => {
+	// Legacy code to sync localModelfiles with models
+	_models = $models;
+	localModelfiles = JSON.parse(localStorage.getItem('modelfiles') ?? '[]');
+
+	if (localModelfiles) {
+		console.log(localModelfiles);
+	}
+
+	if (!$mobile) {
+		// SortableJS
+		new Sortable(document.getElementById('model-list'), {
+			animation: 150,
+			onUpdate: async (event) => {
+				console.log(event);
+				positionChangeHanlder();
+			}
+		});
+	}
+});
 </script>
 
 <svelte:head>

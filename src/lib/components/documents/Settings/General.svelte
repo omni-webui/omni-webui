@@ -1,191 +1,191 @@
 <script lang="ts">
-	import { getDocs } from '$lib/apis/documents';
-	import {
-		getQuerySettings,
-		scanDocs,
-		updateQuerySettings,
-		resetVectorDB,
-		getEmbeddingConfig,
-		updateEmbeddingConfig,
-		getRerankingConfig,
-		updateRerankingConfig,
-		resetUploadDir
-	} from '$lib/apis/rag';
+import { getDocs } from '$lib/apis/documents';
+import {
+	getQuerySettings,
+	scanDocs,
+	updateQuerySettings,
+	resetVectorDB,
+	getEmbeddingConfig,
+	updateEmbeddingConfig,
+	getRerankingConfig,
+	updateRerankingConfig,
+	resetUploadDir
+} from '$lib/apis/rag';
 
-	import { documents, models } from '$lib/stores';
-	import { onMount, getContext } from 'svelte';
-	import { toast } from 'svelte-sonner';
+import { documents, models } from '$lib/stores';
+import { onMount, getContext } from 'svelte';
+import { toast } from 'svelte-sonner';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let saveHandler: Function;
+export let saveHandler: () => void;
 
-	let scanDirLoading = false;
-	let updateEmbeddingModelLoading = false;
-	let updateRerankingModelLoading = false;
+let scanDirLoading = false;
+let updateEmbeddingModelLoading = false;
+let updateRerankingModelLoading = false;
 
-	let showResetConfirm = false;
-	let showResetUploadDirConfirm = false;
+let showResetConfirm = false;
+let showResetUploadDirConfirm = false;
 
-	let embeddingEngine = '';
-	let embeddingModel = '';
-	let rerankingModel = '';
+let embeddingEngine = '';
+let embeddingModel = '';
+let rerankingModel = '';
 
-	let OpenAIKey = '';
-	let OpenAIUrl = '';
-	let OpenAIBatchSize = 1;
+let OpenAIKey = '';
+let OpenAIUrl = '';
+let OpenAIBatchSize = 1;
 
-	let querySettings = {
-		template: '',
-		r: 0.0,
-		k: 4,
-		hybrid: false
-	};
+let querySettings = {
+	template: '',
+	r: 0.0,
+	k: 4,
+	hybrid: false
+};
 
-	const scanHandler = async () => {
-		scanDirLoading = true;
-		const res = await scanDocs(localStorage.token);
-		scanDirLoading = false;
+const scanHandler = async () => {
+	scanDirLoading = true;
+	const res = await scanDocs(localStorage.token);
+	scanDirLoading = false;
 
-		if (res) {
-			await documents.set(await getDocs(localStorage.token));
-			toast.success($i18n.t('Scan complete!'));
+	if (res) {
+		await documents.set(await getDocs(localStorage.token));
+		toast.success($i18n.t('Scan complete!'));
+	}
+};
+
+const embeddingModelUpdateHandler = async () => {
+	if (embeddingEngine === '' && embeddingModel.split('/').length - 1 > 1) {
+		toast.error(
+			$i18n.t(
+				'Model filesystem path detected. Model shortname is required for update, cannot continue.'
+			)
+		);
+		return;
+	}
+	if (embeddingEngine === 'ollama' && embeddingModel === '') {
+		toast.error(
+			$i18n.t(
+				'Model filesystem path detected. Model shortname is required for update, cannot continue.'
+			)
+		);
+		return;
+	}
+
+	if (embeddingEngine === 'openai' && embeddingModel === '') {
+		toast.error(
+			$i18n.t(
+				'Model filesystem path detected. Model shortname is required for update, cannot continue.'
+			)
+		);
+		return;
+	}
+
+	if ((embeddingEngine === 'openai' && OpenAIKey === '') || OpenAIUrl === '') {
+		toast.error($i18n.t('OpenAI URL/Key required.'));
+		return;
+	}
+
+	console.log('Update embedding model attempt:', embeddingModel);
+
+	updateEmbeddingModelLoading = true;
+	const res = await updateEmbeddingConfig(localStorage.token, {
+		embedding_engine: embeddingEngine,
+		embedding_model: embeddingModel,
+		...(embeddingEngine === 'openai'
+			? {
+					openai_config: {
+						key: OpenAIKey,
+						url: OpenAIUrl,
+						batch_size: OpenAIBatchSize
+					}
+				}
+			: {})
+	}).catch(async (error) => {
+		toast.error(error);
+		await setEmbeddingConfig();
+		return null;
+	});
+	updateEmbeddingModelLoading = false;
+
+	if (res) {
+		console.log('embeddingModelUpdateHandler:', res);
+		if (res.status === true) {
+			toast.success($i18n.t('Embedding model set to "{{embedding_model}}"', res), {
+				duration: 1000 * 10
+			});
 		}
-	};
+	}
+};
 
-	const embeddingModelUpdateHandler = async () => {
-		if (embeddingEngine === '' && embeddingModel.split('/').length - 1 > 1) {
-			toast.error(
-				$i18n.t(
-					'Model filesystem path detected. Model shortname is required for update, cannot continue.'
-				)
-			);
-			return;
-		}
-		if (embeddingEngine === 'ollama' && embeddingModel === '') {
-			toast.error(
-				$i18n.t(
-					'Model filesystem path detected. Model shortname is required for update, cannot continue.'
-				)
-			);
-			return;
-		}
+const rerankingModelUpdateHandler = async () => {
+	console.log('Update reranking model attempt:', rerankingModel);
 
-		if (embeddingEngine === 'openai' && embeddingModel === '') {
-			toast.error(
-				$i18n.t(
-					'Model filesystem path detected. Model shortname is required for update, cannot continue.'
-				)
-			);
-			return;
-		}
+	updateRerankingModelLoading = true;
+	const res = await updateRerankingConfig(localStorage.token, {
+		reranking_model: rerankingModel
+	}).catch(async (error) => {
+		toast.error(error);
+		await setRerankingConfig();
+		return null;
+	});
+	updateRerankingModelLoading = false;
 
-		if ((embeddingEngine === 'openai' && OpenAIKey === '') || OpenAIUrl === '') {
-			toast.error($i18n.t('OpenAI URL/Key required.'));
-			return;
-		}
-
-		console.log('Update embedding model attempt:', embeddingModel);
-
-		updateEmbeddingModelLoading = true;
-		const res = await updateEmbeddingConfig(localStorage.token, {
-			embedding_engine: embeddingEngine,
-			embedding_model: embeddingModel,
-			...(embeddingEngine === 'openai'
-				? {
-						openai_config: {
-							key: OpenAIKey,
-							url: OpenAIUrl,
-							batch_size: OpenAIBatchSize
-						}
-				  }
-				: {})
-		}).catch(async (error) => {
-			toast.error(error);
-			await setEmbeddingConfig();
-			return null;
-		});
-		updateEmbeddingModelLoading = false;
-
-		if (res) {
-			console.log('embeddingModelUpdateHandler:', res);
-			if (res.status === true) {
-				toast.success($i18n.t('Embedding model set to "{{embedding_model}}"', res), {
+	if (res) {
+		console.log('rerankingModelUpdateHandler:', res);
+		if (res.status === true) {
+			if (rerankingModel === '') {
+				toast.success($i18n.t('Reranking model disabled', res), {
+					duration: 1000 * 10
+				});
+			} else {
+				toast.success($i18n.t('Reranking model set to "{{reranking_model}}"', res), {
 					duration: 1000 * 10
 				});
 			}
 		}
-	};
+	}
+};
 
-	const rerankingModelUpdateHandler = async () => {
-		console.log('Update reranking model attempt:', rerankingModel);
+const submitHandler = async () => {
+	embeddingModelUpdateHandler();
 
-		updateRerankingModelLoading = true;
-		const res = await updateRerankingConfig(localStorage.token, {
-			reranking_model: rerankingModel
-		}).catch(async (error) => {
-			toast.error(error);
-			await setRerankingConfig();
-			return null;
-		});
-		updateRerankingModelLoading = false;
+	if (querySettings.hybrid) {
+		rerankingModelUpdateHandler();
+	}
+};
 
-		if (res) {
-			console.log('rerankingModelUpdateHandler:', res);
-			if (res.status === true) {
-				if (rerankingModel === '') {
-					toast.success($i18n.t('Reranking model disabled', res), {
-						duration: 1000 * 10
-					});
-				} else {
-					toast.success($i18n.t('Reranking model set to "{{reranking_model}}"', res), {
-						duration: 1000 * 10
-					});
-				}
-			}
-		}
-	};
+const setEmbeddingConfig = async () => {
+	const embeddingConfig = await getEmbeddingConfig(localStorage.token);
 
-	const submitHandler = async () => {
-		embeddingModelUpdateHandler();
+	if (embeddingConfig) {
+		embeddingEngine = embeddingConfig.embedding_engine;
+		embeddingModel = embeddingConfig.embedding_model;
 
-		if (querySettings.hybrid) {
-			rerankingModelUpdateHandler();
-		}
-	};
+		OpenAIKey = embeddingConfig.openai_config.key;
+		OpenAIUrl = embeddingConfig.openai_config.url;
+		OpenAIBatchSize = embeddingConfig.openai_config.batch_size ?? 1;
+	}
+};
 
-	const setEmbeddingConfig = async () => {
-		const embeddingConfig = await getEmbeddingConfig(localStorage.token);
+const setRerankingConfig = async () => {
+	const rerankingConfig = await getRerankingConfig(localStorage.token);
 
-		if (embeddingConfig) {
-			embeddingEngine = embeddingConfig.embedding_engine;
-			embeddingModel = embeddingConfig.embedding_model;
+	if (rerankingConfig) {
+		rerankingModel = rerankingConfig.reranking_model;
+	}
+};
 
-			OpenAIKey = embeddingConfig.openai_config.key;
-			OpenAIUrl = embeddingConfig.openai_config.url;
-			OpenAIBatchSize = embeddingConfig.openai_config.batch_size ?? 1;
-		}
-	};
+const toggleHybridSearch = async () => {
+	querySettings.hybrid = !querySettings.hybrid;
+	querySettings = await updateQuerySettings(localStorage.token, querySettings);
+};
 
-	const setRerankingConfig = async () => {
-		const rerankingConfig = await getRerankingConfig(localStorage.token);
+onMount(async () => {
+	await setEmbeddingConfig();
+	await setRerankingConfig();
 
-		if (rerankingConfig) {
-			rerankingModel = rerankingConfig.reranking_model;
-		}
-	};
-
-	const toggleHybridSearch = async () => {
-		querySettings.hybrid = !querySettings.hybrid;
-		querySettings = await updateQuerySettings(localStorage.token, querySettings);
-	};
-
-	onMount(async () => {
-		await setEmbeddingConfig();
-		await setRerankingConfig();
-
-		querySettings = await getQuerySettings(localStorage.token);
-	});
+	querySettings = await getQuerySettings(localStorage.token);
+});
 </script>
 
 <form
@@ -225,15 +225,15 @@
 								fill="currentColor"
 								xmlns="http://www.w3.org/2000/svg"
 								><style>
-									.spinner_ajPY {
-										transform-origin: center;
-										animation: spinner_AtaB 0.75s infinite linear;
+								.spinner_ajPY {
+									transform-origin: center;
+									animation: spinner_AtaB 0.75s infinite linear;
+								}
+								@keyframes spinner_AtaB {
+									100% {
+										transform: rotate(360deg);
 									}
-									@keyframes spinner_AtaB {
-										100% {
-											transform: rotate(360deg);
-										}
-									}
+								}
 								</style><path
 									d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
 									opacity=".25"
@@ -248,7 +248,9 @@
 			</div>
 
 			<div class=" flex w-full justify-between">
-				<div class=" self-center text-xs font-medium">{$i18n.t('Embedding Model Engine')}</div>
+				<div class=" self-center text-xs font-medium">
+					{$i18n.t('Embedding Model Engine')}
+				</div>
 				<div class="flex items-center relative">
 					<select
 						class="dark:bg-gray-900 w-fit pr-8 rounded px-2 p-1 text-xs bg-transparent outline-none text-right"
@@ -288,7 +290,9 @@
 					/>
 				</div>
 				<div class="flex mt-0.5 space-x-2">
-					<div class=" self-center text-xs font-medium">{$i18n.t('Embedding Batch Size')}</div>
+					<div class=" self-center text-xs font-medium">
+						{$i18n.t('Embedding Batch Size')}
+					</div>
 					<div class=" flex-1">
 						<input
 							id="steps-range"
@@ -386,15 +390,15 @@
 										fill="currentColor"
 										xmlns="http://www.w3.org/2000/svg"
 										><style>
-											.spinner_ajPY {
-												transform-origin: center;
-												animation: spinner_AtaB 0.75s infinite linear;
+										.spinner_ajPY {
+											transform-origin: center;
+											animation: spinner_AtaB 0.75s infinite linear;
+										}
+										@keyframes spinner_AtaB {
+											100% {
+												transform: rotate(360deg);
 											}
-											@keyframes spinner_AtaB {
-												100% {
-													transform: rotate(360deg);
-												}
-											}
+										}
 										</style><path
 											d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
 											opacity=".25"
@@ -459,15 +463,15 @@
 										fill="currentColor"
 										xmlns="http://www.w3.org/2000/svg"
 										><style>
-											.spinner_ajPY {
-												transform-origin: center;
-												animation: spinner_AtaB 0.75s infinite linear;
+										.spinner_ajPY {
+											transform-origin: center;
+											animation: spinner_AtaB 0.75s infinite linear;
+										}
+										@keyframes spinner_AtaB {
+											100% {
+												transform: rotate(360deg);
 											}
-											@keyframes spinner_AtaB {
-												100% {
-													transform: rotate(360deg);
-												}
-											}
+										}
 										</style><path
 											d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
 											opacity=".25"
@@ -597,7 +601,9 @@
 							/>
 						</svg>
 					</div>
-					<div class=" self-center text-sm font-medium">{$i18n.t('Reset Upload Directory')}</div>
+					<div class=" self-center text-sm font-medium">
+						{$i18n.t('Reset Upload Directory')}
+					</div>
 				</button>
 			{/if}
 
@@ -691,7 +697,9 @@
 							/>
 						</svg>
 					</div>
-					<div class=" self-center text-sm font-medium">{$i18n.t('Reset Vector Storage')}</div>
+					<div class=" self-center text-sm font-medium">
+						{$i18n.t('Reset Vector Storage')}
+					</div>
 				</button>
 			{/if}
 		</div>

@@ -1,23 +1,24 @@
 <script lang="ts">
-	import Switch from '$lib/components/common/Switch.svelte';
-	import { settings } from '$lib/stores';
-	import { createEventDispatcher, onMount, getContext } from 'svelte';
-	import ManageModal from './Personalization/ManageModal.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	const dispatch = createEventDispatcher();
+import Switch from '$lib/components/common/Switch.svelte';
+import { settings } from '$lib/stores';
+import { createEventDispatcher, onMount, getContext } from 'svelte';
+import ManageModal from './Personalization/ManageModal.svelte';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
+import type { SaveSettingsFunctionType } from '$lib/types';
+const dispatch = createEventDispatcher();
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let saveSettings: Function;
+export let saveSettings: SaveSettingsFunctionType;
 
-	let showManageModal = false;
+let showManageModal = false;
 
-	// Addons
-	let enableMemory = false;
+// Addons
+let enableMemory = false;
 
-	onMount(async () => {
-		enableMemory = $settings?.memory ?? false;
-	});
+onMount(async () => {
+	enableMemory = $settings?.memory ?? false;
+});
 </script>
 
 <ManageModal bind:show={showManageModal} />

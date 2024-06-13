@@ -1,33 +1,33 @@
 <script lang="ts">
-	import { Select } from 'bits-ui';
+import { Select } from 'bits-ui';
 
-	import { flyAndScale } from '$lib/utils/transitions';
+import { flyAndScale } from '$lib/utils/transitions';
 
-	import { createEventDispatcher } from 'svelte';
-	import ChevronDown from '../icons/ChevronDown.svelte';
-	import Check from '../icons/Check.svelte';
-	import Search from '../icons/Search.svelte';
+import { createEventDispatcher } from 'svelte';
+import ChevronDown from '../icons/ChevronDown.svelte';
+import Check from '../icons/Check.svelte';
+import Search from '../icons/Search.svelte';
 
-	createEventDispatcher();
+createEventDispatcher();
 
-	export let value = '';
-	export let placeholder = 'Select a model';
-	export let searchEnabled = true;
-	export let searchPlaceholder = 'Search a model';
+export let value = '';
+export let placeholder = 'Select a model';
+export let searchEnabled = true;
+export let searchPlaceholder = 'Search a model';
 
-	export let items = [
-		{ value: 'mango', label: 'Mango' },
-		{ value: 'watermelon', label: 'Watermelon' },
-		{ value: 'apple', label: 'Apple' },
-		{ value: 'pineapple', label: 'Pineapple' },
-		{ value: 'orange', label: 'Orange' }
-	];
+export let items = [
+	{ value: 'mango', label: 'Mango' },
+	{ value: 'watermelon', label: 'Watermelon' },
+	{ value: 'apple', label: 'Apple' },
+	{ value: 'pineapple', label: 'Pineapple' },
+	{ value: 'orange', label: 'Orange' }
+];
 
-	let searchValue = '';
+let searchValue = '';
 
-	$: filteredItems = searchValue
-		? items.filter((item) => item.value.toLowerCase().includes(searchValue.toLowerCase()))
-		: items;
+$: filteredItems = searchValue
+	? items.filter((item) => item.value.toLowerCase().includes(searchValue.toLowerCase()))
+	: items;
 </script>
 
 <Select.Root

@@ -1,166 +1,169 @@
 <script>
-	import { toast } from 'svelte-sonner';
-	import { goto } from '$app/navigation';
-	import { models } from '$lib/stores';
+import { toast } from 'svelte-sonner';
+import { goto } from '$app/navigation';
+import { models } from '$lib/stores';
 
-	import { onMount, tick, getContext } from 'svelte';
-	import { addNewModel } from '$lib/apis/models';
-	import { getModels } from '$lib/apis';
+import { onMount, tick, getContext } from 'svelte';
+import { addNewModel } from '$lib/apis/models';
+import { getModels } from '$lib/apis';
 
-	import AdvancedParams from '$lib/components/chat/Settings/Advanced/AdvancedParams.svelte';
-	import Checkbox from '$lib/components/common/Checkbox.svelte';
-	import Tags from '$lib/components/common/Tags.svelte';
+import AdvancedParams from '$lib/components/chat/Settings/Advanced/AdvancedParams.svelte';
+import Checkbox from '$lib/components/common/Checkbox.svelte';
+import Tags from '$lib/components/common/Tags.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let filesInputElement;
-	let inputFiles;
+let filesInputElement;
+let inputFiles;
 
-	let showAdvanced = false;
-	let showPreview = false;
+let showAdvanced = false;
+let showPreview = false;
 
-	let loading = false;
-	let success = false;
+let loading = false;
+let success = false;
 
-	// ///////////
-	// Model
-	// ///////////
+// ///////////
+// Model
+// ///////////
 
-	let id = '';
-	let name = '';
+let id = '';
+let name = '';
 
-	let params = {};
-	let capabilities = {
-		vision: true
-	};
+let params = {};
+let capabilities = {
+	vision: true
+};
 
-	let info = {
-		id: '',
-		base_model_id: null,
-		name: '',
-		meta: {
-			profile_image_url: null,
-			description: '',
-			suggestion_prompts: [
-				{
-					content: ''
-				}
-			]
-		},
-		params: {
-			system: ''
-		}
-	};
-
-	$: if (name) {
-		id = name.replace(/\s+/g, '-').toLowerCase();
+let info = {
+	id: '',
+	base_model_id: null,
+	name: '',
+	meta: {
+		profile_image_url: null,
+		description: '',
+		suggestion_prompts: [
+			{
+				content: ''
+			}
+		]
+	},
+	params: {
+		system: ''
 	}
+};
 
-	let baseModel = null;
-	$: {
-		baseModel = $models.find((m) => m.id === info.base_model_id);
-		console.log(baseModel);
-		if (baseModel) {
-			if (baseModel.owned_by === 'openai') {
-				capabilities.usage = baseModel.info?.meta?.capabilities?.usage ?? false;
-			} else {
-				delete capabilities.usage;
-			}
-			capabilities = capabilities;
+$: if (name) {
+	id = name.replace(/\s+/g, '-').toLowerCase();
+}
+
+let baseModel = null;
+$: {
+	baseModel = $models.find((m) => m.id === info.base_model_id);
+	console.log(baseModel);
+	if (baseModel) {
+		if (baseModel.owned_by === 'openai') {
+			capabilities.usage = baseModel.info?.meta?.capabilities?.usage ?? false;
+		} else {
+			delete capabilities.usage;
 		}
+		capabilities = capabilities;
 	}
+}
 
-	const submitHandler = async () => {
-		loading = true;
+const submitHandler = async () => {
+	loading = true;
 
-		info.id = id;
-		info.name = name;
-		info.meta.capabilities = capabilities;
-		info.params.stop = params.stop ? params.stop.split(',').filter((s) => s.trim()) : null;
+	info.id = id;
+	info.name = name;
+	info.meta.capabilities = capabilities;
+	info.params.stop = params.stop ? params.stop.split(',').filter((s) => s.trim()) : null;
 
-		Object.keys(info.params).forEach((key) => {
-			if (info.params[key] === '' || info.params[key] === null) {
-				delete info.params[key];
-			}
-		});
-
-		if ($models.find((m) => m.id === info.id)) {
-			toast.error(
-				`Error: A model with the ID '${info.id}' already exists. Please select a different ID to proceed.`
-			);
-			loading = false;
-			success = false;
-			return success;
-		}
-
-		if (info) {
-			const res = await addNewModel(localStorage.token, {
-				...info,
-				meta: {
-					...info.meta,
-					profile_image_url: info.meta.profile_image_url ?? '/favicon.png',
-					suggestion_prompts: info.meta.suggestion_prompts
-						? info.meta.suggestion_prompts.filter((prompt) => prompt.content !== '')
-						: null
-				},
-				params: { ...info.params, ...params }
-			});
-
-			if (res) {
-				await models.set(await getModels(localStorage.token));
-				toast.success('Model created successfully!');
-				await goto('/workspace/models');
-			}
-		}
-
-		loading = false;
-		success = false;
-	};
-
-	const initModel = async (model) => {
-		name = model.name;
-		await tick();
-
-		id = model.id;
-
-		params = { ...params, ...model?.info?.params };
-		params.stop = params?.stop ? (params?.stop ?? []).join(',') : null;
-
-		capabilities = { ...capabilities, ...(model?.info?.meta?.capabilities ?? {}) };
-
-		info = {
-			...info,
-			...model.info
-		};
-	};
-
-	onMount(async () => {
-		window.addEventListener('message', async (event) => {
-			if (
-				!['https://omni-webui.com', 'https://www.omni-webui.com', 'http://localhost:5173'].includes(
-					event.origin
-				)
-			)
-				return;
-
-			const model = JSON.parse(event.data);
-			console.log(model);
-
-			initModel(model);
-		});
-
-		if (window.opener ?? false) {
-			window.opener.postMessage('loaded', '*');
-		}
-
-		if (sessionStorage.model) {
-			const model = JSON.parse(sessionStorage.model);
-			sessionStorage.removeItem('model');
-
-			console.log(model);
-			initModel(model);
+	Object.keys(info.params).forEach((key) => {
+		if (info.params[key] === '' || info.params[key] === null) {
+			delete info.params[key];
 		}
 	});
+
+	if ($models.find((m) => m.id === info.id)) {
+		toast.error(
+			`Error: A model with the ID '${info.id}' already exists. Please select a different ID to proceed.`
+		);
+		loading = false;
+		success = false;
+		return success;
+	}
+
+	if (info) {
+		const res = await addNewModel(localStorage.token, {
+			...info,
+			meta: {
+				...info.meta,
+				profile_image_url: info.meta.profile_image_url ?? '/favicon.png',
+				suggestion_prompts: info.meta.suggestion_prompts
+					? info.meta.suggestion_prompts.filter((prompt) => prompt.content !== '')
+					: null
+			},
+			params: { ...info.params, ...params }
+		});
+
+		if (res) {
+			await models.set(await getModels(localStorage.token));
+			toast.success('Model created successfully!');
+			await goto('/workspace/models');
+		}
+	}
+
+	loading = false;
+	success = false;
+};
+
+const initModel = async (model) => {
+	name = model.name;
+	await tick();
+
+	id = model.id;
+
+	params = { ...params, ...model?.info?.params };
+	params.stop = params?.stop ? (params?.stop ?? []).join(',') : null;
+
+	capabilities = {
+		...capabilities,
+		...(model?.info?.meta?.capabilities ?? {})
+	};
+
+	info = {
+		...info,
+		...model.info
+	};
+};
+
+onMount(async () => {
+	window.addEventListener('message', async (event) => {
+		if (
+			!['https://omni-webui.com', 'https://www.omni-webui.com', 'http://localhost:5173'].includes(
+				event.origin
+			)
+		)
+			return;
+
+		const model = JSON.parse(event.data);
+		console.log(model);
+
+		initModel(model);
+	});
+
+	if (window.opener ?? false) {
+		window.opener.postMessage('loaded', '*');
+	}
+
+	if (sessionStorage.model) {
+		const model = JSON.parse(sessionStorage.model);
+		sessionStorage.removeItem('model');
+
+		console.log(model);
+		initModel(model);
+	}
+});
 </script>
 
 <div class="w-full max-h-full">
@@ -430,7 +433,9 @@
 		<div class="my-1">
 			<div class="flex w-full justify-between items-center">
 				<div class="flex w-full justify-between items-center">
-					<div class=" self-center text-sm font-semibold">{$i18n.t('Prompt suggestions')}</div>
+					<div class=" self-center text-sm font-semibold">
+						{$i18n.t('Prompt suggestions')}
+					</div>
 
 					<button
 						class="p-1 text-xs flex rounded transition"
@@ -612,15 +617,15 @@
 							fill="currentColor"
 							xmlns="http://www.w3.org/2000/svg"
 							><style>
-								.spinner_ajPY {
-									transform-origin: center;
-									animation: spinner_AtaB 0.75s infinite linear;
+							.spinner_ajPY {
+								transform-origin: center;
+								animation: spinner_AtaB 0.75s infinite linear;
+							}
+							@keyframes spinner_AtaB {
+								100% {
+									transform: rotate(360deg);
 								}
-								@keyframes spinner_AtaB {
-									100% {
-										transform: rotate(360deg);
-									}
-								}
+							}
 							</style><path
 								d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
 								opacity=".25"

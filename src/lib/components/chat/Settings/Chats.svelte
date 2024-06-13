@@ -1,105 +1,106 @@
 <script lang="ts">
-	import fileSaver from 'file-saver';
-	const { saveAs } = fileSaver;
+import fileSaver from 'file-saver';
+const { saveAs } = fileSaver;
 
-	import { chats, settings } from '$lib/stores';
+import { chats, settings } from '$lib/stores';
 
-	import {
-		archiveAllChats,
-		createNewChat,
-		deleteAllChats,
-		getAllChats,
-		getChatList
-	} from '$lib/apis/chats';
-	import { getImportOrigin, convertOpenAIChats } from '$lib/utils';
-	import { onMount, getContext } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { toast } from 'svelte-sonner';
+import {
+	archiveAllChats,
+	createNewChat,
+	deleteAllChats,
+	getAllChats,
+	getChatList
+} from '$lib/apis/chats';
+import { getImportOrigin, convertOpenAIChats } from '$lib/utils';
+import { onMount, getContext } from 'svelte';
+import { goto } from '$app/navigation';
+import { toast } from 'svelte-sonner';
+import type { SaveSettingsFunctionType } from '$lib/types';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let saveSettings: Function;
-	// Chats
-	let saveChatHistory = true;
-	let importFiles;
+export let saveSettings: SaveSettingsFunctionType;
+// Chats
+let saveChatHistory = true;
+let importFiles;
 
-	let showArchiveConfirm = false;
-	let showDeleteConfirm = false;
+let showArchiveConfirm = false;
+let showDeleteConfirm = false;
 
-	let chatImportInputElement: HTMLInputElement;
+let chatImportInputElement: HTMLInputElement;
 
-	$: if (importFiles) {
-		console.log(importFiles);
+$: if (importFiles) {
+	console.log(importFiles);
 
-		let reader = new FileReader();
-		reader.onload = (event) => {
-			let chats = JSON.parse(event.target.result);
-			console.log(chats);
-			if (getImportOrigin(chats) == 'openai') {
-				try {
-					chats = convertOpenAIChats(chats);
-				} catch (error) {
-					console.log('Unable to import chats:', error);
-				}
+	let reader = new FileReader();
+	reader.onload = (event) => {
+		let chats = JSON.parse(event.target.result);
+		console.log(chats);
+		if (getImportOrigin(chats) == 'openai') {
+			try {
+				chats = convertOpenAIChats(chats);
+			} catch (error) {
+				console.log('Unable to import chats:', error);
 			}
-			importChats(chats);
-		};
+		}
+		importChats(chats);
+	};
 
-		if (importFiles.length > 0) {
-			reader.readAsText(importFiles[0]);
+	if (importFiles.length > 0) {
+		reader.readAsText(importFiles[0]);
+	}
+}
+
+const importChats = async (_chats) => {
+	for (const chat of _chats) {
+		console.log(chat);
+
+		if (chat.chat) {
+			await createNewChat(localStorage.token, chat.chat);
+		} else {
+			await createNewChat(localStorage.token, chat);
 		}
 	}
 
-	const importChats = async (_chats) => {
-		for (const chat of _chats) {
-			console.log(chat);
+	await chats.set(await getChatList(localStorage.token));
+};
 
-			if (chat.chat) {
-				await createNewChat(localStorage.token, chat.chat);
-			} else {
-				await createNewChat(localStorage.token, chat);
-			}
-		}
-
-		await chats.set(await getChatList(localStorage.token));
-	};
-
-	const exportChats = async () => {
-		let blob = new Blob([JSON.stringify(await getAllChats(localStorage.token))], {
-			type: 'application/json'
-		});
-		saveAs(blob, `chat-export-${Date.now()}.json`);
-	};
-
-	const archiveAllChatsHandler = async () => {
-		await goto('/');
-		await archiveAllChats(localStorage.token).catch((error) => {
-			toast.error(error);
-		});
-		await chats.set(await getChatList(localStorage.token));
-	};
-
-	const deleteAllChatsHandler = async () => {
-		await goto('/');
-		await deleteAllChats(localStorage.token).catch((error) => {
-			toast.error(error);
-		});
-		await chats.set(await getChatList(localStorage.token));
-	};
-
-	const toggleSaveChatHistory = async () => {
-		saveChatHistory = !saveChatHistory;
-		console.log(saveChatHistory);
-
-		if (saveChatHistory === false) {
-			await goto('/');
-		}
-		saveSettings({ saveChatHistory: saveChatHistory });
-	};
-
-	onMount(async () => {
-		saveChatHistory = $settings.saveChatHistory ?? true;
+const exportChats = async () => {
+	let blob = new Blob([JSON.stringify(await getAllChats(localStorage.token))], {
+		type: 'application/json'
 	});
+	saveAs(blob, `chat-export-${Date.now()}.json`);
+};
+
+const archiveAllChatsHandler = async () => {
+	await goto('/');
+	await archiveAllChats(localStorage.token).catch((error) => {
+		toast.error(error);
+	});
+	await chats.set(await getChatList(localStorage.token));
+};
+
+const deleteAllChatsHandler = async () => {
+	await goto('/');
+	await deleteAllChats(localStorage.token).catch((error) => {
+		toast.error(error);
+	});
+	await chats.set(await getChatList(localStorage.token));
+};
+
+const toggleSaveChatHistory = async () => {
+	saveChatHistory = !saveChatHistory;
+	console.log(saveChatHistory);
+
+	if (saveChatHistory === false) {
+		await goto('/');
+	}
+	saveSettings({ saveChatHistory: saveChatHistory });
+};
+
+onMount(async () => {
+	saveChatHistory = $settings.saveChatHistory ?? true;
+});
 </script>
 
 <div class="flex flex-col h-full justify-between space-y-3 text-sm max-h-[22rem]">
@@ -303,7 +304,9 @@
 							/>
 						</svg>
 					</div>
-					<div class=" self-center text-sm font-medium">{$i18n.t('Archive All Chats')}</div>
+					<div class=" self-center text-sm font-medium">
+						{$i18n.t('Archive All Chats')}
+					</div>
 				</button>
 			{/if}
 
@@ -387,7 +390,9 @@
 							/>
 						</svg>
 					</div>
-					<div class=" self-center text-sm font-medium">{$i18n.t('Delete All Chats')}</div>
+					<div class=" self-center text-sm font-medium">
+						{$i18n.t('Delete All Chats')}
+					</div>
 				</button>
 			{/if}
 		</div>

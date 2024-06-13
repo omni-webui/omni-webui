@@ -1,110 +1,110 @@
 <script lang="ts">
-	import { tick, getContext } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
+import { tick, getContext } from 'svelte';
+import { goto } from '$app/navigation';
+import { page } from '$app/stores';
 
-	import dayjs from 'dayjs';
+import dayjs from 'dayjs';
 
-	import { chatId, WEBUI_NAME, models } from '$lib/stores';
-	import { convertMessagesToHistory } from '$lib/utils';
+import { chatId, WEBUI_NAME, models } from '$lib/stores';
+import { convertMessagesToHistory } from '$lib/utils';
 
-	import { getChatByShareId } from '$lib/apis/chats';
+import { getChatByShareId } from '$lib/apis/chats';
 
-	import Messages from '$lib/components/chat/Messages.svelte';
-	import { getUserById } from '$lib/apis/users';
-	import { getModels } from '$lib/apis';
+import Messages from '$lib/components/chat/Messages.svelte';
+import { getUserById } from '$lib/apis/users';
+import { getModels } from '$lib/apis';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let loaded = false;
+let loaded = false;
 
-	let autoScroll = true;
-	let selectedModels = [''];
+let autoScroll = true;
+let selectedModels = [''];
 
-	let chat = null;
-	let user = null;
+let chat = null;
+let user = null;
 
-	let title = '';
-	let files = [];
+let title = '';
+let files = [];
 
-	let messages = [];
-	let history = {
-		messages: {},
-		currentId: null
-	};
+let messages = [];
+let history = {
+	messages: {},
+	currentId: null
+};
 
-	$: if (history.currentId !== null) {
-		let _messages = [];
+$: if (history.currentId !== null) {
+	let _messages = [];
 
-		let currentMessage = history.messages[history.currentId];
-		while (currentMessage !== null) {
-			_messages.unshift({ ...currentMessage });
-			currentMessage =
-				currentMessage.parentId !== null ? history.messages[currentMessage.parentId] : null;
-		}
-		messages = _messages;
-	} else {
-		messages = [];
+	let currentMessage = history.messages[history.currentId];
+	while (currentMessage !== null) {
+		_messages.unshift({ ...currentMessage });
+		currentMessage =
+			currentMessage.parentId !== null ? history.messages[currentMessage.parentId] : null;
 	}
+	messages = _messages;
+} else {
+	messages = [];
+}
 
-	$: if ($page.params.id) {
-		(async () => {
-			if (await loadSharedChat()) {
-				await tick();
-				loaded = true;
-			} else {
-				await goto('/');
-			}
-		})();
-	}
-
-	//////////////////////////
-	// Web functions
-	//////////////////////////
-
-	const loadSharedChat = async () => {
-		await models.set(await getModels(localStorage.token));
-		await chatId.set($page.params.id);
-		chat = await getChatByShareId(localStorage.token, $chatId).catch(async () => {
+$: if ($page.params.id) {
+	(async () => {
+		if (await loadSharedChat()) {
+			await tick();
+			loaded = true;
+		} else {
 			await goto('/');
+		}
+	})();
+}
+
+//////////////////////////
+// Web functions
+//////////////////////////
+
+const loadSharedChat = async () => {
+	await models.set(await getModels(localStorage.token));
+	await chatId.set($page.params.id);
+	chat = await getChatByShareId(localStorage.token, $chatId).catch(async () => {
+		await goto('/');
+		return null;
+	});
+
+	if (chat) {
+		user = await getUserById(localStorage.token, chat.user_id).catch((error) => {
+			console.error(error);
 			return null;
 		});
 
-		if (chat) {
-			user = await getUserById(localStorage.token, chat.user_id).catch((error) => {
-				console.error(error);
-				return null;
-			});
+		const chatContent = chat.chat;
 
-			const chatContent = chat.chat;
+		if (chatContent) {
+			console.log(chatContent);
 
-			if (chatContent) {
-				console.log(chatContent);
+			selectedModels =
+				(chatContent?.models ?? undefined) !== undefined
+					? chatContent.models
+					: [chatContent.models ?? ''];
+			history =
+				(chatContent?.history ?? undefined) !== undefined
+					? chatContent.history
+					: convertMessagesToHistory(chatContent.messages);
+			title = chatContent.title;
 
-				selectedModels =
-					(chatContent?.models ?? undefined) !== undefined
-						? chatContent.models
-						: [chatContent.models ?? ''];
-				history =
-					(chatContent?.history ?? undefined) !== undefined
-						? chatContent.history
-						: convertMessagesToHistory(chatContent.messages);
-				title = chatContent.title;
+			autoScroll = true;
+			await tick();
 
-				autoScroll = true;
-				await tick();
-
-				if (messages.length > 0) {
-					history.messages[messages.at(-1).id].done = true;
-				}
-				await tick();
-
-				return true;
-			} else {
-				return null;
+			if (messages.length > 0) {
+				history.messages[messages.at(-1).id].done = true;
 			}
+			await tick();
+
+			return true;
+		} else {
+			return null;
 		}
-	};
+	}
+};
 </script>
 
 <svelte:head>

@@ -1,23 +1,23 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+import { getContext } from 'svelte';
 
-	import Modal from '$lib/components/common/Modal.svelte';
-	const i18n = getContext('i18n');
+import Modal from '$lib/components/common/Modal.svelte';
+const i18n = getContext('i18n');
 
-	export let show = false;
-	export let citation;
+export let show = false;
+export let citation;
 
-	let mergedDocuments = [];
+let mergedDocuments = [];
 
-	$: if (citation) {
-		mergedDocuments = citation.document?.map((c, i) => {
-			return {
-				source: citation.source,
-				document: c,
-				metadata: citation.metadata?.[i]
-			};
-		});
-	}
+$: if (citation) {
+	mergedDocuments = citation.document?.map((c, i) => {
+		return {
+			source: citation.source,
+			document: c,
+			metadata: citation.metadata?.[i]
+		};
+	});
+}
 </script>
 
 <Modal size="lg" bind:show>

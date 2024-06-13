@@ -1,132 +1,130 @@
 <script>
-	import { toast } from 'svelte-sonner';
-	import { goto } from '$app/navigation';
+import { toast } from 'svelte-sonner';
+import { goto } from '$app/navigation';
 
-	import { onMount, getContext } from 'svelte';
-	import { page } from '$app/stores';
-	import { models } from '$lib/stores';
+import { onMount, getContext } from 'svelte';
+import { page } from '$app/stores';
+import { models } from '$lib/stores';
 
-	import { updateModelById } from '$lib/apis/models';
+import { updateModelById } from '$lib/apis/models';
 
-	import AdvancedParams from '$lib/components/chat/Settings/Advanced/AdvancedParams.svelte';
-	import { getModels } from '$lib/apis';
-	import Checkbox from '$lib/components/common/Checkbox.svelte';
-	import Tags from '$lib/components/common/Tags.svelte';
+import AdvancedParams from '$lib/components/chat/Settings/Advanced/AdvancedParams.svelte';
+import { getModels } from '$lib/apis';
+import Checkbox from '$lib/components/common/Checkbox.svelte';
+import Tags from '$lib/components/common/Tags.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let loading = false;
+let loading = false;
 
-	let filesInputElement;
-	let inputFiles;
+let filesInputElement;
+let inputFiles;
 
-	let showAdvanced = false;
-	let showPreview = false;
+let showAdvanced = false;
+let showPreview = false;
 
-	// ///////////
-	// model
-	// ///////////
+// ///////////
+// model
+// ///////////
 
-	let model = null;
+let model = null;
 
-	let id = '';
-	let name = '';
+let id = '';
+let name = '';
 
-	let info = {
-		id: '',
-		base_model_id: null,
-		name: '',
-		meta: {
-			profile_image_url: '/favicon.png',
-			description: '',
-			suggestion_prompts: null,
-			tags: []
-		},
-		params: {
-			system: ''
+let info = {
+	id: '',
+	base_model_id: null,
+	name: '',
+	meta: {
+		profile_image_url: '/favicon.png',
+		description: '',
+		suggestion_prompts: null,
+		tags: []
+	},
+	params: {
+		system: ''
+	}
+};
+
+let params = {};
+
+let capabilities = {
+	vision: true
+};
+
+const updateHandler = async () => {
+	loading = true;
+
+	info.id = id;
+	info.name = name;
+	info.meta.capabilities = capabilities;
+	info.params.stop = params.stop ? params.stop.split(',').filter((s) => s.trim()) : null;
+
+	Object.keys(info.params).forEach((key) => {
+		if (info.params[key] === '' || info.params[key] === null) {
+			delete info.params[key];
 		}
-	};
+	});
 
-	let params = {};
+	const res = await updateModelById(localStorage.token, info.id, info);
 
-	let capabilities = {
-		vision: true
-	};
+	if (res) {
+		await models.set(await getModels(localStorage.token));
+		toast.success('Model updated successfully');
+		await goto('/workspace/models');
+	}
 
-	const updateHandler = async () => {
-		loading = true;
+	loading = false;
+};
 
-		info.id = id;
-		info.name = name;
-		info.meta.capabilities = capabilities;
-		info.params.stop = params.stop ? params.stop.split(',').filter((s) => s.trim()) : null;
+onMount(() => {
+	const _id = $page.url.searchParams.get('id');
 
-		Object.keys(info.params).forEach((key) => {
-			if (info.params[key] === '' || info.params[key] === null) {
-				delete info.params[key];
-			}
-		});
+	if (_id) {
+		model = $models.find((m) => m.id === _id);
+		if (model) {
+			id = model.id;
+			name = model.name;
 
-		const res = await updateModelById(localStorage.token, info.id, info);
-
-		if (res) {
-			await models.set(await getModels(localStorage.token));
-			toast.success('Model updated successfully');
-			await goto('/workspace/models');
-		}
-
-		loading = false;
-	};
-
-	onMount(() => {
-		const _id = $page.url.searchParams.get('id');
-
-		if (_id) {
-			model = $models.find((m) => m.id === _id);
-			if (model) {
-				id = model.id;
-				name = model.name;
-
-				info = {
-					...info,
-					...JSON.parse(
-						JSON.stringify(
-							model?.info
-								? model?.info
-								: {
-										id: model.id,
-										name: model.name
-								  }
-						)
+			info = {
+				...info,
+				...JSON.parse(
+					JSON.stringify(
+						model?.info
+							? model?.info
+							: {
+									id: model.id,
+									name: model.name
+								}
 					)
-				};
+				)
+			};
 
-				if (model.preset && model.owned_by === 'ollama' && !info.base_model_id.includes(':')) {
-					info.base_model_id = `${info.base_model_id}:latest`;
-				}
-
-				params = { ...params, ...model?.info?.params };
-				params.stop = params?.stop
-					? (typeof params.stop === 'string' ? params.stop.split(',') : params?.stop ?? []).join(
-							','
-					  )
-					: null;
-
-				if (model?.owned_by === 'openai') {
-					capabilities.usage = false;
-				}
-
-				if (model?.info?.meta?.capabilities) {
-					capabilities = { ...capabilities, ...model?.info?.meta?.capabilities };
-				}
-				console.log(model);
-			} else {
-				goto('/workspace/models');
+			if (model.preset && model.owned_by === 'ollama' && !info.base_model_id.includes(':')) {
+				info.base_model_id = `${info.base_model_id}:latest`;
 			}
+
+			params = { ...params, ...model?.info?.params };
+			params.stop = params?.stop
+				? (typeof params.stop === 'string' ? params.stop.split(',') : params?.stop ?? []).join(',')
+				: null;
+
+			if (model?.owned_by === 'openai') {
+				capabilities.usage = false;
+			}
+
+			if (model?.info?.meta?.capabilities) {
+				capabilities = { ...capabilities, ...model?.info?.meta?.capabilities };
+			}
+			console.log(model);
 		} else {
 			goto('/workspace/models');
 		}
-	});
+	} else {
+		goto('/workspace/models');
+	}
+});
 </script>
 
 <div class="w-full max-h-full">
@@ -401,7 +399,9 @@
 			<div class="my-1">
 				<div class="flex w-full justify-between items-center">
 					<div class="flex w-full justify-between items-center">
-						<div class=" self-center text-sm font-semibold">{$i18n.t('Prompt suggestions')}</div>
+						<div class=" self-center text-sm font-semibold">
+							{$i18n.t('Prompt suggestions')}
+						</div>
 
 						<button
 							class="p-1 text-xs flex rounded transition"
@@ -583,15 +583,15 @@
 								fill="currentColor"
 								xmlns="http://www.w3.org/2000/svg"
 								><style>
-									.spinner_ajPY {
-										transform-origin: center;
-										animation: spinner_AtaB 0.75s infinite linear;
+								.spinner_ajPY {
+									transform-origin: center;
+									animation: spinner_AtaB 0.75s infinite linear;
+								}
+								@keyframes spinner_AtaB {
+									100% {
+										transform: rotate(360deg);
 									}
-									@keyframes spinner_AtaB {
-										100% {
-											transform: rotate(360deg);
-										}
-									}
+								}
 								</style><path
 									d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
 									opacity=".25"

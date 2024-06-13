@@ -1,28 +1,28 @@
 <script lang="ts">
-	import { DropdownMenu } from 'bits-ui';
-	import { flyAndScale } from '$lib/utils/transitions';
-	import { getContext } from 'svelte';
+import { DropdownMenu } from 'bits-ui';
+import { flyAndScale } from '$lib/utils/transitions';
+import { getContext } from 'svelte';
 
-	import Dropdown from '$lib/components/common/Dropdown.svelte';
-	import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import Share from '$lib/components/icons/Share.svelte';
-	import DocumentDuplicate from '$lib/components/icons/DocumentDuplicate.svelte';
-	import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
+import Dropdown from '$lib/components/common/Dropdown.svelte';
+import GarbageBin from '$lib/components/icons/GarbageBin.svelte';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
+import Share from '$lib/components/icons/Share.svelte';
+import DocumentDuplicate from '$lib/components/icons/DocumentDuplicate.svelte';
+import ArrowDownTray from '$lib/components/icons/ArrowDownTray.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let model;
+export let model;
 
-	export let shareHandler: Function;
-	export let cloneHandler: Function;
-	export let exportHandler: Function;
+export let shareHandler: () => void;
+export let cloneHandler: () => void;
+export let exportHandler: () => void;
 
-	export let hideHandler: Function;
-	export let deleteHandler: Function;
-	export let onClose: Function;
+export let hideHandler: () => void;
+export let deleteHandler: () => void;
+export let onClose: () => void;
 
-	let show = false;
+let show = false;
 </script>
 
 <Dropdown

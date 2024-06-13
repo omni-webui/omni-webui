@@ -1,39 +1,39 @@
 <script lang="ts">
-	import { getRAGConfig, updateRAGConfig } from '$lib/apis/rag';
-	import Switch from '$lib/components/common/Switch.svelte';
+import { getRAGConfig, updateRAGConfig } from '$lib/apis/rag';
+import Switch from '$lib/components/common/Switch.svelte';
 
-	import { onMount, getContext } from 'svelte';
+import { onMount, getContext } from 'svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let saveHandler: Function;
+export let saveHandler: () => void;
 
-	let webConfig = null;
-	let webSearchEngines = ['searxng', 'google_pse', 'brave', 'serpstack', 'serper'];
+let webConfig = null;
+let webSearchEngines = ['searxng', 'google_pse', 'brave', 'serpstack', 'serper'];
 
-	let youtubeLanguage = 'en';
-	let youtubeTranslation = null;
+let youtubeLanguage = 'en';
+let youtubeTranslation = null;
 
-	const submitHandler = async () => {
-		await updateRAGConfig(localStorage.token, {
-			web: webConfig,
-			youtube: {
-				language: youtubeLanguage.split(',').map((lang) => lang.trim()),
-				translation: youtubeTranslation
-			}
-		});
-	};
-
-	onMount(async () => {
-		const res = await getRAGConfig(localStorage.token);
-
-		if (res) {
-			webConfig = res.web;
-
-			youtubeLanguage = res.youtube.language.join(',');
-			youtubeTranslation = res.youtube.translation;
+const submitHandler = async () => {
+	await updateRAGConfig(localStorage.token, {
+		web: webConfig,
+		youtube: {
+			language: youtubeLanguage.split(',').map((lang) => lang.trim()),
+			translation: youtubeTranslation
 		}
 	});
+};
+
+onMount(async () => {
+	const res = await getRAGConfig(localStorage.token);
+
+	if (res) {
+		webConfig = res.web;
+
+		youtubeLanguage = res.youtube.language.join(',');
+		youtubeTranslation = res.youtube.translation;
+	}
+});
 </script>
 
 <form
@@ -61,7 +61,9 @@
 				</div>
 
 				<div class=" py-0.5 flex w-full justify-between">
-					<div class=" self-center text-xs font-medium">{$i18n.t('Web Search Engine')}</div>
+					<div class=" self-center text-xs font-medium">
+						{$i18n.t('Web Search Engine')}
+					</div>
 					<div class="flex items-center relative">
 						<select
 							class="dark:bg-gray-900 w-fit pr-8 rounded px-2 p-1 text-xs bg-transparent outline-none text-right"
@@ -257,7 +259,9 @@
 
 				<div>
 					<div class=" py-0.5 flex w-full justify-between">
-						<div class=" w-20 text-xs font-medium self-center">{$i18n.t('Language')}</div>
+						<div class=" w-20 text-xs font-medium self-center">
+							{$i18n.t('Language')}
+						</div>
 						<div class=" flex-1 self-center">
 							<input
 								class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none"

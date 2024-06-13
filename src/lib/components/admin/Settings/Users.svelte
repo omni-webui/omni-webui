@@ -1,37 +1,37 @@
 <script lang="ts">
-	import { getBackendConfig, getModelFilterConfig, updateModelFilterConfig } from '$lib/apis';
-	import { getUserPermissions, updateUserPermissions } from '$lib/apis/users';
+import { getBackendConfig, getModelFilterConfig, updateModelFilterConfig } from '$lib/apis';
+import { getUserPermissions, updateUserPermissions } from '$lib/apis/users';
 
-	import { onMount, getContext } from 'svelte';
-	import { models, config } from '$lib/stores';
-	import Switch from '$lib/components/common/Switch.svelte';
-	import { setDefaultModels } from '$lib/apis/configs';
+import { onMount, getContext } from 'svelte';
+import { models, config } from '$lib/stores';
+import Switch from '$lib/components/common/Switch.svelte';
+import { setDefaultModels } from '$lib/apis/configs';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let saveHandler: Function;
+export let saveHandler: () => void;
 
-	let defaultModelId = '';
+let defaultModelId = '';
 
-	let whitelistEnabled = false;
-	let whitelistModels = [''];
-	let permissions = {
-		chat: {
-			deletion: true
-		}
-	};
+let whitelistEnabled = false;
+let whitelistModels = [''];
+let permissions = {
+	chat: {
+		deletion: true
+	}
+};
 
-	onMount(async () => {
-		permissions = await getUserPermissions(localStorage.token);
+onMount(async () => {
+	permissions = await getUserPermissions(localStorage.token);
 
-		const res = await getModelFilterConfig(localStorage.token);
-		if (res) {
-			whitelistEnabled = res.enabled;
-			whitelistModels = res.models.length > 0 ? res.models : [''];
-		}
+	const res = await getModelFilterConfig(localStorage.token);
+	if (res) {
+		whitelistEnabled = res.enabled;
+		whitelistModels = res.models.length > 0 ? res.models : [''];
+	}
 
-		defaultModelId = $config.default_models ? $config?.default_models.split(',')[0] : '';
-	});
+	defaultModelId = $config.default_models ? $config?.default_models.split(',')[0] : '';
+});
 </script>
 
 <form

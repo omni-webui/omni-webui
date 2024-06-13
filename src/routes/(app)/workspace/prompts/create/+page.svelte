@@ -1,92 +1,92 @@
 <script>
-	import { toast } from 'svelte-sonner';
+import { toast } from 'svelte-sonner';
 
-	import { goto } from '$app/navigation';
-	import { prompts } from '$lib/stores';
-	import { onMount, tick, getContext } from 'svelte';
+import { goto } from '$app/navigation';
+import { prompts } from '$lib/stores';
+import { onMount, tick, getContext } from 'svelte';
 
-	import { createNewPrompt, getPrompts } from '$lib/apis/prompts';
+import { createNewPrompt, getPrompts } from '$lib/apis/prompts';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let loading = false;
+let loading = false;
 
-	// ///////////
-	// Prompt
-	// ///////////
+// ///////////
+// Prompt
+// ///////////
 
-	let title = '';
-	let command = '';
-	let content = '';
+let title = '';
+let command = '';
+let content = '';
 
-	$: command = title !== '' ? `${title.replace(/\s+/g, '-').toLowerCase()}` : '';
+$: command = title !== '' ? `${title.replace(/\s+/g, '-').toLowerCase()}` : '';
 
-	const submitHandler = async () => {
-		loading = true;
+const submitHandler = async () => {
+	loading = true;
 
-		if (validateCommandString(command)) {
-			const prompt = await createNewPrompt(localStorage.token, command, title, content).catch(
-				(error) => {
-					toast.error(error);
+	if (validateCommandString(command)) {
+		const prompt = await createNewPrompt(localStorage.token, command, title, content).catch(
+			(error) => {
+				toast.error(error);
 
-					return null;
-				}
-			);
-
-			if (prompt) {
-				await prompts.set(await getPrompts(localStorage.token));
-				await goto('/workspace/prompts');
+				return null;
 			}
-		} else {
-			toast.error(
-				$i18n.t('Only alphanumeric characters and hyphens are allowed in the command string.')
-			);
+		);
+
+		if (prompt) {
+			await prompts.set(await getPrompts(localStorage.token));
+			await goto('/workspace/prompts');
 		}
+	} else {
+		toast.error(
+			$i18n.t('Only alphanumeric characters and hyphens are allowed in the command string.')
+		);
+	}
 
-		loading = false;
-	};
+	loading = false;
+};
 
-	const validateCommandString = (inputString) => {
-		// Regular expression to match only alphanumeric characters and hyphen
-		const regex = /^[a-zA-Z0-9-]+$/;
+const validateCommandString = (inputString) => {
+	// Regular expression to match only alphanumeric characters and hyphen
+	const regex = /^[a-zA-Z0-9-]+$/;
 
-		// Test the input string against the regular expression
-		return regex.test(inputString);
-	};
+	// Test the input string against the regular expression
+	return regex.test(inputString);
+};
 
-	onMount(async () => {
-		window.addEventListener('message', async (event) => {
-			if (
-				!['https://omni-webui.com', 'https://www.omni-webui.com', 'http://localhost:5173'].includes(
-					event.origin
-				)
+onMount(async () => {
+	window.addEventListener('message', async (event) => {
+		if (
+			!['https://omni-webui.com', 'https://www.omni-webui.com', 'http://localhost:5173'].includes(
+				event.origin
 			)
-				return;
-			const prompt = JSON.parse(event.data);
-			console.log(prompt);
+		)
+			return;
+		const prompt = JSON.parse(event.data);
+		console.log(prompt);
 
-			title = prompt.title;
-			await tick();
-			content = prompt.content;
-			command = prompt.command;
-		});
-
-		if (window.opener ?? false) {
-			window.opener.postMessage('loaded', '*');
-		}
-
-		if (sessionStorage.prompt) {
-			const prompt = JSON.parse(sessionStorage.prompt);
-
-			console.log(prompt);
-			title = prompt.title;
-			await tick();
-			content = prompt.content;
-			command = prompt.command.at(0) === '/' ? prompt.command.slice(1) : prompt.command;
-
-			sessionStorage.removeItem('prompt');
-		}
+		title = prompt.title;
+		await tick();
+		content = prompt.content;
+		command = prompt.command;
 	});
+
+	if (window.opener ?? false) {
+		window.opener.postMessage('loaded', '*');
+	}
+
+	if (sessionStorage.prompt) {
+		const prompt = JSON.parse(sessionStorage.prompt);
+
+		console.log(prompt);
+		title = prompt.title;
+		await tick();
+		content = prompt.content;
+		command = prompt.command.at(0) === '/' ? prompt.command.slice(1) : prompt.command;
+
+		sessionStorage.removeItem('prompt');
+	}
+});
 </script>
 
 <div class="w-full max-h-full">
@@ -216,15 +216,15 @@
 							fill="currentColor"
 							xmlns="http://www.w3.org/2000/svg"
 							><style>
-								.spinner_ajPY {
-									transform-origin: center;
-									animation: spinner_AtaB 0.75s infinite linear;
+							.spinner_ajPY {
+								transform-origin: center;
+								animation: spinner_AtaB 0.75s infinite linear;
+							}
+							@keyframes spinner_AtaB {
+								100% {
+									transform: rotate(360deg);
 								}
-								@keyframes spinner_AtaB {
-									100% {
-										transform: rotate(360deg);
-									}
-								}
+							}
 							</style><path
 								d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
 								opacity=".25"

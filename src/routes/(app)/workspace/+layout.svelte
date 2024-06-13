@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
+import { getContext } from 'svelte';
 
-	import { WEBUI_NAME, showSidebar } from '$lib/stores';
-	import MenuLines from '$lib/components/icons/MenuLines.svelte';
-	import { page } from '$app/stores';
+import { WEBUI_NAME, showSidebar } from '$lib/stores';
+import MenuLines from '$lib/components/icons/MenuLines.svelte';
+import { page } from '$app/stores';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 </script>
 
 <svelte:head>

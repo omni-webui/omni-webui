@@ -64,7 +64,12 @@ self.onmessage = async (event) => {
 	} catch (error) {
 		self.stderr = error.toString();
 	}
-	self.postMessage({ id, result: self.result, stdout: self.stdout, stderr: self.stderr });
+	self.postMessage({
+		id,
+		result: self.result,
+		stdout: self.stdout,
+		stderr: self.stderr
+	});
 };
 
 export default {};

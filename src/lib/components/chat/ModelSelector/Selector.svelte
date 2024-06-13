@@ -1,199 +1,198 @@
 <script lang="ts">
-	import { DropdownMenu } from 'bits-ui';
+import { DropdownMenu } from 'bits-ui';
 
-	import { flyAndScale } from '$lib/utils/transitions';
-	import { createEventDispatcher, onMount, getContext } from 'svelte';
+import { flyAndScale } from '$lib/utils/transitions';
+import { createEventDispatcher, onMount, getContext } from 'svelte';
 
-	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-	import Check from '$lib/components/icons/Check.svelte';
-	import Search from '$lib/components/icons/Search.svelte';
+import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
+import Check from '$lib/components/icons/Check.svelte';
+import Search from '$lib/components/icons/Search.svelte';
 
-	import { deleteModel, getOllamaVersion, pullModel } from '$lib/apis/ollama';
+import { deleteModel, getOllamaVersion, pullModel } from '$lib/apis/ollama';
 
-	import { user, MODEL_DOWNLOAD_POOL, models, mobile } from '$lib/stores';
-	import { toast } from 'svelte-sonner';
-	import { sanitizeResponseContent, splitStream } from '$lib/utils';
-	import { getModels } from '$lib/apis';
+import { user, MODEL_DOWNLOAD_POOL, models, mobile } from '$lib/stores';
+import { toast } from 'svelte-sonner';
+import { sanitizeResponseContent, splitStream } from '$lib/utils';
+import { getModels } from '$lib/apis';
 
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
 
-	const i18n = getContext('i18n');
-	createEventDispatcher();
+const i18n = getContext('i18n');
+createEventDispatcher();
 
-	export let value = '';
-	export let placeholder = 'Select a model';
-	export let searchEnabled = true;
-	export let searchPlaceholder = $i18n.t('Search a model');
+export let value = '';
+export let placeholder = 'Select a model';
+export let searchEnabled = true;
+export let searchPlaceholder = $i18n.t('Search a model');
 
-	export let items: {
-		label: string;
-		value: string;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		[key: string]: any;
-	} = [];
+export let items: {
+	label: string;
+	value: string;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	[key: string]: any;
+} = [];
 
-	export let className = 'w-[30rem]';
+export let className = 'w-[30rem]';
 
-	let show = false;
+let show = false;
 
-	let selectedModel = '';
-	$: selectedModel = items.find((item) => item.value === value) ?? '';
+let selectedModel = '';
+$: selectedModel = items.find((item) => item.value === value) ?? '';
 
-	let searchValue = '';
-	let ollamaVersion = null;
+let searchValue = '';
+let ollamaVersion = null;
 
-	$: filteredItems = items.filter(
-		(item) =>
-			(searchValue
-				? item.value.toLowerCase().includes(searchValue.toLowerCase()) ||
-				  item.label.toLowerCase().includes(searchValue.toLowerCase()) ||
-				  (item.model?.info?.meta?.tags ?? []).some((tag) =>
-						tag.name.toLowerCase().includes(searchValue.toLowerCase())
-				  )
-				: true) && !(item.model?.info?.meta?.hidden ?? false)
+$: filteredItems = items.filter(
+	(item) =>
+		(searchValue
+			? item.value.toLowerCase().includes(searchValue.toLowerCase()) ||
+				item.label.toLowerCase().includes(searchValue.toLowerCase()) ||
+				(item.model?.info?.meta?.tags ?? []).some((tag) =>
+					tag.name.toLowerCase().includes(searchValue.toLowerCase())
+				)
+			: true) && !(item.model?.info?.meta?.hidden ?? false)
+);
+
+const pullModelHandler = async () => {
+	const sanitizedModelTag = searchValue.trim().replace(/^ollama\s+(run|pull)\s+/, '');
+
+	console.log($MODEL_DOWNLOAD_POOL);
+	if ($MODEL_DOWNLOAD_POOL[sanitizedModelTag]) {
+		toast.error(
+			$i18n.t(`Model '{{modelTag}}' is already in queue for downloading.`, {
+				modelTag: sanitizedModelTag
+			})
+		);
+		return;
+	}
+	if (Object.keys($MODEL_DOWNLOAD_POOL).length === 3) {
+		toast.error(
+			$i18n.t('Maximum of 3 models can be downloaded simultaneously. Please try again later.')
+		);
+		return;
+	}
+
+	const [res, controller] = await pullModel(localStorage.token, sanitizedModelTag, '0').catch(
+		(error) => {
+			toast.error(error);
+			return null;
+		}
 	);
 
-	const pullModelHandler = async () => {
-		const sanitizedModelTag = searchValue.trim().replace(/^ollama\s+(run|pull)\s+/, '');
+	if (res) {
+		const reader = res.body
+			.pipeThrough(new TextDecoderStream())
+			.pipeThrough(splitStream('\n'))
+			.getReader();
 
-		console.log($MODEL_DOWNLOAD_POOL);
-		if ($MODEL_DOWNLOAD_POOL[sanitizedModelTag]) {
-			toast.error(
-				$i18n.t(`Model '{{modelTag}}' is already in queue for downloading.`, {
-					modelTag: sanitizedModelTag
-				})
-			);
-			return;
-		}
-		if (Object.keys($MODEL_DOWNLOAD_POOL).length === 3) {
-			toast.error(
-				$i18n.t('Maximum of 3 models can be downloaded simultaneously. Please try again later.')
-			);
-			return;
-		}
-
-		const [res, controller] = await pullModel(localStorage.token, sanitizedModelTag, '0').catch(
-			(error) => {
-				toast.error(error);
-				return null;
+		MODEL_DOWNLOAD_POOL.set({
+			...$MODEL_DOWNLOAD_POOL,
+			[sanitizedModelTag]: {
+				...$MODEL_DOWNLOAD_POOL[sanitizedModelTag],
+				abortController: controller,
+				reader,
+				done: false
 			}
-		);
+		});
 
-		if (res) {
-			const reader = res.body
-				.pipeThrough(new TextDecoderStream())
-				.pipeThrough(splitStream('\n'))
-				.getReader();
+		while (true) {
+			try {
+				const { value, done } = await reader.read();
+				if (done) break;
 
-			MODEL_DOWNLOAD_POOL.set({
-				...$MODEL_DOWNLOAD_POOL,
-				[sanitizedModelTag]: {
-					...$MODEL_DOWNLOAD_POOL[sanitizedModelTag],
-					abortController: controller,
-					reader,
-					done: false
-				}
-			});
+				let lines = value.split('\n');
 
-			while (true) {
-				try {
-					const { value, done } = await reader.read();
-					if (done) break;
+				for (const line of lines) {
+					if (line !== '') {
+						let data = JSON.parse(line);
+						console.log(data);
+						if (data.error) {
+							throw data.error;
+						}
+						if (data.detail) {
+							throw data.detail;
+						}
 
-					let lines = value.split('\n');
-
-					for (const line of lines) {
-						if (line !== '') {
-							let data = JSON.parse(line);
-							console.log(data);
-							if (data.error) {
-								throw data.error;
-							}
-							if (data.detail) {
-								throw data.detail;
-							}
-
-							if (data.status) {
-								if (data.digest) {
-									let downloadProgress = 0;
-									if (data.completed) {
-										downloadProgress = Math.round((data.completed / data.total) * 1000) / 10;
-									} else {
-										downloadProgress = 100;
-									}
-
-									MODEL_DOWNLOAD_POOL.set({
-										...$MODEL_DOWNLOAD_POOL,
-										[sanitizedModelTag]: {
-											...$MODEL_DOWNLOAD_POOL[sanitizedModelTag],
-											pullProgress: downloadProgress,
-											digest: data.digest
-										}
-									});
+						if (data.status) {
+							if (data.digest) {
+								let downloadProgress = 0;
+								if (data.completed) {
+									downloadProgress = Math.round((data.completed / data.total) * 1000) / 10;
 								} else {
-									toast.success(data.status);
-
-									MODEL_DOWNLOAD_POOL.set({
-										...$MODEL_DOWNLOAD_POOL,
-										[sanitizedModelTag]: {
-											...$MODEL_DOWNLOAD_POOL[sanitizedModelTag],
-											done: data.status === 'success'
-										}
-									});
+									downloadProgress = 100;
 								}
+
+								MODEL_DOWNLOAD_POOL.set({
+									...$MODEL_DOWNLOAD_POOL,
+									[sanitizedModelTag]: {
+										...$MODEL_DOWNLOAD_POOL[sanitizedModelTag],
+										pullProgress: downloadProgress,
+										digest: data.digest
+									}
+								});
+							} else {
+								toast.success(data.status);
+
+								MODEL_DOWNLOAD_POOL.set({
+									...$MODEL_DOWNLOAD_POOL,
+									[sanitizedModelTag]: {
+										...$MODEL_DOWNLOAD_POOL[sanitizedModelTag],
+										done: data.status === 'success'
+									}
+								});
 							}
 						}
 					}
-				} catch (error) {
-					console.log(error);
-					if (typeof error !== 'string') {
-						error = error.message;
-					}
-
+				}
+			} catch (error) {
+				console.log(error);
+				if (typeof error === 'string') {
 					toast.error(error);
-					// opts.callback({ success: false, error, modelName: opts.modelName });
+				} else {
+					toast.error(error.message);
 				}
 			}
-
-			if ($MODEL_DOWNLOAD_POOL[sanitizedModelTag].done) {
-				toast.success(
-					$i18n.t(`Model '{{modelName}}' has been successfully downloaded.`, {
-						modelName: sanitizedModelTag
-					})
-				);
-
-				models.set(await getModels(localStorage.token));
-			} else {
-				toast.error($i18n.t('Download canceled'));
-			}
-
-			delete $MODEL_DOWNLOAD_POOL[sanitizedModelTag];
-
-			MODEL_DOWNLOAD_POOL.set({
-				...$MODEL_DOWNLOAD_POOL
-			});
 		}
-	};
 
-	onMount(async () => {
-		ollamaVersion = await getOllamaVersion(localStorage.token).catch(() => false);
-	});
+		if ($MODEL_DOWNLOAD_POOL[sanitizedModelTag].done) {
+			toast.success(
+				$i18n.t(`Model '{{modelName}}' has been successfully downloaded.`, {
+					modelName: sanitizedModelTag
+				})
+			);
 
-	const cancelModelPullHandler = async (model: string) => {
-		const { reader, abortController } = $MODEL_DOWNLOAD_POOL[model];
-		if (abortController) {
-			abortController.abort();
+			models.set(await getModels(localStorage.token));
+		} else {
+			toast.error($i18n.t('Download canceled'));
 		}
-		if (reader) {
-			await reader.cancel();
-			delete $MODEL_DOWNLOAD_POOL[model];
-			MODEL_DOWNLOAD_POOL.set({
-				...$MODEL_DOWNLOAD_POOL
-			});
-			await deleteModel(localStorage.token, model);
-			toast.success(`${model} download has been canceled`);
-		}
-	};
+
+		delete $MODEL_DOWNLOAD_POOL[sanitizedModelTag];
+
+		MODEL_DOWNLOAD_POOL.set({
+			...$MODEL_DOWNLOAD_POOL
+		});
+	}
+};
+
+onMount(async () => {
+	ollamaVersion = await getOllamaVersion(localStorage.token).catch(() => false);
+});
+
+const cancelModelPullHandler = async (model: string) => {
+	const { reader, abortController } = $MODEL_DOWNLOAD_POOL[model];
+	if (abortController) {
+		abortController.abort();
+	}
+	if (reader) {
+		await reader.cancel();
+		delete $MODEL_DOWNLOAD_POOL[model];
+		MODEL_DOWNLOAD_POOL.set({
+			...$MODEL_DOWNLOAD_POOL
+		});
+		await deleteModel(localStorage.token, model);
+		toast.success(`${model} download has been canceled`);
+	}
+};
 </script>
 
 <DropdownMenu.Root
@@ -378,7 +377,9 @@
 							pullModelHandler();
 						}}
 					>
-						{$i18n.t(`Pull "{{searchValue}}" from Ollama.com`, { searchValue: searchValue })}
+						{$i18n.t(`Pull "{{searchValue}}" from Ollama.com`, {
+							searchValue: searchValue
+						})}
 					</button>
 				{/if}
 
@@ -394,15 +395,15 @@
 									fill="currentColor"
 									xmlns="http://www.w3.org/2000/svg"
 									><style>
-										.spinner_ajPY {
-											transform-origin: center;
-											animation: spinner_AtaB 0.75s infinite linear;
+									.spinner_ajPY {
+										transform-origin: center;
+										animation: spinner_AtaB 0.75s infinite linear;
+									}
+									@keyframes spinner_AtaB {
+										100% {
+											transform: rotate(360deg);
 										}
-										@keyframes spinner_AtaB {
-											100% {
-												transform: rotate(360deg);
-											}
-										}
+									}
 									</style><path
 										d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
 										opacity=".25"
@@ -467,12 +468,12 @@
 </DropdownMenu.Root>
 
 <style>
-	.scrollbar-hidden:active::-webkit-scrollbar-thumb,
-	.scrollbar-hidden:focus::-webkit-scrollbar-thumb,
-	.scrollbar-hidden:hover::-webkit-scrollbar-thumb {
-		visibility: visible;
-	}
-	.scrollbar-hidden::-webkit-scrollbar-thumb {
-		visibility: hidden;
-	}
+.scrollbar-hidden:active::-webkit-scrollbar-thumb,
+.scrollbar-hidden:focus::-webkit-scrollbar-thumb,
+.scrollbar-hidden:hover::-webkit-scrollbar-thumb {
+	visibility: visible;
+}
+.scrollbar-hidden::-webkit-scrollbar-thumb {
+	visibility: hidden;
+}
 </style>

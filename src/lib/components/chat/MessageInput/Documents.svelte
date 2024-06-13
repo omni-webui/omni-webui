@@ -1,103 +1,103 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+import { createEventDispatcher } from 'svelte';
 
-	import { documents } from '$lib/stores';
-	import { removeFirstHashWord, isValidHttpUrl } from '$lib/utils';
-	import { tick, getContext } from 'svelte';
-	import { toast } from 'svelte-sonner';
+import { documents } from '$lib/stores';
+import { removeFirstHashWord, isValidHttpUrl } from '$lib/utils';
+import { tick, getContext } from 'svelte';
+import { toast } from 'svelte-sonner';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let prompt = '';
+export let prompt = '';
 
-	const dispatch = createEventDispatcher();
-	let selectedIdx = 0;
+const dispatch = createEventDispatcher();
+let selectedIdx = 0;
 
-	let filteredItems = [];
-	let filteredDocs = [];
+let filteredItems = [];
+let filteredDocs = [];
 
-	let collections = [];
+let collections = [];
 
-	$: collections = [
-		...($documents.length > 0
-			? [
-					{
-						name: 'All Documents',
-						type: 'collection',
-						title: $i18n.t('All Documents'),
-						collection_names: $documents.map((doc) => doc.collection_name)
-					}
-			  ]
-			: []),
-		...$documents
-			.reduce((a, e) => {
-				return [...new Set([...a, ...(e?.content?.tags ?? []).map((tag) => tag.name)])];
-			}, [])
-			.map((tag) => ({
-				name: tag,
-				type: 'collection',
-				collection_names: $documents
-					.filter((doc) => (doc?.content?.tags ?? []).map((tag) => tag.name).includes(tag))
-					.map((doc) => doc.collection_name)
-			}))
-	];
+$: collections = [
+	...($documents.length > 0
+		? [
+				{
+					name: 'All Documents',
+					type: 'collection',
+					title: $i18n.t('All Documents'),
+					collection_names: $documents.map((doc) => doc.collection_name)
+				}
+			]
+		: []),
+	...$documents
+		.reduce((a, e) => {
+			return [...new Set([...a, ...(e?.content?.tags ?? []).map((tag) => tag.name)])];
+		}, [])
+		.map((tag) => ({
+			name: tag,
+			type: 'collection',
+			collection_names: $documents
+				.filter((doc) => (doc?.content?.tags ?? []).map((tag) => tag.name).includes(tag))
+				.map((doc) => doc.collection_name)
+		}))
+];
 
-	$: filteredCollections = collections
-		.filter((collection) => collection.name.includes(prompt.split(' ')?.at(0)?.substring(1) ?? ''))
-		.sort((a, b) => a.name.localeCompare(b.name));
+$: filteredCollections = collections
+	.filter((collection) => collection.name.includes(prompt.split(' ')?.at(0)?.substring(1) ?? ''))
+	.sort((a, b) => a.name.localeCompare(b.name));
 
-	$: filteredDocs = $documents
-		.filter((doc) => doc.name.includes(prompt.split(' ')?.at(0)?.substring(1) ?? ''))
-		.sort((a, b) => a.title.localeCompare(b.title));
+$: filteredDocs = $documents
+	.filter((doc) => doc.name.includes(prompt.split(' ')?.at(0)?.substring(1) ?? ''))
+	.sort((a, b) => a.title.localeCompare(b.title));
 
-	$: filteredItems = [...filteredCollections, ...filteredDocs];
+$: filteredItems = [...filteredCollections, ...filteredDocs];
 
-	$: if (prompt) {
-		selectedIdx = 0;
+$: if (prompt) {
+	selectedIdx = 0;
 
-		console.log(filteredCollections);
-	}
+	console.log(filteredCollections);
+}
 
-	export const selectUp = () => {
-		selectedIdx = Math.max(0, selectedIdx - 1);
-	};
+export const selectUp = () => {
+	selectedIdx = Math.max(0, selectedIdx - 1);
+};
 
-	export const selectDown = () => {
-		selectedIdx = Math.min(selectedIdx + 1, filteredItems.length - 1);
-	};
+export const selectDown = () => {
+	selectedIdx = Math.min(selectedIdx + 1, filteredItems.length - 1);
+};
 
-	const confirmSelect = async (doc) => {
-		dispatch('select', doc);
+const confirmSelect = async (doc) => {
+	dispatch('select', doc);
 
-		prompt = removeFirstHashWord(prompt);
-		const chatInputElement = document.getElementById('chat-textarea');
+	prompt = removeFirstHashWord(prompt);
+	const chatInputElement = document.getElementById('chat-textarea');
 
-		await tick();
-		chatInputElement?.focus();
-		await tick();
-	};
+	await tick();
+	chatInputElement?.focus();
+	await tick();
+};
 
-	const confirmSelectWeb = async (url) => {
-		dispatch('url', url);
+const confirmSelectWeb = async (url) => {
+	dispatch('url', url);
 
-		prompt = removeFirstHashWord(prompt);
-		const chatInputElement = document.getElementById('chat-textarea');
+	prompt = removeFirstHashWord(prompt);
+	const chatInputElement = document.getElementById('chat-textarea');
 
-		await tick();
-		chatInputElement?.focus();
-		await tick();
-	};
+	await tick();
+	chatInputElement?.focus();
+	await tick();
+};
 
-	const confirmSelectYoutube = async (url) => {
-		dispatch('youtube', url);
+const confirmSelectYoutube = async (url) => {
+	dispatch('youtube', url);
 
-		prompt = removeFirstHashWord(prompt);
-		const chatInputElement = document.getElementById('chat-textarea');
+	prompt = removeFirstHashWord(prompt);
+	const chatInputElement = document.getElementById('chat-textarea');
 
-		await tick();
-		chatInputElement?.focus();
-		await tick();
-	};
+	await tick();
+	chatInputElement?.focus();
+	await tick();
+};
 </script>
 
 {#if filteredItems.length > 0 || prompt.split(' ')?.at(0)?.substring(1).startsWith('http')}
@@ -130,7 +130,9 @@
 									{doc?.title ?? `#${doc.name}`}
 								</div>
 
-								<div class=" text-xs text-gray-600 line-clamp-1">{$i18n.t('Collection')}</div>
+								<div class=" text-xs text-gray-600 line-clamp-1">
+									{$i18n.t('Collection')}
+								</div>
 							{:else}
 								<div class=" font-medium text-black line-clamp-1">
 									#{doc.name} ({doc.filename})
@@ -168,7 +170,9 @@
 								{prompt.split(' ')?.at(0)?.substring(1)}
 							</div>
 
-							<div class=" text-xs text-gray-600 line-clamp-1">{$i18n.t('Youtube')}</div>
+							<div class=" text-xs text-gray-600 line-clamp-1">
+								{$i18n.t('Youtube')}
+							</div>
 						</button>
 					{:else if prompt.split(' ')?.at(0)?.substring(1).startsWith('http')}
 						<button

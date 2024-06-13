@@ -1,34 +1,34 @@
 <script lang="ts">
-	import { getContext, createEventDispatcher } from 'svelte';
+import { getContext, createEventDispatcher } from 'svelte';
 
-	const dispatch = createEventDispatcher();
+const dispatch = createEventDispatcher();
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let params = {
-		// Advanced
-		seed: 0,
-		stop: null,
-		temperature: '',
-		frequency_penalty: '',
-		repeat_last_n: '',
-		mirostat: '',
-		mirostat_eta: '',
-		mirostat_tau: '',
-		top_k: '',
-		top_p: '',
-		tfs_z: '',
-		num_ctx: '',
-		max_tokens: '',
-		use_mmap: null,
-		use_mlock: null,
-		num_thread: null,
-		template: null
-	};
+export let params = {
+	// Advanced
+	seed: 0,
+	stop: null,
+	temperature: '',
+	frequency_penalty: '',
+	repeat_last_n: '',
+	mirostat: '',
+	mirostat_eta: '',
+	mirostat_tau: '',
+	top_k: '',
+	top_p: '',
+	tfs_z: '',
+	num_ctx: '',
+	max_tokens: '',
+	use_mmap: null,
+	use_mlock: null,
+	num_thread: null,
+	template: null
+};
 
-	$: if (params) {
-		dispatch('change', params);
-	}
+$: if (params) {
+	dispatch('change', params);
+}
 </script>
 
 <div class=" space-y-1 text-xs">
@@ -562,7 +562,9 @@
 
 	<div class=" py-0.5 w-full justify-between">
 		<div class="flex w-full justify-between">
-			<div class=" self-center text-xs font-medium">{$i18n.t('Max Tokens (num_predict)')}</div>
+			<div class=" self-center text-xs font-medium">
+				{$i18n.t('Max Tokens (num_predict)')}
+			</div>
 
 			<button
 				class="p-1 px-3 text-xs flex rounded transition"

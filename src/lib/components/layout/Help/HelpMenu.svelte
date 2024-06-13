@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { DropdownMenu } from 'bits-ui';
-	import { getContext } from 'svelte';
+import { DropdownMenu } from 'bits-ui';
+import { getContext } from 'svelte';
 
-	import { flyAndScale } from '$lib/utils/transitions';
+import { flyAndScale } from '$lib/utils/transitions';
 
-	import Dropdown from '$lib/components/common/Dropdown.svelte';
-	import QuestionMarkCircle from '$lib/components/icons/QuestionMarkCircle.svelte';
-	import Keyboard from '$lib/components/icons/Keyboard.svelte';
-	const i18n = getContext('i18n');
+import Dropdown from '$lib/components/common/Dropdown.svelte';
+import QuestionMarkCircle from '$lib/components/icons/QuestionMarkCircle.svelte';
+import Keyboard from '$lib/components/icons/Keyboard.svelte';
+const i18n = getContext('i18n');
 
-	export let showShortcutsHandler: Function;
+export let showShortcutsHandler: () => void;
 
-	export let onClose: Function = () => {};
+export let onClose: () => void = () => {};
 </script>
 
 <Dropdown

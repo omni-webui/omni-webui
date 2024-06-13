@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { createEventDispatcher, tick } from 'svelte';
-	import { Switch } from 'bits-ui';
-	export let state = true;
+import { createEventDispatcher, tick } from 'svelte';
+import { Switch } from 'bits-ui';
+export let state = true;
 
-	const dispatch = createEventDispatcher();
+const dispatch = createEventDispatcher();
 </script>
 
 <Switch.Root

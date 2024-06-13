@@ -1,43 +1,43 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import dayjs from 'dayjs';
-	import { createEventDispatcher } from 'svelte';
-	import { onMount, getContext } from 'svelte';
+import { toast } from 'svelte-sonner';
+import dayjs from 'dayjs';
+import { createEventDispatcher } from 'svelte';
+import { onMount, getContext } from 'svelte';
 
-	import { updateUserById } from '$lib/apis/users';
-	import Modal from '../common/Modal.svelte';
+import { updateUserById } from '$lib/apis/users';
+import Modal from '../common/Modal.svelte';
 
-	const i18n = getContext('i18n');
-	const dispatch = createEventDispatcher();
+const i18n = getContext('i18n');
+const dispatch = createEventDispatcher();
 
-	export let show = false;
-	export let selectedUser;
-	export let sessionUser;
+export let show = false;
+export let selectedUser;
+export let sessionUser;
 
-	let _user = {
-		profile_image_url: '',
-		name: '',
-		email: '',
-		password: ''
-	};
+let _user = {
+	profile_image_url: '',
+	name: '',
+	email: '',
+	password: ''
+};
 
-	const submitHandler = async () => {
-		const res = await updateUserById(localStorage.token, selectedUser.id, _user).catch((error) => {
-			toast.error(error);
-		});
-
-		if (res) {
-			dispatch('save');
-			show = false;
-		}
-	};
-
-	onMount(() => {
-		if (selectedUser) {
-			_user = selectedUser;
-			_user.password = '';
-		}
+const submitHandler = async () => {
+	const res = await updateUserById(localStorage.token, selectedUser.id, _user).catch((error) => {
+		toast.error(error);
 	});
+
+	if (res) {
+		dispatch('save');
+		show = false;
+	}
+};
+
+onMount(() => {
+	if (selectedUser) {
+		_user = selectedUser;
+		_user.password = '';
+	}
+});
 </script>
 
 <Modal size="sm" bind:show>
@@ -82,7 +82,9 @@
 						</div>
 
 						<div>
-							<div class=" self-center capitalize font-semibold">{selectedUser.name}</div>
+							<div class=" self-center capitalize font-semibold">
+								{selectedUser.name}
+							</div>
 
 							<div class="text-xs text-gray-500">
 								{$i18n.t('Created at')}
@@ -152,10 +154,10 @@
 </Modal>
 
 <style>
-	input::-webkit-outer-spin-button,
-	input::-webkit-inner-spin-button {
-		/* display: none; <- Crashes Chrome on hover */
-		-webkit-appearance: none;
-		margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
-	}
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+	/* display: none; <- Crashes Chrome on hover */
+	-webkit-appearance: none;
+	margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+}
 </style>

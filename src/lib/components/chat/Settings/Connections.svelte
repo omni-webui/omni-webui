@@ -1,152 +1,153 @@
 <script lang="ts">
-	import { models, user } from '$lib/stores';
-	import { createEventDispatcher, onMount, getContext } from 'svelte';
-	const dispatch = createEventDispatcher();
+import { models, user } from '$lib/stores';
+import { createEventDispatcher, onMount, getContext } from 'svelte';
+const dispatch = createEventDispatcher();
 
-	import {
-		getOllamaConfig,
-		getOllamaUrls,
-		getOllamaVersion,
-		updateOllamaConfig,
-		updateOllamaUrls
-	} from '$lib/apis/ollama';
-	import {
-		getOpenAIConfig,
-		getOpenAIKeys,
-		getOpenAIModels,
-		getOpenAIUrls,
-		updateOpenAIConfig,
-		updateOpenAIKeys,
-		updateOpenAIUrls
-	} from '$lib/apis/openai';
-	import { toast } from 'svelte-sonner';
-	import Switch from '$lib/components/common/Switch.svelte';
-	import Spinner from '$lib/components/common/Spinner.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+import {
+	getOllamaConfig,
+	getOllamaUrls,
+	getOllamaVersion,
+	updateOllamaConfig,
+	updateOllamaUrls
+} from '$lib/apis/ollama';
+import {
+	getOpenAIConfig,
+	getOpenAIKeys,
+	getOpenAIModels,
+	getOpenAIUrls,
+	updateOpenAIConfig,
+	updateOpenAIKeys,
+	updateOpenAIUrls
+} from '$lib/apis/openai';
+import { toast } from 'svelte-sonner';
+import Switch from '$lib/components/common/Switch.svelte';
+import Spinner from '$lib/components/common/Spinner.svelte';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
+import type { GetModelsFunctionType } from '$lib/types';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let getModels: Function;
+export let getModels: GetModelsFunctionType;
 
-	// External
-	let OLLAMA_BASE_URLS = [''];
+// External
+let OLLAMA_BASE_URLS = [''];
 
-	let OPENAI_API_KEYS = [''];
-	let OPENAI_API_BASE_URLS = [''];
+let OPENAI_API_KEYS = [''];
+let OPENAI_API_BASE_URLS = [''];
 
-	let pipelineUrls = {};
+let pipelineUrls = {};
 
-	let ENABLE_OPENAI_API = null;
-	let ENABLE_OLLAMA_API = null;
+let ENABLE_OPENAI_API = null;
+let ENABLE_OLLAMA_API = null;
 
-	const verifyOpenAIHandler = async (idx) => {
-		OPENAI_API_BASE_URLS = await updateOpenAIUrls(localStorage.token, OPENAI_API_BASE_URLS);
-		OPENAI_API_KEYS = await updateOpenAIKeys(localStorage.token, OPENAI_API_KEYS);
+const verifyOpenAIHandler = async (idx) => {
+	OPENAI_API_BASE_URLS = await updateOpenAIUrls(localStorage.token, OPENAI_API_BASE_URLS);
+	OPENAI_API_KEYS = await updateOpenAIKeys(localStorage.token, OPENAI_API_KEYS);
 
-		const res = await getOpenAIModels(localStorage.token, idx).catch((error) => {
-			toast.error(error);
-			return null;
-		});
+	const res = await getOpenAIModels(localStorage.token, idx).catch((error) => {
+		toast.error(error);
+		return null;
+	});
 
-		if (res) {
-			toast.success($i18n.t('Server connection verified'));
-			if (res.pipelines) {
-				pipelineUrls[OPENAI_API_BASE_URLS[idx]] = true;
-			}
+	if (res) {
+		toast.success($i18n.t('Server connection verified'));
+		if (res.pipelines) {
+			pipelineUrls[OPENAI_API_BASE_URLS[idx]] = true;
+		}
+	}
+
+	await models.set(await getModels());
+};
+
+const verifyOllamaHandler = async (idx) => {
+	OLLAMA_BASE_URLS = await updateOllamaUrls(localStorage.token, OLLAMA_BASE_URLS);
+
+	const res = await getOllamaVersion(localStorage.token, idx).catch((error) => {
+		toast.error(error);
+		return null;
+	});
+
+	if (res) {
+		toast.success($i18n.t('Server connection verified'));
+	}
+
+	await models.set(await getModels());
+};
+
+const updateOpenAIHandler = async () => {
+	// Check if API KEYS length is same than API URLS length
+	if (OPENAI_API_KEYS.length !== OPENAI_API_BASE_URLS.length) {
+		// if there are more keys than urls, remove the extra keys
+		if (OPENAI_API_KEYS.length > OPENAI_API_BASE_URLS.length) {
+			OPENAI_API_KEYS = OPENAI_API_KEYS.slice(0, OPENAI_API_BASE_URLS.length);
 		}
 
-		await models.set(await getModels());
-	};
+		// if there are more urls than keys, add empty keys
+		if (OPENAI_API_KEYS.length < OPENAI_API_BASE_URLS.length) {
+			const diff = OPENAI_API_BASE_URLS.length - OPENAI_API_KEYS.length;
+			for (let i = 0; i < diff; i++) {
+				OPENAI_API_KEYS.push('');
+			}
+		}
+	}
 
-	const verifyOllamaHandler = async (idx) => {
+	OPENAI_API_BASE_URLS = await updateOpenAIUrls(localStorage.token, OPENAI_API_BASE_URLS);
+	OPENAI_API_KEYS = await updateOpenAIKeys(localStorage.token, OPENAI_API_KEYS);
+	await models.set(await getModels());
+};
+
+const updateOllamaUrlsHandler = async () => {
+	OLLAMA_BASE_URLS = OLLAMA_BASE_URLS.filter((url) => url !== '');
+	console.log(OLLAMA_BASE_URLS);
+
+	if (OLLAMA_BASE_URLS.length === 0) {
+		ENABLE_OLLAMA_API = false;
+		await updateOllamaConfig(localStorage.token, ENABLE_OLLAMA_API);
+
+		toast.info($i18n.t('Ollama API disabled'));
+	} else {
 		OLLAMA_BASE_URLS = await updateOllamaUrls(localStorage.token, OLLAMA_BASE_URLS);
 
-		const res = await getOllamaVersion(localStorage.token, idx).catch((error) => {
+		const ollamaVersion = await getOllamaVersion(localStorage.token).catch((error) => {
 			toast.error(error);
 			return null;
 		});
 
-		if (res) {
+		if (ollamaVersion) {
 			toast.success($i18n.t('Server connection verified'));
+			await models.set(await getModels());
 		}
+	}
+};
 
-		await models.set(await getModels());
-	};
+onMount(async () => {
+	if ($user.role === 'admin') {
+		await Promise.all([
+			(async () => {
+				OLLAMA_BASE_URLS = await getOllamaUrls(localStorage.token);
+			})(),
+			(async () => {
+				OPENAI_API_BASE_URLS = await getOpenAIUrls(localStorage.token);
+			})(),
+			(async () => {
+				OPENAI_API_KEYS = await getOpenAIKeys(localStorage.token);
+			})()
+		]);
 
-	const updateOpenAIHandler = async () => {
-		// Check if API KEYS length is same than API URLS length
-		if (OPENAI_API_KEYS.length !== OPENAI_API_BASE_URLS.length) {
-			// if there are more keys than urls, remove the extra keys
-			if (OPENAI_API_KEYS.length > OPENAI_API_BASE_URLS.length) {
-				OPENAI_API_KEYS = OPENAI_API_KEYS.slice(0, OPENAI_API_BASE_URLS.length);
+		OPENAI_API_BASE_URLS.forEach(async (url, idx) => {
+			const res = await getOpenAIModels(localStorage.token, idx);
+			if (res.pipelines) {
+				pipelineUrls[url] = true;
 			}
+		});
 
-			// if there are more urls than keys, add empty keys
-			if (OPENAI_API_KEYS.length < OPENAI_API_BASE_URLS.length) {
-				const diff = OPENAI_API_BASE_URLS.length - OPENAI_API_KEYS.length;
-				for (let i = 0; i < diff; i++) {
-					OPENAI_API_KEYS.push('');
-				}
-			}
-		}
+		const ollamaConfig = await getOllamaConfig(localStorage.token);
+		const openaiConfig = await getOpenAIConfig(localStorage.token);
 
-		OPENAI_API_BASE_URLS = await updateOpenAIUrls(localStorage.token, OPENAI_API_BASE_URLS);
-		OPENAI_API_KEYS = await updateOpenAIKeys(localStorage.token, OPENAI_API_KEYS);
-		await models.set(await getModels());
-	};
-
-	const updateOllamaUrlsHandler = async () => {
-		OLLAMA_BASE_URLS = OLLAMA_BASE_URLS.filter((url) => url !== '');
-		console.log(OLLAMA_BASE_URLS);
-
-		if (OLLAMA_BASE_URLS.length === 0) {
-			ENABLE_OLLAMA_API = false;
-			await updateOllamaConfig(localStorage.token, ENABLE_OLLAMA_API);
-
-			toast.info($i18n.t('Ollama API disabled'));
-		} else {
-			OLLAMA_BASE_URLS = await updateOllamaUrls(localStorage.token, OLLAMA_BASE_URLS);
-
-			const ollamaVersion = await getOllamaVersion(localStorage.token).catch((error) => {
-				toast.error(error);
-				return null;
-			});
-
-			if (ollamaVersion) {
-				toast.success($i18n.t('Server connection verified'));
-				await models.set(await getModels());
-			}
-		}
-	};
-
-	onMount(async () => {
-		if ($user.role === 'admin') {
-			await Promise.all([
-				(async () => {
-					OLLAMA_BASE_URLS = await getOllamaUrls(localStorage.token);
-				})(),
-				(async () => {
-					OPENAI_API_BASE_URLS = await getOpenAIUrls(localStorage.token);
-				})(),
-				(async () => {
-					OPENAI_API_KEYS = await getOpenAIKeys(localStorage.token);
-				})()
-			]);
-
-			OPENAI_API_BASE_URLS.forEach(async (url, idx) => {
-				const res = await getOpenAIModels(localStorage.token, idx);
-				if (res.pipelines) {
-					pipelineUrls[url] = true;
-				}
-			});
-
-			const ollamaConfig = await getOllamaConfig(localStorage.token);
-			const openaiConfig = await getOpenAIConfig(localStorage.token);
-
-			ENABLE_OPENAI_API = openaiConfig.ENABLE_OPENAI_API;
-			ENABLE_OLLAMA_API = ollamaConfig.ENABLE_OLLAMA_API;
-		}
-	});
+		ENABLE_OPENAI_API = openaiConfig.ENABLE_OPENAI_API;
+		ENABLE_OLLAMA_API = ollamaConfig.ENABLE_OLLAMA_API;
+	}
+});
 </script>
 
 <form

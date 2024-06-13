@@ -1,63 +1,63 @@
 <script lang="ts">
-	import { prompts } from '$lib/stores';
-	import { findWordIndices } from '$lib/utils';
-	import { tick, getContext } from 'svelte';
-	import { toast } from 'svelte-sonner';
+import { prompts } from '$lib/stores';
+import { findWordIndices } from '$lib/utils';
+import { tick, getContext } from 'svelte';
+import { toast } from 'svelte-sonner';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let prompt = '';
-	let selectedCommandIdx = 0;
-	let filteredPromptCommands = [];
+export let prompt = '';
+let selectedCommandIdx = 0;
+let filteredPromptCommands = [];
 
-	$: filteredPromptCommands = $prompts
-		.filter((p) => p.command.includes(prompt))
-		.sort((a, b) => a.title.localeCompare(b.title));
+$: filteredPromptCommands = $prompts
+	.filter((p) => p.command.includes(prompt))
+	.sort((a, b) => a.title.localeCompare(b.title));
 
-	$: if (prompt) {
-		selectedCommandIdx = 0;
+$: if (prompt) {
+	selectedCommandIdx = 0;
+}
+
+export const selectUp = () => {
+	selectedCommandIdx = Math.max(0, selectedCommandIdx - 1);
+};
+
+export const selectDown = () => {
+	selectedCommandIdx = Math.min(selectedCommandIdx + 1, filteredPromptCommands.length - 1);
+};
+
+const confirmCommand = async (command) => {
+	let text = command.content;
+
+	if (command.content.includes('{{CLIPBOARD}}')) {
+		const clipboardText = await navigator.clipboard.readText().catch(() => {
+			toast.error($i18n.t('Failed to read clipboard contents'));
+			return '{{CLIPBOARD}}';
+		});
+
+		text = command.content.replaceAll('{{CLIPBOARD}}', clipboardText);
 	}
 
-	export const selectUp = () => {
-		selectedCommandIdx = Math.max(0, selectedCommandIdx - 1);
-	};
+	prompt = text;
 
-	export const selectDown = () => {
-		selectedCommandIdx = Math.min(selectedCommandIdx + 1, filteredPromptCommands.length - 1);
-	};
+	const chatInputElement = document.getElementById('chat-textarea');
 
-	const confirmCommand = async (command) => {
-		let text = command.content;
+	await tick();
 
-		if (command.content.includes('{{CLIPBOARD}}')) {
-			const clipboardText = await navigator.clipboard.readText().catch(() => {
-				toast.error($i18n.t('Failed to read clipboard contents'));
-				return '{{CLIPBOARD}}';
-			});
+	chatInputElement.style.height = '';
+	chatInputElement.style.height = Math.min(chatInputElement.scrollHeight, 200) + 'px';
 
-			text = command.content.replaceAll('{{CLIPBOARD}}', clipboardText);
-		}
+	chatInputElement?.focus();
 
-		prompt = text;
+	await tick();
 
-		const chatInputElement = document.getElementById('chat-textarea');
+	const words = findWordIndices(prompt);
 
-		await tick();
-
-		chatInputElement.style.height = '';
-		chatInputElement.style.height = Math.min(chatInputElement.scrollHeight, 200) + 'px';
-
-		chatInputElement?.focus();
-
-		await tick();
-
-		const words = findWordIndices(prompt);
-
-		if (words.length > 0) {
-			const word = words.at(0);
-			chatInputElement.setSelectionRange(word?.startIndex, word.endIndex + 1);
-		}
-	};
+	if (words.length > 0) {
+		const word = words.at(0);
+		chatInputElement.setSelectionRange(word?.startIndex, word.endIndex + 1);
+	}
+};
 </script>
 
 {#if filteredPromptCommands.length > 0}

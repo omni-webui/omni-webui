@@ -1,40 +1,40 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
-	import { toast } from 'svelte-sonner';
-	import { models, settings, user } from '$lib/stores';
+import { getContext } from 'svelte';
+import { toast } from 'svelte-sonner';
+import { models, settings, user, type Settings } from '$lib/stores';
 
-	import { getModels as _getModels } from '$lib/apis';
+import { getModels as _getModels } from '$lib/apis';
 
-	import Modal from '../common/Modal.svelte';
-	import Account from './Settings/Account.svelte';
-	import About from './Settings/About.svelte';
-	import Models from './Settings/Models.svelte';
-	import General from './Settings/General.svelte';
-	import Interface from './Settings/Interface.svelte';
-	import Audio from './Settings/Audio.svelte';
-	import Chats from './Settings/Chats.svelte';
-	import Connections from './Settings/Connections.svelte';
-	import Images from './Settings/Images.svelte';
-	import User from '../icons/User.svelte';
-	import Personalization from './Settings/Personalization.svelte';
-	import { updateUserSettings } from '$lib/apis/users';
+import Modal from '../common/Modal.svelte';
+import Account from './Settings/Account.svelte';
+import About from './Settings/About.svelte';
+import Models from './Settings/Models.svelte';
+import General from './Settings/General.svelte';
+import Interface from './Settings/Interface.svelte';
+import Audio from './Settings/Audio.svelte';
+import Chats from './Settings/Chats.svelte';
+import Connections from './Settings/Connections.svelte';
+import Images from './Settings/Images.svelte';
+import User from '../icons/User.svelte';
+import Personalization from './Settings/Personalization.svelte';
+import { updateUserSettings } from '$lib/apis/users';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let show = false;
+export let show = false;
 
-	const saveSettings = async (updated) => {
-		console.log(updated);
-		await settings.set({ ...$settings, ...updated });
-		await models.set(await getModels());
-		await updateUserSettings(localStorage.token, { ui: $settings });
-	};
+const saveSettings = async (updated: Partial<Settings>) => {
+	console.log(updated);
+	await settings.set({ ...$settings, ...updated });
+	await models.set(await getModels());
+	await updateUserSettings(localStorage.token, { ui: $settings });
+};
 
-	const getModels = async () => {
-		return await _getModels(localStorage.token);
-	};
+const getModels = async () => {
+	return await _getModels(localStorage.token);
+};
 
-	let selectedTab = 'general';
+let selectedTab = 'general';
 </script>
 
 <Modal bind:show>
@@ -377,12 +377,12 @@
 </Modal>
 
 <style>
-	.tabs::-webkit-scrollbar {
-		display: none; /* for Chrome, Safari and Opera */
-	}
+.tabs::-webkit-scrollbar {
+	display: none; /* for Chrome, Safari and Opera */
+}
 
-	.tabs {
-		-ms-overflow-style: none; /* IE and Edge */
-		scrollbar-width: none; /* Firefox */
-	}
+.tabs {
+	-ms-overflow-style: none; /* IE and Edge */
+	scrollbar-width: none; /* Firefox */
+}
 </style>

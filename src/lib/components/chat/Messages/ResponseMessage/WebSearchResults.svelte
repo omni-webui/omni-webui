@@ -1,11 +1,11 @@
 <script lang="ts">
-	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
-	import { Collapsible } from 'bits-ui';
-	import { slide } from 'svelte/transition';
+import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
+import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
+import { Collapsible } from 'bits-ui';
+import { slide } from 'svelte/transition';
 
-	export let urls = [];
-	let state = false;
+export let urls = [];
+let state = false;
 </script>
 
 <Collapsible.Root class="w-full space-y-1" bind:open={state}>

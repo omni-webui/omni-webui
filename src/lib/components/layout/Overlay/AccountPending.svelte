@@ -1,17 +1,17 @@
 <script lang="ts">
-	import { getAdminDetails } from '$lib/apis/auths';
-	import { onMount, getContext } from 'svelte';
+import { getAdminDetails } from '$lib/apis/auths';
+import { onMount, getContext } from 'svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let adminDetails = null;
+let adminDetails = null;
 
-	onMount(async () => {
-		adminDetails = await getAdminDetails(localStorage.token).catch((err) => {
-			console.error(err);
-			return null;
-		});
+onMount(async () => {
+	adminDetails = await getAdminDetails(localStorage.token).catch((err) => {
+		console.error(err);
+		return null;
 	});
+});
 </script>
 
 <div class="fixed w-full h-full flex z-[999]">

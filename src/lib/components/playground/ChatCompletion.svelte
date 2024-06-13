@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { onMount, getContext } from 'svelte';
+import { onMount, getContext } from 'svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let messages = [];
-	let textAreaElement: HTMLTextAreaElement;
-	onMount(() => {
-		messages.forEach(() => {
-			textAreaElement.style.height = '';
-			textAreaElement.style.height = textAreaElement.scrollHeight + 'px';
-		});
+export let messages = [];
+let textAreaElement: HTMLTextAreaElement;
+onMount(() => {
+	messages.forEach(() => {
+		textAreaElement.style.height = '';
+		textAreaElement.style.height = textAreaElement.scrollHeight + 'px';
 	});
+});
 </script>
 
 <div class="py-3 space-y-3">

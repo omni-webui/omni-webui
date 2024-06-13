@@ -1,14 +1,14 @@
 <script lang="ts">
-	import TagInput from './Tags/TagInput.svelte';
-	import TagList from './Tags/TagList.svelte';
-	import { getContext } from 'svelte';
+import TagInput from './Tags/TagInput.svelte';
+import TagList from './Tags/TagList.svelte';
+import { getContext } from 'svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let tags = [];
+export let tags = [];
 
-	export let deleteTag: Function;
-	export let addTag: Function;
+export let deleteTag: (tagName: string) => void;
+export let addTag: (tagName: string) => void;
 </script>
 
 <div class="flex flex-row flex-wrap gap-1 line-clamp-1">

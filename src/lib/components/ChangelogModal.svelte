@@ -1,24 +1,24 @@
 <script lang="ts">
-	import { onMount, getContext } from 'svelte';
-	import { Confetti } from 'svelte-confetti';
+import { onMount, getContext } from 'svelte';
+import { Confetti } from 'svelte-confetti';
 
-	import { WEBUI_NAME, config } from '$lib/stores';
+import { WEBUI_NAME, config } from '$lib/stores';
 
-	import { WEBUI_VERSION } from '$lib/constants';
-	import { getChangelog } from '$lib/apis';
+import { WEBUI_VERSION } from '$lib/constants';
+import { getChangelog } from '$lib/apis';
 
-	import Modal from './common/Modal.svelte';
+import Modal from './common/Modal.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let show = false;
+export let show = false;
 
-	let changelog = null;
+let changelog = null;
 
-	onMount(async () => {
-		const res = await getChangelog();
-		changelog = res;
-	});
+onMount(async () => {
+	const res = await getChangelog();
+	changelog = res;
+});
 </script>
 
 <Modal bind:show>
@@ -91,7 +91,9 @@
 												<div class="font-semibold uppercase">
 													{changelog[version][section][item].title}
 												</div>
-												<div class="mb-2 mt-1">{changelog[version][section][item].content}</div>
+												<div class="mb-2 mt-1">
+													{changelog[version][section][item].content}
+												</div>
 											</div>
 										{/each}
 									</div>

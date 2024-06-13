@@ -1,35 +1,35 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+import { createEventDispatcher } from 'svelte';
 
-	import { models } from '$lib/stores';
+import { models } from '$lib/stores';
 
-	const dispatch = createEventDispatcher();
+const dispatch = createEventDispatcher();
 
-	export let prompt = '';
+export let prompt = '';
 
-	let selectedIdx = 0;
-	let filteredModels = [];
+let selectedIdx = 0;
+let filteredModels = [];
 
-	$: filteredModels = $models
-		.filter((p) => p.name.includes(prompt.split(' ')?.at(0)?.substring(1) ?? ''))
-		.sort((a, b) => a.name.localeCompare(b.name));
+$: filteredModels = $models
+	.filter((p) => p.name.includes(prompt.split(' ')?.at(0)?.substring(1) ?? ''))
+	.sort((a, b) => a.name.localeCompare(b.name));
 
-	$: if (prompt) {
-		selectedIdx = 0;
-	}
+$: if (prompt) {
+	selectedIdx = 0;
+}
 
-	export const selectUp = () => {
-		selectedIdx = Math.max(0, selectedIdx - 1);
-	};
+export const selectUp = () => {
+	selectedIdx = Math.max(0, selectedIdx - 1);
+};
 
-	export const selectDown = () => {
-		selectedIdx = Math.min(selectedIdx + 1, filteredModels.length - 1);
-	};
+export const selectDown = () => {
+	selectedIdx = Math.min(selectedIdx + 1, filteredModels.length - 1);
+};
 
-	const confirmSelect = async (model) => {
-		prompt = '';
-		dispatch('select', model);
-	};
+const confirmSelect = async (model) => {
+	prompt = '';
+	dispatch('select', model);
+};
 </script>
 
 {#if prompt.charAt(0) === '@'}

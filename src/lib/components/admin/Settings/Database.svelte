@@ -1,27 +1,27 @@
 <script lang="ts">
-	import fileSaver from 'file-saver';
-	const { saveAs } = fileSaver;
+import fileSaver from 'file-saver';
+const { saveAs } = fileSaver;
 
-	import { downloadDatabase } from '$lib/apis/utils';
-	import { onMount, getContext } from 'svelte';
-	import { config } from '$lib/stores';
-	import { toast } from 'svelte-sonner';
-	import { getAllUserChats } from '$lib/apis/chats';
+import { downloadDatabase } from '$lib/apis/utils';
+import { onMount, getContext } from 'svelte';
+import { config } from '$lib/stores';
+import { toast } from 'svelte-sonner';
+import { getAllUserChats } from '$lib/apis/chats';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let saveHandler: Function;
+export let saveHandler: () => void;
 
-	const exportAllUserChats = async () => {
-		let blob = new Blob([JSON.stringify(await getAllUserChats(localStorage.token))], {
-			type: 'application/json'
-		});
-		saveAs(blob, `all-chats-export-${Date.now()}.json`);
-	};
-
-	onMount(async () => {
-		// permissions = await getUserPermissions(localStorage.token);
+const exportAllUserChats = async () => {
+	let blob = new Blob([JSON.stringify(await getAllUserChats(localStorage.token))], {
+		type: 'application/json'
 	});
+	saveAs(blob, `all-chats-export-${Date.now()}.json`);
+};
+
+onMount(async () => {
+	// permissions = await getUserPermissions(localStorage.token);
+});
 </script>
 
 <form
@@ -64,7 +64,9 @@
 								/>
 							</svg>
 						</div>
-						<div class=" self-center text-sm font-medium">{$i18n.t('Download Database')}</div>
+						<div class=" self-center text-sm font-medium">
+							{$i18n.t('Download Database')}
+						</div>
 					</button>
 				</div>
 

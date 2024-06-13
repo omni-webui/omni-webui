@@ -1,70 +1,70 @@
 <script>
-	import { WEBUI_BASE_URL } from '$lib/constants';
-	import { user } from '$lib/stores';
-	import { goto } from '$app/navigation';
-	import { onMount, getContext } from 'svelte';
+import { WEBUI_BASE_URL } from '$lib/constants';
+import { user } from '$lib/stores';
+import { goto } from '$app/navigation';
+import { onMount, getContext } from 'svelte';
 
-	import dayjs from 'dayjs';
-	import relativeTime from 'dayjs/plugin/relativeTime';
-	dayjs.extend(relativeTime);
+import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+dayjs.extend(relativeTime);
 
-	import { toast } from 'svelte-sonner';
+import { toast } from 'svelte-sonner';
 
-	import { updateUserRole, getUsers, deleteUserById } from '$lib/apis/users';
+import { updateUserRole, getUsers, deleteUserById } from '$lib/apis/users';
 
-	import EditUserModal from '$lib/components/admin/EditUserModal.svelte';
-	import SettingsModal from '$lib/components/admin/SettingsModal.svelte';
-	import Pagination from '$lib/components/common/Pagination.svelte';
-	import ChatBubbles from '$lib/components/icons/ChatBubbles.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import UserChatsModal from '$lib/components/admin/UserChatsModal.svelte';
-	import AddUserModal from '$lib/components/admin/AddUserModal.svelte';
+import EditUserModal from '$lib/components/admin/EditUserModal.svelte';
+import SettingsModal from '$lib/components/admin/SettingsModal.svelte';
+import Pagination from '$lib/components/common/Pagination.svelte';
+import ChatBubbles from '$lib/components/icons/ChatBubbles.svelte';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
+import UserChatsModal from '$lib/components/admin/UserChatsModal.svelte';
+import AddUserModal from '$lib/components/admin/AddUserModal.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let loaded = false;
-	let users = [];
+let loaded = false;
+let users = [];
 
-	let search = '';
-	let selectedUser = null;
+let search = '';
+let selectedUser = null;
 
-	let page = 1;
+let page = 1;
 
-	let showSettingsModal = false;
-	let showAddUserModal = false;
+let showSettingsModal = false;
+let showAddUserModal = false;
 
-	let showUserChatsModal = false;
-	let showEditUserModal = false;
+let showUserChatsModal = false;
+let showEditUserModal = false;
 
-	const updateRoleHandler = async (id, role) => {
-		const res = await updateUserRole(localStorage.token, id, role).catch((error) => {
-			toast.error(error);
-			return null;
-		});
-
-		if (res) {
-			users = await getUsers(localStorage.token);
-		}
-	};
-
-	const deleteUserHandler = async (id) => {
-		const res = await deleteUserById(localStorage.token, id).catch((error) => {
-			toast.error(error);
-			return null;
-		});
-		if (res) {
-			users = await getUsers(localStorage.token);
-		}
-	};
-
-	onMount(async () => {
-		if ($user?.role !== 'admin') {
-			await goto('/');
-		} else {
-			users = await getUsers(localStorage.token);
-		}
-		loaded = true;
+const updateRoleHandler = async (id, role) => {
+	const res = await updateUserRole(localStorage.token, id, role).catch((error) => {
+		toast.error(error);
+		return null;
 	});
+
+	if (res) {
+		users = await getUsers(localStorage.token);
+	}
+};
+
+const deleteUserHandler = async (id) => {
+	const res = await deleteUserById(localStorage.token, id).catch((error) => {
+		toast.error(error);
+		return null;
+	});
+	if (res) {
+		users = await getUsers(localStorage.token);
+	}
+};
+
+onMount(async () => {
+	if ($user?.role !== 'admin') {
+		await goto('/');
+	} else {
+		users = await getUsers(localStorage.token);
+	}
+	loaded = true;
+});
 </script>
 
 {#key selectedUser}
@@ -330,16 +330,16 @@
 {/if}
 
 <style>
-	.font-mona {
-		font-family: 'Mona Sans';
-	}
+.font-mona {
+	font-family: 'Mona Sans';
+}
 
-	.scrollbar-hidden::-webkit-scrollbar {
-		display: none; /* for Chrome, Safari and Opera */
-	}
+.scrollbar-hidden::-webkit-scrollbar {
+	display: none; /* for Chrome, Safari and Opera */
+}
 
-	.scrollbar-hidden {
-		-ms-overflow-style: none; /* IE and Edge */
-		scrollbar-width: none; /* Firefox */
-	}
+.scrollbar-hidden {
+	-ms-overflow-style: none; /* IE and Edge */
+	scrollbar-width: none; /* Firefox */
+}
 </style>

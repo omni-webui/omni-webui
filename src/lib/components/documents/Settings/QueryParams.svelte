@@ -1,29 +1,26 @@
 <script lang="ts">
-	import {
-		getQuerySettings,
-		updateQuerySettings,
-	} from '$lib/apis/rag';
+import { getQuerySettings, updateQuerySettings } from '$lib/apis/rag';
 
-	import { onMount, getContext } from 'svelte';
+import { onMount, getContext } from 'svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let saveHandler: Function;
+export let saveHandler: () => void;
 
-	let querySettings = {
-		template: '',
-		r: 0.0,
-		k: 4,
-		hybrid: false
-	};
+let querySettings = {
+	template: '',
+	r: 0.0,
+	k: 4,
+	hybrid: false
+};
 
-	const submitHandler = async () => {
-		querySettings = await updateQuerySettings(localStorage.token, querySettings);
-	};
+const submitHandler = async () => {
+	querySettings = await updateQuerySettings(localStorage.token, querySettings);
+};
 
-	onMount(async () => {
-		querySettings = await getQuerySettings(localStorage.token);
-	});
+onMount(async () => {
+	querySettings = await getQuerySettings(localStorage.token);
+});
 </script>
 
 <form

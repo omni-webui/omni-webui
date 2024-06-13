@@ -1,40 +1,40 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import fileSaver from 'file-saver';
-	const { saveAs } = fileSaver;
+import { toast } from 'svelte-sonner';
+import fileSaver from 'file-saver';
+const { saveAs } = fileSaver;
 
-	import { getContext } from 'svelte';
-	import { WEBUI_NAME, prompts } from '$lib/stores';
-	import { createNewPrompt, deletePromptByCommand, getPrompts } from '$lib/apis/prompts';
-	import { goto } from '$app/navigation';
+import { getContext } from 'svelte';
+import { WEBUI_NAME, prompts } from '$lib/stores';
+import { createNewPrompt, deletePromptByCommand, getPrompts } from '$lib/apis/prompts';
+import { goto } from '$app/navigation';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let importFiles = '';
-	let query = '';
-	let promptsImportInputElement: HTMLInputElement;
-	const sharePrompt = async (prompt) => {
-		toast.success($i18n.t('Redirecting you to OmniWebUI Community'));
+let importFiles = '';
+let query = '';
+let promptsImportInputElement: HTMLInputElement;
+const sharePrompt = async (prompt) => {
+	toast.success($i18n.t('Redirecting you to OmniWebUI Community'));
 
-		const url = 'https://omni-webui.com';
+	const url = 'https://omni-webui.com';
 
-		const tab = await window.open(`${url}/prompts/create`, '_blank');
-		window.addEventListener(
-			'message',
-			(event) => {
-				if (event.origin !== url) return;
-				if (event.data === 'loaded') {
-					tab.postMessage(JSON.stringify(prompt), '*');
-				}
-			},
-			false
-		);
-	};
+	const tab = await window.open(`${url}/prompts/create`, '_blank');
+	window.addEventListener(
+		'message',
+		(event) => {
+			if (event.origin !== url) return;
+			if (event.data === 'loaded') {
+				tab.postMessage(JSON.stringify(prompt), '*');
+			}
+		},
+		false
+	);
+};
 
-	const deletePrompt = async (command) => {
-		await deletePromptByCommand(localStorage.token, command);
-		await prompts.set(await getPrompts(localStorage.token));
-	};
+const deletePrompt = async (command) => {
+	await deletePromptByCommand(localStorage.token, command);
+	await prompts.set(await getPrompts(localStorage.token));
+};
 </script>
 
 <svelte:head>

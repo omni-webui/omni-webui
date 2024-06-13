@@ -1,23 +1,23 @@
 <script lang="ts">
-	import { DropdownMenu } from 'bits-ui';
-	import { flyAndScale } from '$lib/utils/transitions';
-	import { getContext } from 'svelte';
+import { DropdownMenu } from 'bits-ui';
+import { flyAndScale } from '$lib/utils/transitions';
+import { getContext } from 'svelte';
 
-	import Dropdown from '$lib/components/common/Dropdown.svelte';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
-	import DocumentArrowUpSolid from '$lib/components/icons/DocumentArrowUpSolid.svelte';
-	import Switch from '$lib/components/common/Switch.svelte';
-	import GlobeAltSolid from '$lib/components/icons/GlobeAltSolid.svelte';
-	import { config } from '$lib/stores';
+import Dropdown from '$lib/components/common/Dropdown.svelte';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
+import DocumentArrowUpSolid from '$lib/components/icons/DocumentArrowUpSolid.svelte';
+import Switch from '$lib/components/common/Switch.svelte';
+import GlobeAltSolid from '$lib/components/icons/GlobeAltSolid.svelte';
+import { config } from '$lib/stores';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let uploadFilesHandler: Function;
-	export let webSearchEnabled: boolean;
+export let uploadFilesHandler: () => void;
+export let webSearchEnabled: boolean;
 
-	export let onClose: Function;
+export let onClose: () => void;
 
-	let show = false;
+let show = false;
 </script>
 
 <Dropdown

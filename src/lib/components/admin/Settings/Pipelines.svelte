@@ -1,156 +1,152 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
-	import { models } from '$lib/stores';
-	import { getContext, onMount, tick } from 'svelte';
-	import type { Writable } from 'svelte/store';
-	import type { i18n as i18nType } from 'i18next';
-	import {
-		getPipelineValves,
-		getPipelineValvesSpec,
-		updatePipelineValves,
-		getPipelines,
-		getModels,
-		getPipelinesList,
-		downloadPipeline,
-		deletePipeline
-	} from '$lib/apis';
+import { toast } from 'svelte-sonner';
+import { models } from '$lib/stores';
+import { getContext, onMount, tick } from 'svelte';
+import type { Writable } from 'svelte/store';
+import type { i18n as i18nType } from 'i18next';
+import {
+	getPipelineValves,
+	getPipelineValvesSpec,
+	updatePipelineValves,
+	getPipelines,
+	getModels,
+	getPipelinesList,
+	downloadPipeline,
+	deletePipeline
+} from '$lib/apis';
 
-	import Spinner from '$lib/components/common/Spinner.svelte';
+import Spinner from '$lib/components/common/Spinner.svelte';
 
-	const i18n: Writable<i18nType> = getContext('i18n');
+const i18n: Writable<i18nType> = getContext('i18n');
 
-	export let saveHandler: Function;
+export let saveHandler: () => void;
 
-	let downloading = false;
+let downloading = false;
 
-	let PIPELINES_LIST = null;
-	let selectedPipelinesUrlIdx = '';
+let PIPELINES_LIST = null;
+let selectedPipelinesUrlIdx = '';
 
-	let pipelines = null;
+let pipelines = null;
 
-	let valves = null;
-	let valves_spec = null;
-	let selectedPipelineIdx = null;
+let valves = null;
+let valves_spec = null;
+let selectedPipelineIdx = null;
 
-	let pipelineDownloadUrl = '';
+let pipelineDownloadUrl = '';
 
-	const updateHandler = async () => {
-		const pipeline = pipelines[selectedPipelineIdx];
+const updateHandler = async () => {
+	const pipeline = pipelines[selectedPipelineIdx];
 
-		if (pipeline && (pipeline?.valves ?? false)) {
-			for (const property in valves_spec.properties) {
-				if (valves_spec.properties[property]?.type === 'array') {
-					valves[property] = valves[property].split(',').map((v) => v.trim());
-				}
-			}
-
-			const res = await updatePipelineValves(
-				localStorage.token,
-				pipeline.id,
-				valves,
-				selectedPipelinesUrlIdx
-			).catch((error) => {
-				toast.error(error);
-			});
-
-			if (res) {
-				toast.success('Valves updated successfully');
-				setPipelines();
-				models.set(await getModels(localStorage.token));
-				saveHandler();
-			}
-		} else {
-			toast.error('No valves to update');
-		}
-	};
-
-	const getValves = async (idx) => {
-		valves = null;
-		valves_spec = null;
-
-		valves_spec = await getPipelineValvesSpec(
-			localStorage.token,
-			pipelines[idx].id,
-			selectedPipelinesUrlIdx
-		);
-		valves = await getPipelineValves(
-			localStorage.token,
-			pipelines[idx].id,
-			selectedPipelinesUrlIdx
-		);
-
+	if (pipeline && (pipeline?.valves ?? false)) {
 		for (const property in valves_spec.properties) {
 			if (valves_spec.properties[property]?.type === 'array') {
-				valves[property] = valves[property].join(',');
+				valves[property] = valves[property].split(',').map((v) => v.trim());
 			}
 		}
-	};
 
-	const setPipelines = async () => {
-		pipelines = null;
-		valves = null;
-		valves_spec = null;
-
-		if (PIPELINES_LIST.length > 0) {
-			console.log(selectedPipelinesUrlIdx);
-			pipelines = await getPipelines(localStorage.token, selectedPipelinesUrlIdx);
-
-			if (pipelines.length > 0) {
-				selectedPipelineIdx = 0;
-				await getValves(selectedPipelineIdx);
-			}
-		} else {
-			pipelines = [];
-		}
-	};
-
-	const addPipelineHandler = async () => {
-		downloading = true;
-		const res = await downloadPipeline(
+		const res = await updatePipelineValves(
 			localStorage.token,
-			pipelineDownloadUrl,
+			pipeline.id,
+			valves,
 			selectedPipelinesUrlIdx
 		).catch((error) => {
 			toast.error(error);
-			return null;
 		});
 
 		if (res) {
-			toast.success('Pipeline downloaded successfully');
+			toast.success('Valves updated successfully');
 			setPipelines();
 			models.set(await getModels(localStorage.token));
+			saveHandler();
 		}
+	} else {
+		toast.error('No valves to update');
+	}
+};
 
-		downloading = false;
-	};
+const getValves = async (idx) => {
+	valves = null;
+	valves_spec = null;
 
-	const deletePipelineHandler = async () => {
-		const res = await deletePipeline(
-			localStorage.token,
-			pipelines[selectedPipelineIdx].id,
-			selectedPipelinesUrlIdx
-		).catch((error) => {
-			toast.error(error);
-			return null;
-		});
+	valves_spec = await getPipelineValvesSpec(
+		localStorage.token,
+		pipelines[idx].id,
+		selectedPipelinesUrlIdx
+	);
+	valves = await getPipelineValves(localStorage.token, pipelines[idx].id, selectedPipelinesUrlIdx);
 
-		if (res) {
-			toast.success('Pipeline deleted successfully');
-			setPipelines();
-			models.set(await getModels(localStorage.token));
+	for (const property in valves_spec.properties) {
+		if (valves_spec.properties[property]?.type === 'array') {
+			valves[property] = valves[property].join(',');
 		}
-	};
+	}
+};
 
-	onMount(async () => {
-		PIPELINES_LIST = await getPipelinesList(localStorage.token);
-		console.log(PIPELINES_LIST);
+const setPipelines = async () => {
+	pipelines = null;
+	valves = null;
+	valves_spec = null;
 
-		if (PIPELINES_LIST.length > 0) {
-			selectedPipelinesUrlIdx = PIPELINES_LIST[0]['idx'].toString();
+	if (PIPELINES_LIST.length > 0) {
+		console.log(selectedPipelinesUrlIdx);
+		pipelines = await getPipelines(localStorage.token, selectedPipelinesUrlIdx);
+
+		if (pipelines.length > 0) {
+			selectedPipelineIdx = 0;
+			await getValves(selectedPipelineIdx);
 		}
+	} else {
+		pipelines = [];
+	}
+};
 
-		await setPipelines();
+const addPipelineHandler = async () => {
+	downloading = true;
+	const res = await downloadPipeline(
+		localStorage.token,
+		pipelineDownloadUrl,
+		selectedPipelinesUrlIdx
+	).catch((error) => {
+		toast.error(error);
+		return null;
 	});
+
+	if (res) {
+		toast.success('Pipeline downloaded successfully');
+		setPipelines();
+		models.set(await getModels(localStorage.token));
+	}
+
+	downloading = false;
+};
+
+const deletePipelineHandler = async () => {
+	const res = await deletePipeline(
+		localStorage.token,
+		pipelines[selectedPipelineIdx].id,
+		selectedPipelinesUrlIdx
+	).catch((error) => {
+		toast.error(error);
+		return null;
+	});
+
+	if (res) {
+		toast.success('Pipeline deleted successfully');
+		setPipelines();
+		models.set(await getModels(localStorage.token));
+	}
+};
+
+onMount(async () => {
+	PIPELINES_LIST = await getPipelinesList(localStorage.token);
+	console.log(PIPELINES_LIST);
+
+	if (PIPELINES_LIST.length > 0) {
+		selectedPipelinesUrlIdx = PIPELINES_LIST[0]['idx'].toString();
+	}
+
+	await setPipelines();
+});
 </script>
 
 <form
@@ -223,16 +219,16 @@
 										xmlns="http://www.w3.org/2000/svg"
 									>
 										<style>
-											.spinner_ajPY {
-												transform-origin: center;
-												animation: spinner_AtaB 0.75s infinite linear;
-											}
+										.spinner_ajPY {
+											transform-origin: center;
+											animation: spinner_AtaB 0.75s infinite linear;
+										}
 
-											@keyframes spinner_AtaB {
-												100% {
-													transform: rotate(360deg);
-												}
+										@keyframes spinner_AtaB {
+											100% {
+												transform: rotate(360deg);
 											}
+										}
 										</style>
 										<path
 											d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
@@ -342,9 +338,13 @@
 														}}
 													>
 														{#if (valves[property] ?? null) === null}
-															<span class="ml-2 self-center"> {$i18n.t('None')} </span>
+															<span class="ml-2 self-center">
+																{$i18n.t('None')}
+															</span>
 														{:else}
-															<span class="ml-2 self-center"> {$i18n.t('Custom')} </span>
+															<span class="ml-2 self-center">
+																{$i18n.t('Custom')}
+															</span>
 														{/if}
 													</button>
 												</div>

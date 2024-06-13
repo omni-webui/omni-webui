@@ -1,60 +1,60 @@
 <script lang="ts">
-	import fileSaver from 'file-saver';
-	const { saveAs } = fileSaver;
-	import { toast } from 'svelte-sonner';
-	import dayjs from 'dayjs';
-	import { getContext, createEventDispatcher } from 'svelte';
+import fileSaver from 'file-saver';
+const { saveAs } = fileSaver;
+import { toast } from 'svelte-sonner';
+import dayjs from 'dayjs';
+import { getContext, createEventDispatcher } from 'svelte';
 
-	const dispatch = createEventDispatcher();
+const dispatch = createEventDispatcher();
 
-	import Modal from '$lib/components/common/Modal.svelte';
-	import {
-		archiveChatById,
-		deleteChatById,
-		getAllArchivedChats,
-		getArchivedChatList
-	} from '$lib/apis/chats';
-	import Tooltip from '$lib/components/common/Tooltip.svelte';
+import Modal from '$lib/components/common/Modal.svelte';
+import {
+	archiveChatById,
+	deleteChatById,
+	getAllArchivedChats,
+	getArchivedChatList
+} from '$lib/apis/chats';
+import Tooltip from '$lib/components/common/Tooltip.svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let show = false;
+export let show = false;
 
-	let searchValue = '';
+let searchValue = '';
 
-	let chats = [];
+let chats = [];
 
-	const unarchiveChatHandler = async (chatId) => {
-		await archiveChatById(localStorage.token, chatId).catch((error) => {
-			toast.error(error);
-		});
+const unarchiveChatHandler = async (chatId) => {
+	await archiveChatById(localStorage.token, chatId).catch((error) => {
+		toast.error(error);
+	});
 
+	chats = await getArchivedChatList(localStorage.token);
+
+	dispatch('change');
+};
+
+const deleteChatHandler = async (chatId) => {
+	await deleteChatById(localStorage.token, chatId).catch((error) => {
+		toast.error(error);
+	});
+
+	chats = await getArchivedChatList(localStorage.token);
+};
+
+const exportChatsHandler = async () => {
+	const chats = await getAllArchivedChats(localStorage.token);
+	let blob = new Blob([JSON.stringify(chats)], {
+		type: 'application/json'
+	});
+	saveAs(blob, `archived-chat-export-${Date.now()}.json`);
+};
+
+$: if (show) {
+	(async () => {
 		chats = await getArchivedChatList(localStorage.token);
-
-		dispatch('change');
-	};
-
-	const deleteChatHandler = async (chatId) => {
-		await deleteChatById(localStorage.token, chatId).catch((error) => {
-			toast.error(error);
-		});
-
-		chats = await getArchivedChatList(localStorage.token);
-	};
-
-	const exportChatsHandler = async () => {
-		const chats = await getAllArchivedChats(localStorage.token);
-		let blob = new Blob([JSON.stringify(chats)], {
-			type: 'application/json'
-		});
-		saveAs(blob, `archived-chat-export-${Date.now()}.json`);
-	};
-
-	$: if (show) {
-		(async () => {
-			chats = await getArchivedChatList(localStorage.token);
-		})();
-	}
+	})();
+}
 </script>
 
 <Modal size="lg" bind:show>
@@ -115,7 +115,9 @@
 										class="text-xs text-gray-700 uppercase bg-transparent dark:text-gray-200 border-b-2 dark:border-gray-800"
 									>
 										<tr>
-											<th scope="col" class="px-3 py-2"> {$i18n.t('Name')} </th>
+											<th scope="col" class="px-3 py-2">
+												{$i18n.t('Name')}
+											</th>
 											<th scope="col" class="px-3 py-2 hidden md:flex">
 												{$i18n.t('Created At')}
 											</th>

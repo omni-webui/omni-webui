@@ -1,25 +1,25 @@
 <script lang="ts">
-	import { createEventDispatcher, getContext } from 'svelte';
-	import { tags } from '$lib/stores';
-	import { toast } from 'svelte-sonner';
-	const dispatch = createEventDispatcher();
+import { createEventDispatcher, getContext } from 'svelte';
+import { tags } from '$lib/stores';
+import { toast } from 'svelte-sonner';
+const dispatch = createEventDispatcher();
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	export let label = '';
-	let showTagInput = false;
-	let tagName = '';
+export let label = '';
+let showTagInput = false;
+let tagName = '';
 
-	const addTagHandler = async () => {
-		tagName = tagName.trim();
-		if (tagName !== '') {
-			dispatch('add', tagName);
-			tagName = '';
-			showTagInput = false;
-		} else {
-			toast.error($i18n.t(`Invalid Tag`));
-		}
-	};
+const addTagHandler = async () => {
+	tagName = tagName.trim();
+	if (tagName !== '') {
+		dispatch('add', tagName);
+		tagName = '';
+		showTagInput = false;
+	} else {
+		toast.error($i18n.t(`Invalid Tag`));
+	}
+};
 </script>
 
 <div class="flex {showTagInput ? 'flex-row-reverse' : ''}">

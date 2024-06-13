@@ -1,104 +1,122 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
+import { toast } from 'svelte-sonner';
 
-	import { createEventDispatcher, onMount, getContext } from 'svelte';
-	import { config, user } from '$lib/stores';
-	import {
-		getImageGenerationModels,
-		getDefaultImageGenerationModel,
-		updateDefaultImageGenerationModel,
-		getImageSize,
-		getImageGenerationConfig,
-		updateImageGenerationConfig,
-		getImageGenerationEngineUrls,
-		updateImageGenerationEngineUrls,
-		updateImageSize,
-		getImageSteps,
-		updateImageSteps,
-		getOpenAIConfig,
-		updateOpenAIConfig
-	} from '$lib/apis/images';
-	import { getBackendConfig } from '$lib/apis';
-	const dispatch = createEventDispatcher();
+import { createEventDispatcher, onMount, getContext } from 'svelte';
+import { config, user } from '$lib/stores';
+import {
+	getImageGenerationModels,
+	getDefaultImageGenerationModel,
+	updateDefaultImageGenerationModel,
+	getImageSize,
+	getImageGenerationConfig,
+	updateImageGenerationConfig,
+	getImageGenerationEngineUrls,
+	updateImageGenerationEngineUrls,
+	updateImageSize,
+	getImageSteps,
+	updateImageSteps,
+	getOpenAIConfig,
+	updateOpenAIConfig
+} from '$lib/apis/images';
+import { getBackendConfig } from '$lib/apis';
+const dispatch = createEventDispatcher();
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let loading = false;
+let loading = false;
 
-	let imageGenerationEngine = '';
-	let enableImageGeneration = false;
+let imageGenerationEngine = '';
+let enableImageGeneration = false;
 
-	let AUTOMATIC1111_BASE_URL = '';
-	let COMFYUI_BASE_URL = '';
+let AUTOMATIC1111_BASE_URL = '';
+let COMFYUI_BASE_URL = '';
 
-	let OPENAI_API_BASE_URL = '';
-	let OPENAI_API_KEY = '';
+let OPENAI_API_BASE_URL = '';
+let OPENAI_API_KEY = '';
 
-	let selectedModel = '';
-	let models = null;
+let selectedModel = '';
+let models = null;
 
-	let imageSize = '';
-	let steps = 50;
+let imageSize = '';
+let steps = 50;
 
-	const getModels = async () => {
-		models = await getImageGenerationModels(localStorage.token).catch((error) => {
+const getModels = async () => {
+	models = await getImageGenerationModels(localStorage.token).catch((error) => {
+		toast.error(error);
+		return null;
+	});
+	selectedModel = await getDefaultImageGenerationModel(localStorage.token).catch(() => {
+		return '';
+	});
+};
+
+const updateUrlHandler = async () => {
+	if (imageGenerationEngine === 'comfyui') {
+		const res = await updateImageGenerationEngineUrls(localStorage.token, {
+			COMFYUI_BASE_URL: COMFYUI_BASE_URL
+		}).catch((error) => {
+			toast.error(error);
+
+			console.log(error);
+			return null;
+		});
+
+		if (res) {
+			COMFYUI_BASE_URL = res.COMFYUI_BASE_URL;
+
+			await getModels();
+
+			if (models) {
+				toast.success($i18n.t('Server connection verified'));
+			}
+		} else {
+			({ COMFYUI_BASE_URL } = await getImageGenerationEngineUrls(localStorage.token));
+		}
+	} else {
+		const res = await updateImageGenerationEngineUrls(localStorage.token, {
+			AUTOMATIC1111_BASE_URL: AUTOMATIC1111_BASE_URL
+		}).catch((error) => {
 			toast.error(error);
 			return null;
 		});
-		selectedModel = await getDefaultImageGenerationModel(localStorage.token).catch(() => {
-			return '';
-		});
-	};
 
-	const updateUrlHandler = async () => {
-		if (imageGenerationEngine === 'comfyui') {
-			const res = await updateImageGenerationEngineUrls(localStorage.token, {
-				COMFYUI_BASE_URL: COMFYUI_BASE_URL
-			}).catch((error) => {
-				toast.error(error);
+		if (res) {
+			AUTOMATIC1111_BASE_URL = res.AUTOMATIC1111_BASE_URL;
 
-				console.log(error);
-				return null;
-			});
+			await getModels();
 
-			if (res) {
-				COMFYUI_BASE_URL = res.COMFYUI_BASE_URL;
-
-				await getModels();
-
-				if (models) {
-					toast.success($i18n.t('Server connection verified'));
-				}
-			} else {
-				({ COMFYUI_BASE_URL } = await getImageGenerationEngineUrls(localStorage.token));
+			if (models) {
+				toast.success($i18n.t('Server connection verified'));
 			}
 		} else {
-			const res = await updateImageGenerationEngineUrls(localStorage.token, {
-				AUTOMATIC1111_BASE_URL: AUTOMATIC1111_BASE_URL
-			}).catch((error) => {
-				toast.error(error);
-				return null;
-			});
-
-			if (res) {
-				AUTOMATIC1111_BASE_URL = res.AUTOMATIC1111_BASE_URL;
-
-				await getModels();
-
-				if (models) {
-					toast.success($i18n.t('Server connection verified'));
-				}
-			} else {
-				({ AUTOMATIC1111_BASE_URL } = await getImageGenerationEngineUrls(localStorage.token));
-			}
+			({ AUTOMATIC1111_BASE_URL } = await getImageGenerationEngineUrls(localStorage.token));
 		}
-	};
-	const updateImageGeneration = async () => {
-		const res = await updateImageGenerationConfig(
-			localStorage.token,
-			imageGenerationEngine,
-			enableImageGeneration
-		).catch((error) => {
+	}
+};
+const updateImageGeneration = async () => {
+	const res = await updateImageGenerationConfig(
+		localStorage.token,
+		imageGenerationEngine,
+		enableImageGeneration
+	).catch((error) => {
+		toast.error(error);
+		return null;
+	});
+
+	if (res) {
+		imageGenerationEngine = res.engine;
+		enableImageGeneration = res.enabled;
+	}
+
+	if (enableImageGeneration) {
+		config.set(await getBackendConfig(localStorage.token));
+		getModels();
+	}
+};
+
+onMount(async () => {
+	if ($user.role === 'admin') {
+		const res = await getImageGenerationConfig(localStorage.token).catch((error) => {
 			toast.error(error);
 			return null;
 		});
@@ -107,42 +125,24 @@
 			imageGenerationEngine = res.engine;
 			enableImageGeneration = res.enabled;
 		}
+		const URLS = await getImageGenerationEngineUrls(localStorage.token);
+
+		AUTOMATIC1111_BASE_URL = URLS.AUTOMATIC1111_BASE_URL;
+		COMFYUI_BASE_URL = URLS.COMFYUI_BASE_URL;
+
+		const config = await getOpenAIConfig(localStorage.token);
+
+		OPENAI_API_KEY = config.OPENAI_API_KEY;
+		OPENAI_API_BASE_URL = config.OPENAI_API_BASE_URL;
+
+		imageSize = await getImageSize(localStorage.token);
+		steps = await getImageSteps(localStorage.token);
 
 		if (enableImageGeneration) {
-			config.set(await getBackendConfig(localStorage.token));
 			getModels();
 		}
-	};
-
-	onMount(async () => {
-		if ($user.role === 'admin') {
-			const res = await getImageGenerationConfig(localStorage.token).catch((error) => {
-				toast.error(error);
-				return null;
-			});
-
-			if (res) {
-				imageGenerationEngine = res.engine;
-				enableImageGeneration = res.enabled;
-			}
-			const URLS = await getImageGenerationEngineUrls(localStorage.token);
-
-			AUTOMATIC1111_BASE_URL = URLS.AUTOMATIC1111_BASE_URL;
-			COMFYUI_BASE_URL = URLS.COMFYUI_BASE_URL;
-
-			const config = await getOpenAIConfig(localStorage.token);
-
-			OPENAI_API_KEY = config.OPENAI_API_KEY;
-			OPENAI_API_BASE_URL = config.OPENAI_API_BASE_URL;
-
-			imageSize = await getImageSize(localStorage.token);
-			steps = await getImageSteps(localStorage.token);
-
-			if (enableImageGeneration) {
-				getModels();
-			}
-		}
-	});
+	}
+});
 </script>
 
 <form
@@ -174,7 +174,9 @@
 			<div class=" mb-1 text-sm font-medium">{$i18n.t('Image Settings')}</div>
 
 			<div class=" py-0.5 flex w-full justify-between">
-				<div class=" self-center text-xs font-medium">{$i18n.t('Image Generation Engine')}</div>
+				<div class=" self-center text-xs font-medium">
+					{$i18n.t('Image Generation Engine')}
+				</div>
 				<div class="flex items-center relative">
 					<select
 						class="w-fit pr-8 rounded px-2 p-1 text-xs bg-transparent outline-none text-right"
@@ -413,15 +415,15 @@
 						fill="currentColor"
 						xmlns="http://www.w3.org/2000/svg"
 						><style>
-							.spinner_ajPY {
-								transform-origin: center;
-								animation: spinner_AtaB 0.75s infinite linear;
+						.spinner_ajPY {
+							transform-origin: center;
+							animation: spinner_AtaB 0.75s infinite linear;
+						}
+						@keyframes spinner_AtaB {
+							100% {
+								transform: rotate(360deg);
 							}
-							@keyframes spinner_AtaB {
-								100% {
-									transform: rotate(360deg);
-								}
-							}
+						}
 						</style><path
 							d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
 							opacity=".25"

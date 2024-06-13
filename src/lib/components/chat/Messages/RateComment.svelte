@@ -1,67 +1,67 @@
 <script lang="ts">
-	import { toast } from 'svelte-sonner';
+import { toast } from 'svelte-sonner';
 
-	import { createEventDispatcher, onMount, getContext } from 'svelte';
+import { createEventDispatcher, onMount, getContext } from 'svelte';
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	const dispatch = createEventDispatcher();
+const dispatch = createEventDispatcher();
 
-	export let messageId = null;
-	export let show = false;
-	export let message;
+export let messageId = null;
+export let show = false;
+export let message;
 
-	let LIKE_REASONS = [];
-	let DISLIKE_REASONS = [];
+let LIKE_REASONS = [];
+let DISLIKE_REASONS = [];
 
-	function loadReasons() {
-		LIKE_REASONS = [
-			$i18n.t('Accurate information'),
-			$i18n.t('Followed instructions perfectly'),
-			$i18n.t('Showcased creativity'),
-			$i18n.t('Positive attitude'),
-			$i18n.t('Attention to detail'),
-			$i18n.t('Thorough explanation'),
-			$i18n.t('Other')
-		];
+function loadReasons() {
+	LIKE_REASONS = [
+		$i18n.t('Accurate information'),
+		$i18n.t('Followed instructions perfectly'),
+		$i18n.t('Showcased creativity'),
+		$i18n.t('Positive attitude'),
+		$i18n.t('Attention to detail'),
+		$i18n.t('Thorough explanation'),
+		$i18n.t('Other')
+	];
 
-		DISLIKE_REASONS = [
-			$i18n.t("Don't like the style"),
-			$i18n.t('Not factually correct'),
-			$i18n.t("Didn't fully follow instructions"),
-			$i18n.t("Refused when it shouldn't have"),
-			$i18n.t('Being lazy'),
-			$i18n.t('Other')
-		];
-	}
+	DISLIKE_REASONS = [
+		$i18n.t("Don't like the style"),
+		$i18n.t('Not factually correct'),
+		$i18n.t("Didn't fully follow instructions"),
+		$i18n.t("Refused when it shouldn't have"),
+		$i18n.t('Being lazy'),
+		$i18n.t('Other')
+	];
+}
 
-	let reasons = [];
-	let selectedReason = null;
-	let comment = '';
+let reasons = [];
+let selectedReason = null;
+let comment = '';
 
-	$: if (message?.annotation?.rating === 1) {
-		reasons = LIKE_REASONS;
-	} else if (message?.annotation?.rating === -1) {
-		reasons = DISLIKE_REASONS;
-	}
+$: if (message?.annotation?.rating === 1) {
+	reasons = LIKE_REASONS;
+} else if (message?.annotation?.rating === -1) {
+	reasons = DISLIKE_REASONS;
+}
 
-	onMount(() => {
-		selectedReason = message.annotation.reason;
-		comment = message.annotation.comment;
-		loadReasons();
-	});
+onMount(() => {
+	selectedReason = message.annotation.reason;
+	comment = message.annotation.comment;
+	loadReasons();
+});
 
-	const submitHandler = () => {
-		console.log('submitHandler');
+const submitHandler = () => {
+	console.log('submitHandler');
 
-		message.annotation.reason = selectedReason;
-		message.annotation.comment = comment;
+	message.annotation.reason = selectedReason;
+	message.annotation.comment = comment;
 
-		dispatch('submit');
+	dispatch('submit');
 
-		toast.success($i18n.t('Thanks for your feedback!'));
-		show = false;
-	};
+	toast.success($i18n.t('Thanks for your feedback!'));
+	show = false;
+};
 </script>
 
 <div

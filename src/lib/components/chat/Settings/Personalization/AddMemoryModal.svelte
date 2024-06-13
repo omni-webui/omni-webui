@@ -1,38 +1,38 @@
 <script>
-	import { createEventDispatcher, getContext } from 'svelte';
+import { createEventDispatcher, getContext } from 'svelte';
 
-	import Modal from '$lib/components/common/Modal.svelte';
-	import { addNewMemory } from '$lib/apis/memories';
-	import { toast } from 'svelte-sonner';
+import Modal from '$lib/components/common/Modal.svelte';
+import { addNewMemory } from '$lib/apis/memories';
+import { toast } from 'svelte-sonner';
 
-	const dispatch = createEventDispatcher();
+const dispatch = createEventDispatcher();
 
-	export let show;
+export let show;
 
-	const i18n = getContext('i18n');
+const i18n = getContext('i18n');
 
-	let loading = false;
-	let content = '';
+let loading = false;
+let content = '';
 
-	const submitHandler = async () => {
-		loading = true;
+const submitHandler = async () => {
+	loading = true;
 
-		const res = await addNewMemory(localStorage.token, content).catch((error) => {
-			toast.error(error);
+	const res = await addNewMemory(localStorage.token, content).catch((error) => {
+		toast.error(error);
 
-			return null;
-		});
+		return null;
+	});
 
-		if (res) {
-			console.log(res);
-			toast.success('Memory added successfully');
-			content = '';
-			show = false;
-			dispatch('save');
-		}
+	if (res) {
+		console.log(res);
+		toast.success('Memory added successfully');
+		content = '';
+		show = false;
+		dispatch('save');
+	}
 
-		loading = false;
-	};
+	loading = false;
+};
 </script>
 
 <Modal bind:show size="sm">
@@ -97,15 +97,15 @@
 										fill="currentColor"
 										xmlns="http://www.w3.org/2000/svg"
 										><style>
-											.spinner_ajPY {
-												transform-origin: center;
-												animation: spinner_AtaB 0.75s infinite linear;
+										.spinner_ajPY {
+											transform-origin: center;
+											animation: spinner_AtaB 0.75s infinite linear;
+										}
+										@keyframes spinner_AtaB {
+											100% {
+												transform: rotate(360deg);
 											}
-											@keyframes spinner_AtaB {
-												100% {
-													transform: rotate(360deg);
-												}
-											}
+										}
 										</style><path
 											d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
 											opacity=".25"
