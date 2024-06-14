@@ -2,22 +2,20 @@
 import { toast } from 'svelte-sonner';
 import { createEventDispatcher, onMount, getContext } from 'svelte';
 import { getLanguages } from '$lib/i18n';
-const dispatch = createEventDispatcher();
 
 import { settings, theme } from '$lib/stores';
-
-const i18n = getContext('i18n');
-
 import AdvancedParams from './Advanced/AdvancedParams.svelte';
-import type { SaveSettingsFunctionType } from '$lib/types';
+import type { SaveSettingsFunctionType, AdvancedSettingParameters, I18n } from '$lib/types';
 
 export let saveSettings: SaveSettingsFunctionType;
 
+const i18n: I18n = getContext('i18n');
+const dispatch = createEventDispatcher();
 // General
 let themes = ['dark', 'light', 'rose-pine dark', 'rose-pine-dawn light', 'oled-dark'];
 let selectedTheme = 'system';
 
-let languages = [];
+let languages: { code: string; title: string }[] = [];
 let lang = $i18n.language;
 let notificationEnabled = false;
 let system = '';
@@ -39,24 +37,9 @@ const toggleNotification = async () => {
 
 // Advanced
 let requestFormat = '';
-let keepAlive = null;
+let keepAlive: string | number | undefined;
 
-let params = {
-	// Advanced
-	seed: 0,
-	temperature: '',
-	frequency_penalty: '',
-	repeat_last_n: '',
-	mirostat: '',
-	mirostat_eta: '',
-	mirostat_tau: '',
-	top_k: '',
-	top_p: '',
-	stop: null,
-	tfs_z: '',
-	num_ctx: '',
-	max_tokens: ''
-};
+let params: Partial<AdvancedSettingParameters> = {};
 
 const toggleRequestFormat = async () => {
 	if (requestFormat === '') {
@@ -79,16 +62,11 @@ onMount(async () => {
 	system = $settings.system ?? '';
 
 	requestFormat = $settings.requestFormat ?? '';
-	keepAlive = $settings.keepAlive ?? null;
+	keepAlive = $settings.keepAlive;
 
-	params.seed = $settings.seed ?? 0;
-	params.temperature = $settings.temperature ?? '';
-	params.frequency_penalty = $settings.frequency_penalty ?? '';
-	params.top_k = $settings.top_k ?? '';
-	params.top_p = $settings.top_p ?? '';
-	params.num_ctx = $settings.num_ctx ?? '';
-	params = { ...params, ...$settings.params };
-	params.stop = $settings?.params?.stop ? ($settings?.params?.stop ?? []).join(',') : null;
+	let { stop, ...rest } = $settings.params ?? {};
+	params = { ...params, ...rest };
+	params.stop = (stop ?? []).join(',') || undefined;
 });
 
 const applyTheme = (_theme: string) => {
@@ -240,10 +218,10 @@ const themeChangeHandler = (_theme: string) => {
 							class="p-1 px-3 text-xs flex rounded transition"
 							type="button"
 							on:click={() => {
-								keepAlive = keepAlive === null ? '5m' : null;
+								keepAlive = keepAlive === undefined ? '5m' : undefined;
 							}}
 						>
-							{#if keepAlive === null}
+							{#if keepAlive === undefined}
 								<span class="ml-2 self-center"> {$i18n.t('Default')} </span>
 							{:else}
 								<span class="ml-2 self-center"> {$i18n.t('Custom')} </span>
@@ -251,7 +229,7 @@ const themeChangeHandler = (_theme: string) => {
 						</button>
 					</div>
 
-					{#if keepAlive !== null}
+					{#if keepAlive !== undefined}
 						<div class="flex mt-1 space-x-2">
 							<input
 								class="w-full rounded-lg py-2 px-4 text-sm dark:text-gray-300 dark:bg-gray-850 outline-none"
@@ -301,25 +279,15 @@ const themeChangeHandler = (_theme: string) => {
 		<button
 			class="  px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-gray-100 transition rounded-lg"
 			on:click={() => {
+				let { stop, ...rest } = params;
+				let stopWords = stop?.split(',');
 				saveSettings({
 					system: system !== '' ? system : undefined,
 					params: {
-						seed: (params.seed !== 0 ? params.seed : undefined) ?? undefined,
-						stop: params.stop ? params.stop.split(',').filter((e) => e) : undefined,
-						temperature: params.temperature !== '' ? params.temperature : undefined,
-						frequency_penalty:
-							params.frequency_penalty !== '' ? params.frequency_penalty : undefined,
-						repeat_last_n: params.repeat_last_n !== '' ? params.repeat_last_n : undefined,
-						mirostat: params.mirostat !== '' ? params.mirostat : undefined,
-						mirostat_eta: params.mirostat_eta !== '' ? params.mirostat_eta : undefined,
-						mirostat_tau: params.mirostat_tau !== '' ? params.mirostat_tau : undefined,
-						top_k: params.top_k !== '' ? params.top_k : undefined,
-						top_p: params.top_p !== '' ? params.top_p : undefined,
-						tfs_z: params.tfs_z !== '' ? params.tfs_z : undefined,
-						num_ctx: params.num_ctx !== '' ? params.num_ctx : undefined,
-						max_tokens: params.max_tokens !== '' ? params.max_tokens : undefined
+						stop: stopWords,
+						...rest
 					},
-					keepAlive: keepAlive ? (isNaN(keepAlive) ? keepAlive : parseInt(keepAlive)) : undefined
+					keepAlive: typeof keepAlive === 'string' ? (/^\d+/.test(keepAlive) ? parseInt(keepAlive) : keepAlive) : keepAlive
 				});
 				dispatch('save');
 			}}

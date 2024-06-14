@@ -849,7 +849,7 @@ const sendPromptOpenAI = async (model, userPrompt, responseMessageId, _chatId) =
 										arr.length - 1 !== idx ? message.content : message?.raContent ?? message.content
 								})
 					})),
-				seed: $settings?.params?.seed ?? undefined,
+				seed: $settings?.params?.seed,
 				stop:
 					$settings?.params?.stop ?? undefined
 						? $settings.params.stop.map((str) =>

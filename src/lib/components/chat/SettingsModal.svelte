@@ -1,7 +1,7 @@
 <script lang="ts">
 import { getContext } from 'svelte';
 import { toast } from 'svelte-sonner';
-import { models, settings, user, type Settings } from '$lib/stores';
+import { models, settings, user } from '$lib/stores';
 
 import { getModels as _getModels } from '$lib/apis';
 
@@ -18,6 +18,7 @@ import Images from './Settings/Images.svelte';
 import User from '../icons/User.svelte';
 import Personalization from './Settings/Personalization.svelte';
 import { updateUserSettings } from '$lib/apis/users';
+import type { Settings } from '$lib/types';
 
 const i18n = getContext('i18n');
 

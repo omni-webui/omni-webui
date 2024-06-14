@@ -8,8 +8,7 @@ import {
 	tags,
 	showSidebar,
 	mobile,
-	showArchivedChats,
-	type Settings
+	showArchivedChats
 } from '$lib/stores';
 import { onMount, getContext } from 'svelte';
 
@@ -32,6 +31,7 @@ import ShareChatModal from '../chat/ShareChatModal.svelte';
 import ArchivedChatsModal from './Sidebar/ArchivedChatsModal.svelte';
 import UserMenu from './Sidebar/UserMenu.svelte';
 import { updateUserSettings } from '$lib/apis/users';
+import type { Settings } from '$lib/types';
 
 const BREAKPOINT = 768;
 

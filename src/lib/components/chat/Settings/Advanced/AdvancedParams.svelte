@@ -1,30 +1,12 @@
 <script lang="ts">
 import { getContext, createEventDispatcher } from 'svelte';
+import type { I18n, AdvancedSettingParameters } from '$lib/types';
 
 const dispatch = createEventDispatcher();
 
-const i18n = getContext('i18n');
+const i18n: I18n = getContext('i18n');
 
-export let params = {
-	// Advanced
-	seed: 0,
-	stop: null,
-	temperature: '',
-	frequency_penalty: '',
-	repeat_last_n: '',
-	mirostat: '',
-	mirostat_eta: '',
-	mirostat_tau: '',
-	top_k: '',
-	top_p: '',
-	tfs_z: '',
-	num_ctx: '',
-	max_tokens: '',
-	use_mmap: null,
-	use_mlock: null,
-	num_thread: null,
-	template: null
-};
+export let params: Partial<AdvancedSettingParameters> = {};
 
 $: if (params) {
 	dispatch('change', params);
@@ -40,10 +22,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.seed = (params?.seed ?? null) === null ? 0 : null;
+					params.seed = params.seed === undefined ? 0 : undefined;
 				}}
 			>
-				{#if (params?.seed ?? null) === null}
+				{#if params.seed === undefined}
 					<span class="ml-2 self-center"> {$i18n.t('Default')} </span>
 				{:else}
 					<span class="ml-2 self-center"> {$i18n.t('Custom')} </span>
@@ -51,7 +33,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.seed ?? null) !== null}
+		{#if params.seed !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -75,10 +57,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.stop = (params?.stop ?? null) === null ? '' : null;
+					params.stop = params.stop === undefined ? '' : undefined;
 				}}
 			>
-				{#if (params?.stop ?? null) === null}
+				{#if params.stop === undefined}
 					<span class="ml-2 self-center"> {$i18n.t('Default')} </span>
 				{:else}
 					<span class="ml-2 self-center"> {$i18n.t('Custom')} </span>
@@ -86,7 +68,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.stop ?? null) !== null}
+		{#if params.stop !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -109,10 +91,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.temperature = (params?.temperature ?? '') === '' ? 0.8 : '';
+					params.temperature = params.temperature === undefined ? 0.8 : undefined;
 				}}
 			>
-				{#if (params?.temperature ?? '') === ''}
+				{#if params.temperature === undefined}
 					<span class="ml-2 self-center"> {$i18n.t('Default')} </span>
 				{:else}
 					<span class="ml-2 self-center"> {$i18n.t('Custom')} </span>
@@ -120,7 +102,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.temperature ?? '') !== ''}
+		{#if params.temperature !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -155,10 +137,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.mirostat = (params?.mirostat ?? '') === '' ? 0 : '';
+					params.mirostat = params.mirostat === undefined ? 0 : undefined;
 				}}
 			>
-				{#if (params?.mirostat ?? '') === ''}
+				{#if params.mirostat === undefined}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
@@ -166,7 +148,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.mirostat ?? '') !== ''}
+		{#if params.mirostat !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -201,10 +183,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.mirostat_eta = (params?.mirostat_eta ?? '') === '' ? 0.1 : '';
+					params.mirostat_eta = params.mirostat_eta === undefined ? 0.1 : undefined;
 				}}
 			>
-				{#if (params?.mirostat_eta ?? '') === ''}
+				{#if params.mirostat_eta === undefined}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
@@ -212,7 +194,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.mirostat_eta ?? '') !== ''}
+		{#if params.mirostat_eta !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -247,10 +229,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.mirostat_tau = (params?.mirostat_tau ?? '') === '' ? 5.0 : '';
+					params.mirostat_tau = params.mirostat_tau === undefined ? 5.0 : undefined;
 				}}
 			>
-				{#if (params?.mirostat_tau ?? '') === ''}
+				{#if params.mirostat_tau === undefined}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
@@ -258,7 +240,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.mirostat_tau ?? '') !== ''}
+		{#if params.mirostat_tau !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -293,10 +275,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.top_k = (params?.top_k ?? '') === '' ? 40 : '';
+					params.top_k = params.top_k === undefined ? 40 : undefined;
 				}}
 			>
-				{#if (params?.top_k ?? '') === ''}
+				{#if params.top_k === undefined}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
@@ -304,7 +286,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.top_k ?? '') !== ''}
+		{#if params.top_k !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -339,10 +321,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.top_p = (params?.top_p ?? '') === '' ? 0.9 : '';
+					params.top_p = params.top_p === undefined ? 0.9 : undefined;
 				}}
 			>
-				{#if (params?.top_p ?? '') === ''}
+				{#if params.top_p === undefined}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
@@ -350,7 +332,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.top_p ?? '') !== ''}
+		{#if params.top_p !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -385,10 +367,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.frequency_penalty = (params?.frequency_penalty ?? '') === '' ? 1.1 : '';
+					params.frequency_penalty = params.frequency_penalty === undefined ? 1.1 : undefined;
 				}}
 			>
-				{#if (params?.frequency_penalty ?? '') === ''}
+				{#if params.frequency_penalty === undefined}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
@@ -396,7 +378,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.frequency_penalty ?? '') !== ''}
+		{#if params.frequency_penalty !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -431,10 +413,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.repeat_last_n = (params?.repeat_last_n ?? '') === '' ? 64 : '';
+					params.repeat_last_n = params.repeat_last_n === undefined ? 64 : undefined;
 				}}
 			>
-				{#if (params?.repeat_last_n ?? '') === ''}
+				{#if params.repeat_last_n === undefined}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
@@ -442,7 +424,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.repeat_last_n ?? '') !== ''}
+		{#if params.repeat_last_n !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -477,10 +459,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.tfs_z = (params?.tfs_z ?? '') === '' ? 1 : '';
+					params.tfs_z = params.tfs_z === undefined ? 1 : undefined;
 				}}
 			>
-				{#if (params?.tfs_z ?? '') === ''}
+				{#if params.tfs_z === undefined}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
@@ -488,7 +470,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.tfs_z ?? '') !== ''}
+		{#if params.tfs_z !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -523,10 +505,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.num_ctx = (params?.num_ctx ?? '') === '' ? 2048 : '';
+					params.num_ctx = params.num_ctx === undefined ? 2048 : undefined;
 				}}
 			>
-				{#if (params?.num_ctx ?? '') === ''}
+				{#if params.num_ctx === undefined}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
@@ -534,7 +516,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.num_ctx ?? '') !== ''}
+		{#if params.num_ctx !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -570,10 +552,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.max_tokens = (params?.max_tokens ?? '') === '' ? 128 : '';
+					params.max_tokens = params.max_tokens === undefined ? 128 : undefined;
 				}}
 			>
-				{#if (params?.max_tokens ?? '') === ''}
+				{#if params.max_tokens === undefined}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
@@ -581,7 +563,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.max_tokens ?? '') !== ''}
+		{#if params.max_tokens !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -616,10 +598,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.use_mmap = (params?.use_mmap ?? null) === null ? true : null;
+					params.use_mmap = params.use_mmap === undefined ? true : undefined;
 				}}
 			>
-				{#if (params?.use_mmap ?? null) === null}
+				{#if !params.use_mmap}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('On')}</span>
@@ -636,10 +618,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.use_mlock = (params?.use_mlock ?? null) === null ? true : null;
+					params.use_mlock = params.use_mlock === undefined ? true : undefined;
 				}}
 			>
-				{#if (params?.use_mlock ?? null) === null}
+				{#if !params.use_mlock}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('On')}</span>
@@ -656,10 +638,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.num_thread = (params?.num_thread ?? null) === null ? 2 : null;
+					params.num_thread = params.num_thread === undefined ? 2 : undefined;
 				}}
 			>
-				{#if (params?.num_thread ?? null) === null}
+				{#if params.num_thread === undefined}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
@@ -667,7 +649,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.num_thread ?? null) !== null}
+		{#if params.num_thread !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<input
@@ -702,10 +684,10 @@ $: if (params) {
 				class="p-1 px-3 text-xs flex rounded transition"
 				type="button"
 				on:click={() => {
-					params.template = (params?.template ?? null) === null ? '' : null;
+					params.template = params.template === undefined ? '' : undefined;
 				}}
 			>
-				{#if (params?.template ?? null) === null}
+				{#if params.template === undefined}
 					<span class="ml-2 self-center">{$i18n.t('Default')}</span>
 				{:else}
 					<span class="ml-2 self-center">{$i18n.t('Custom')}</span>
@@ -713,7 +695,7 @@ $: if (params) {
 			</button>
 		</div>
 
-		{#if (params?.template ?? null) !== null}
+		{#if params.template !== undefined}
 			<div class="flex mt-0.5 space-x-2">
 				<div class=" flex-1">
 					<textarea
