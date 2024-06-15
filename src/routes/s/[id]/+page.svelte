@@ -13,8 +13,9 @@ import { getChatByShareId } from '$lib/apis/chats';
 import Messages from '$lib/components/chat/Messages.svelte';
 import { getUserById } from '$lib/apis/users';
 import { getModels } from '$lib/apis';
+import type { I18n, Message, SessionUser } from '$lib/types';
 
-const i18n = getContext('i18n');
+const i18n: I18n = getContext('i18n');
 
 let loaded = false;
 
@@ -22,12 +23,12 @@ let autoScroll = true;
 let selectedModels = [''];
 
 let chat = null;
-let user = null;
+let user: SessionUser;
 
 let title = '';
 let files = [];
 
-let messages = [];
+let messages: Message[] = [];
 let history = {
 	messages: {},
 	currentId: null
@@ -71,10 +72,7 @@ const loadSharedChat = async () => {
 	});
 
 	if (chat) {
-		user = await getUserById(localStorage.token, chat.user_id).catch((error) => {
-			console.error(error);
-			return null;
-		});
+		user = await getUserById(localStorage.token, chat.user_id);
 
 		const chatContent = chat.chat;
 

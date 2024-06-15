@@ -22,11 +22,11 @@ export let continueGeneration: () => void;
 export let regenerateResponse: (message: Message) => void;
 
 export let user = $_user;
-export let prompt;
+export let prompt = '';
 export let bottomPadding = false;
 export let autoScroll;
 export let history = {};
-export let messages = [];
+export let messages: Message[] = [];
 
 export let selectedModels;
 

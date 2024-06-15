@@ -1,4 +1,3 @@
-import type { Model } from '$lib/stores';
 import type { i18n } from 'i18next';
 import type { Writable } from 'svelte/store';
 
@@ -11,6 +10,59 @@ export type Banner = {
 	dismissible?: boolean;
 	timestamp: number;
 };
+
+
+export type Model = OpenAIModel | OllamaModel;
+
+type BaseModel = {
+	id: string;
+	name: string;
+	info?: ModelConfig;
+};
+
+export interface OpenAIModel extends BaseModel {
+	external: boolean;
+	source?: string;
+	owned_by: "openai";
+}
+
+export interface OllamaModel extends BaseModel {
+	details: OllamaModelDetails;
+	size: number;
+	description: string;
+	model: string;
+	modified_at: string;
+	digest: string;
+	owned_by: "ollama";
+}
+
+type OllamaModelDetails = {
+	parent_model: string;
+	format: string;
+	family: string;
+	families: string[] | null;
+	parameter_size: string;
+	quantization_level: string;
+};
+
+
+export interface ModelConfig {
+	id: string;
+	name: string;
+	meta: ModelMeta;
+	base_model_id?: string;
+	params: ModelParams;
+}
+
+export interface ModelMeta {
+	description?: string;
+	capabilities?: object;
+	position?: number;
+}
+
+export interface ModelParams {}
+
+export type GlobalModelConfig = ModelConfig[];
 
 export type Message = {
 	model: string;
@@ -89,3 +141,11 @@ enum Mirostat {
 	ON = 1,
 	V2 = 2
 }
+
+export type SessionUser = {
+	id: string;
+	email: string;
+	name: string;
+	role: string;
+	profile_image_url: string;
+};

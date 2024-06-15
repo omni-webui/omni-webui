@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 import { toast } from 'svelte-sonner';
 import { goto } from '$app/navigation';
 import { models } from '$lib/stores';
@@ -10,11 +10,12 @@ import { getModels } from '$lib/apis';
 import AdvancedParams from '$lib/components/chat/Settings/Advanced/AdvancedParams.svelte';
 import Checkbox from '$lib/components/common/Checkbox.svelte';
 import Tags from '$lib/components/common/Tags.svelte';
+import type { AdvancedSettingParameters, I18n } from '$lib/types';
 
-const i18n = getContext('i18n');
+const i18n: I18n = getContext('i18n');
 
 let filesInputElement;
-let inputFiles;
+let inputFiles: FileList;
 
 let showAdvanced = false;
 let showPreview = false;
@@ -29,28 +30,29 @@ let success = false;
 let id = '';
 let name = '';
 
-let params = {};
-let capabilities = {
+let params: Partial<AdvancedSettingParameters> = {};
+let capabilities: Record<string, boolean> = {
 	vision: true
 };
 
-let info = {
-	id: '',
-	base_model_id: null,
-	name: '',
-	meta: {
-		profile_image_url: null,
-		description: '',
-		suggestion_prompts: [
-			{
-				content: ''
-			}
-		]
-	},
-	params: {
-		system: ''
-	}
+type Info = {
+	id: string;
+	base_model_id: string;
+	name: string;
+	meta: Partial<{
+		profile_image_url: string;
+		description: string;
+		suggestion_prompts: { content: string }[];
+		tags: { name: string }[];
+		capabilities: Record<string, boolean>;
+	}>;
+	params: Partial<{
+		system: string;
+		stop: string[];
+	}>;
 };
+
+let info: Info;
 
 $: if (name) {
 	id = name.replace(/\s+/g, '-').toLowerCase();
@@ -76,13 +78,10 @@ const submitHandler = async () => {
 	info.id = id;
 	info.name = name;
 	info.meta.capabilities = capabilities;
-	info.params.stop = params.stop ? params.stop.split(',').filter((s) => s.trim()) : null;
-
-	Object.keys(info.params).forEach((key) => {
-		if (info.params[key] === '' || info.params[key] === null) {
-			delete info.params[key];
-		}
-	});
+	info.params.stop = (params.stop ?? '').split(',').filter((s) => s.trim());
+	if (info.params.stop.length === 0) {
+		delete info.params.stop;
+	}
 
 	if ($models.find((m) => m.id === info.id)) {
 		toast.error(
@@ -214,20 +213,16 @@ onMount(async () => {
 
 					// Display the compressed image
 					info.meta.profile_image_url = compressedSrc;
-
-					inputFiles = null;
 				};
 			};
 
 			if (
-				inputFiles &&
 				inputFiles.length > 0 &&
 				['image/gif', 'image/webp', 'image/jpeg', 'image/png'].includes(inputFiles[0]['type'])
 			) {
 				reader.readAsDataURL(inputFiles[0]);
 			} else {
 				console.log(`Unsupported File Type '${inputFiles[0]['type']}'.`);
-				inputFiles = null;
 			}
 		}}
 	/>

@@ -1,4 +1,5 @@
 import { WEBUI_BASE_URL } from '$lib/constants';
+import type { Model, GlobalModelConfig } from '$lib/types';
 
 export const getModels = async (token: string = '') => {
 	let error = null;
@@ -28,23 +29,17 @@ export const getModels = async (token: string = '') => {
 	let models = res?.data ?? [];
 
 	models = models
-		.filter((models) => models)
 		// Sort the models
-		.sort((a, b) => {
+		.sort((a: Model, b: Model) => {
 			// Check if models have position property
-			const aHasPosition = a.info?.meta?.position !== undefined;
-			const bHasPosition = b.info?.meta?.position !== undefined;
-
 			// If both a and b have the position property
-			if (aHasPosition && bHasPosition) {
+			if (a.info?.meta?.position !== undefined && b.info?.meta?.position !== undefined) {
 				return a.info.meta.position - b.info.meta.position;
+			} else if (a.info?.meta?.position !== undefined) { // If only a has the position property, it should come first
+				return -1;
+			} else if (b.info?.meta?.position !== undefined) { // If only b has the position property, it should come first
+				return 1;
 			}
-
-			// If only a has the position property, it should come first
-			if (aHasPosition) return -1;
-
-			// If only b has the position property, it should come first
-			if (bHasPosition) return 1;
 
 			// Compare case-insensitively by name for models without position property
 			const lowerA = a.name.toLowerCase();
@@ -635,23 +630,6 @@ export const getModelConfig = async (token: string): Promise<GlobalModelConfig> 
 
 	return res.models;
 };
-
-export interface ModelConfig {
-	id: string;
-	name: string;
-	meta: ModelMeta;
-	base_model_id?: string;
-	params: ModelParams;
-}
-
-export interface ModelMeta {
-	description?: string;
-	capabilities?: object;
-}
-
-export interface ModelParams {}
-
-export type GlobalModelConfig = ModelConfig[];
 
 export const updateModelConfig = async (token: string, config: GlobalModelConfig) => {
 	let error = null;
