@@ -79,7 +79,9 @@ build-backend = "hatchling.build"
 
 [tool.rye]
 managed = true
-dev-dependencies = []
+dev-dependencies = [
+    "types-peewee>=3.17.3.20240424",
+]
 
 [tool.hatch.metadata]
 allow-direct-references = true
@@ -101,5 +103,16 @@ exclude = [
 ]
 force-include = { "CHANGELOG.md" = "omni_webui/CHANGELOG.md", build = "omni_webui/frontend" }
 
+[tool.ruff]
+exclude = ["**/migrations/*.py"]
+
 [tool.ruff.lint]
 extend-select = ["I"]
+
+[tool.mypy]
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = "omni_webui.*"
+disable_error_code = ["operator"]

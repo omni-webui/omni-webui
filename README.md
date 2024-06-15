@@ -13,6 +13,24 @@ Omni WebUI is an [extensible](https://github.com/omni-webui/pipelines), feature-
 
 ![Omni WebUI Demo](./demo.gif)
 
+## Why Fork Open WebUI?
+
+Omni WebUI is a fork of the original [Open WebUI project](https://github.com/open-webui/open-webui), which was created by [Timothy J. Baek](https://github.com/tjbck).
+There are several reasons for this fork:
+
+1. **AI driven development**: I want to use AI to help me develop this project, and I want to use this project to help me develop AI.
+2. **More features**: I want to add more features to this project, such as more AI models, more plugins, and more integrations.
+3. **Better User Experience**: I want to make this project more user-friendly, more accessible, and more enjoyable to use.
+4. **Personal Flavor**: I want it to be more like me, more like what I like, and more like what I want to see in the world.
+
+The last reason is the most important to me.
+
+The follow is my flavor of the project:
+1. Prefer TypeScript/Mypy: it's more type-safe, more readable, and more maintainable.
+2. Prefer TDD and DDD: I want to use TDD and DDD for development, because I like it.
+3. Prefer new packages: I want to use new packages, keep up with the latest trends, and use the best tools available.
+
+
 ## Key Features of Omni WebUI ⭐
 
 - 🚀 **Effortless Setup**: Install seamlessly using Docker or Kubernetes (kubectl, kustomize or helm) for a hassle-free experience with support for both `:ollama` and `:cuda` tagged images.
@@ -53,7 +71,7 @@ Don't forget to explore our sibling project, [Omni WebUI Community](https://omni
 
 ## How to Install 🚀
 
-> [!NOTE]  
+> [!NOTE]
 > Please note that for certain Docker environments, additional configurations might be needed. If you encounter any connection issues, our detailed guide on [Omni WebUI Documentation](https://docs.omni-webui.com/) is ready to assist you.
 
 ### Quick Start with Docker 🐳
@@ -61,7 +79,7 @@ Don't forget to explore our sibling project, [Omni WebUI Community](https://omni
 > [!WARNING]
 > When using Docker to install Omni WebUI, make sure to include the `-v omni-webui:/app/backend/data` in your Docker command. This step is crucial as it ensures your database is properly mounted and prevents any loss of data.
 
-> [!TIP]  
+> [!TIP]
 > If you wish to utilize Omni WebUI with Ollama included or CUDA acceleration, we recommend utilizing our official images tagged with either `:cuda` or `:ollama`. To enable CUDA, you must install the [Nvidia CUDA container toolkit](https://docs.nvidia.com/dgx/nvidia-container-runtime-upgrade/) on your Linux/WSL system.
 
 ### Installation with Default Configuration
