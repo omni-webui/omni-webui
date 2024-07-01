@@ -1,20 +1,15 @@
-from fastapi import APIRouter, UploadFile, File, Response
-from fastapi import Depends, HTTPException, status
-from peewee import SqliteDatabase
-from starlette.responses import StreamingResponse, FileResponse
-from pydantic import BaseModel
-
-
-from fpdf import FPDF
-import markdown
-
-from omni_webui.apps.webui.internal.db import DB
-from omni_webui.utils import get_admin_user
-from omni_webui.utils.misc import calculate_sha256, get_gravatar_url
-
-from omni_webui.config import ENABLE_ADMIN_EXPORT, STATIC_DIR
-from omni_webui.constants import ERROR_MESSAGES
 from typing import List
+
+import markdown
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fpdf import FPDF
+from omni_webui.config import settings
+from omni_webui.constants import ERROR_MESSAGES
+from omni_webui.utils import get_admin_user
+from omni_webui.utils.misc import get_gravatar_url
+from peewee import SqliteDatabase
+from pydantic import BaseModel
+from starlette.responses import FileResponse
 
 router = APIRouter()
 
@@ -49,13 +44,13 @@ async def download_chat_as_pdf(
     pdf = FPDF()
     pdf.add_page()
 
-    FONTS_DIR = f"{STATIC_DIR}/fonts"
+    FONTS_DIR = settings.static_dir / "fonts"
 
-    pdf.add_font("NotoSans", "", f"{FONTS_DIR}/NotoSans-Regular.ttf")
-    pdf.add_font("NotoSans", "b", f"{FONTS_DIR}/NotoSans-Bold.ttf")
-    pdf.add_font("NotoSans", "i", f"{FONTS_DIR}/NotoSans-Italic.ttf")
-    pdf.add_font("NotoSansKR", "", f"{FONTS_DIR}/NotoSansKR-Regular.ttf")
-    pdf.add_font("NotoSansJP", "", f"{FONTS_DIR}/NotoSansJP-Regular.ttf")
+    pdf.add_font("NotoSans", "", FONTS_DIR / "NotoSans-Regular.ttf")
+    pdf.add_font("NotoSans", "B", FONTS_DIR / "NotoSans-Bold.ttf")
+    pdf.add_font("NotoSans", "I", FONTS_DIR / "NotoSans-Italic.ttf")
+    pdf.add_font("NotoSansKR", "", FONTS_DIR / "NotoSansKR-Regular.ttf")
+    pdf.add_font("NotoSansJP", "", FONTS_DIR / "NotoSansJP-Regular.ttf")
 
     pdf.set_font("NotoSans", size=12)
     pdf.set_fallback_fonts(["NotoSansKR", "NotoSansJP"])
@@ -85,25 +80,24 @@ async def download_chat_as_pdf(
     return Response(
         content=bytes(pdf_bytes),
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment;filename=chat.pdf"},
+        headers={"Content-Disposition": "attachment;filename=chat.pdf"},
     )
 
 
 @router.get("/db/download")
 async def download_db(user=Depends(get_admin_user)):
-    if not ENABLE_ADMIN_EXPORT:
+    if not settings.enable_admin_export:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
         )
-    if not isinstance(DB, SqliteDatabase):
+    if not isinstance(settings.database, SqliteDatabase):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.DB_NOT_SQLITE,
         )
     return FileResponse(
-        DB.database,
+        settings.database.database,
         media_type="application/octet-stream",
         filename="webui.db",
     )
-

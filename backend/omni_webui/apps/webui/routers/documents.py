@@ -1,21 +1,16 @@
-from fastapi import Depends, FastAPI, HTTPException, status
-from datetime import datetime, timedelta
-from typing import List, Union, Optional
-
-from fastapi import APIRouter
-from pydantic import BaseModel
 import json
+from typing import List, Optional
 
+from fastapi import APIRouter, Depends, HTTPException, status
 from omni_webui.apps.webui.models.documents import (
-    Documents,
     DocumentForm,
-    DocumentUpdateForm,
-    DocumentModel,
     DocumentResponse,
+    Documents,
+    DocumentUpdateForm,
 )
-
-from omni_webui.utils import get_current_user, get_admin_user
 from omni_webui.constants import ERROR_MESSAGES
+from omni_webui.utils import get_admin_user, get_current_user
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -46,7 +41,7 @@ async def get_documents(user=Depends(get_current_user)):
 @router.post("/create", response_model=Optional[DocumentResponse])
 async def create_new_doc(form_data: DocumentForm, user=Depends(get_admin_user)):
     doc = Documents.get_doc_by_name(form_data.name)
-    if doc == None:
+    if doc is None:
         doc = Documents.insert_new_doc(user.id, form_data)
 
         if doc:

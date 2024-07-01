@@ -1,25 +1,12 @@
-from fastapi import Response, Request
-from fastapi import Depends, FastAPI, HTTPException, status
-from datetime import datetime, timedelta
-from typing import List, Union
+from typing import List
 
-from fastapi import APIRouter
-from pydantic import BaseModel
-import time
-import uuid
-
+from fastapi import APIRouter, Depends, Request
 from omni_webui.config import BannerModel
-
-from omni_webui.apps.webui.models.users import Users
-
 from omni_webui.utils import (
-    get_password_hash,
-    get_current_user,
     get_admin_user,
-    create_token,
+    get_current_user,
 )
-from omni_webui.utils.misc import get_gravatar_url, validate_email_format
-from omni_webui.constants import ERROR_MESSAGES
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -67,10 +54,10 @@ async def set_global_default_suggestions(
 
 
 class SetBannersForm(BaseModel):
-    banners: List[BannerModel]
+    banners: list[BannerModel]
 
 
-@router.post("/banners", response_model=List[BannerModel])
+@router.post("/banners", response_model=list[BannerModel])
 async def set_banners(
     request: Request,
     form_data: SetBannersForm,
@@ -81,7 +68,7 @@ async def set_banners(
     return request.app.state.config.BANNERS
 
 
-@router.get("/banners", response_model=List[BannerModel])
+@router.get("/banners", response_model=list[BannerModel])
 async def get_banners(
     request: Request,
     user=Depends(get_current_user),

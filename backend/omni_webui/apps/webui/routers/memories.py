@@ -1,21 +1,9 @@
-from fastapi import Response, Request
-from fastapi import Depends, FastAPI, HTTPException, status
-from datetime import datetime, timedelta
-from typing import List, Union, Optional
-
-from fastapi import APIRouter
-from pydantic import BaseModel
-import logging
-
+from fastapi import APIRouter, Depends, Request
+from loguru import logger
 from omni_webui.apps.webui.models.memories import Memories, MemoryModel
-
+from omni_webui.config import CHROMA_CLIENT
 from omni_webui.utils import get_verified_user
-from omni_webui.constants import ERROR_MESSAGES
-
-from omni_webui.config import SRC_LOG_LEVELS, CHROMA_CLIENT
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MODELS"])
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -30,7 +18,7 @@ async def get_embeddings(request: Request):
 ############################
 
 
-@router.get("/", response_model=List[MemoryModel])
+@router.get("/", response_model=list[MemoryModel])
 async def get_memories(user=Depends(get_verified_user)):
     return Memories.get_memories_by_user_id(user.id)
 
@@ -44,11 +32,12 @@ class AddMemoryForm(BaseModel):
     content: str
 
 
-@router.post("/add", response_model=Optional[MemoryModel])
+@router.post("/add", response_model=MemoryModel)
 async def add_memory(
     request: Request, form_data: AddMemoryForm, user=Depends(get_verified_user)
 ):
     memory = Memories.insert_new_memory(user.id, form_data.content)
+    assert memory is not None
     memory_embedding = request.app.state.EMBEDDING_FUNCTION(memory.content)
 
     collection = CHROMA_CLIENT.get_or_create_collection(name=f"user-memory-{user.id}")
@@ -120,7 +109,7 @@ async def delete_memory_by_user_id(user=Depends(get_verified_user)):
         try:
             CHROMA_CLIENT.delete_collection(f"user-memory-{user.id}")
         except Exception as e:
-            log.error(e)
+            logger.error(e)
         return True
 
     return False

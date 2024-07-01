@@ -15,6 +15,7 @@
 			".venv/**",
 			".svelte-kit/**",
 			".mypy_cache/**",
+			".vscode/**",
 			"static/"
 		]
 	},
@@ -27,6 +28,7 @@
 			".venv/**",
 			".svelte-kit/**",
 			".mypy_cache/**",
+			".vscode/**",
 			"static/"
 		],
 		"lineWidth": 100

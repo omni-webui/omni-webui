@@ -1,11 +1,8 @@
 import json
-import logging
 import mimetypes
-import os
-import sys
 import time
 from contextlib import asynccontextmanager
-from typing import List, Optional
+from typing import Optional
 
 import aiohttp
 import requests
@@ -14,25 +11,19 @@ from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from loguru import logger
+from pydantic import BaseModel, HttpUrl
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response, StreamingResponse
 
+from omni_webui import __version__
 from omni_webui.apps.audio.main import app as audio_app
 from omni_webui.apps.images.main import app as images_app
-from omni_webui.apps.ollama.main import (
-    app as ollama_app,
-)
-from omni_webui.apps.ollama.main import (
-    get_all_models as get_ollama_models,
-)
-from omni_webui.apps.openai.main import (
-    app as openai_app,
-)
-from omni_webui.apps.openai.main import (
-    get_all_models as get_openai_models,
-)
+from omni_webui.apps.ollama.main import app as ollama_app
+from omni_webui.apps.ollama.main import get_all_models as get_ollama_models
+from omni_webui.apps.openai.main import app as openai_app
+from omni_webui.apps.openai.main import get_all_models as get_openai_models
 from omni_webui.apps.rag.main import app as rag_app
 from omni_webui.apps.rag.utils import rag_messages
 from omni_webui.apps.socket.main import app as socket_app
@@ -41,24 +32,9 @@ from omni_webui.apps.webui.models.models import Models
 from omni_webui.config import (
     CACHE_DIR,
     CHANGELOG,
-    CONFIG_DATA,
-    ENABLE_ADMIN_EXPORT,
-    ENABLE_MODEL_FILTER,
-    ENABLE_OLLAMA_API,
-    ENABLE_OPENAI_API,
-    ENV,
-    FRONTEND_BUILD_DIR,
-    GLOBAL_LOG_LEVEL,
-    MODEL_FILTER_LIST,
-    SRC_LOG_LEVELS,
-    STATIC_DIR,
-    VERSION,
-    WEBHOOK_URL,
-    WEBUI_AUTH,
-    WEBUI_BUILD_HASH,
-    WEBUI_NAME,
-    WEBUI_URL,
-    AppConfig,
+    ModelFilter,
+    config,
+    settings,
 )
 from omni_webui.constants import ERROR_MESSAGES
 from omni_webui.utils import (
@@ -67,10 +43,6 @@ from omni_webui.utils import (
     get_http_authorization_cred,
     get_verified_user,
 )
-
-logging.basicConfig(stream=sys.stdout, level=GLOBAL_LOG_LEVEL)
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MAIN"])
 
 
 class SPAStaticFiles(StaticFiles):
@@ -84,11 +56,12 @@ class SPAStaticFiles(StaticFiles):
                 raise ex
 
 
-print(
-    rf"""{text2art(WEBUI_NAME)}
+logger.info(
+    rf"""
+{text2art(settings.name)}
 
-v{VERSION} - building the best open-source AI user interface.
-{f"Commit: {WEBUI_BUILD_HASH}" if WEBUI_BUILD_HASH != "dev-build" else ""}
+v{__version__} - building the best open-source AI user interface.
+{f"Commit: {settings.build_hash}" if settings.build_hash != "dev-build" else ""}
 https://github.com/omni-webui/omni-webui
 """
 )
@@ -97,38 +70,18 @@ https://github.com/omni-webui/omni-webui
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     yield
+    settings.database.close()
 
 
 app = FastAPI(
-    docs_url="/docs" if ENV == "dev" else None, redoc_url=None, lifespan=lifespan
+    docs_url="/docs" if settings.env == "dev" else None,
+    redoc_url=None,
+    lifespan=lifespan,
 )
-
-app.state.config = AppConfig()
-
-app.state.config.ENABLE_OPENAI_API = ENABLE_OPENAI_API
-app.state.config.ENABLE_OLLAMA_API = ENABLE_OLLAMA_API
-
-app.state.config.ENABLE_MODEL_FILTER = ENABLE_MODEL_FILTER
-app.state.config.MODEL_FILTER_LIST = MODEL_FILTER_LIST
-
-
-app.state.config.WEBHOOK_URL = WEBHOOK_URL
-
 
 app.state.MODELS = {}
 
 origins = ["*"]
-
-# Custom middleware to add security headers
-# class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-#     async def dispatch(self, request: Request, call_next):
-#         response: Response = await call_next(request)
-#         response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-#         response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
-#         return response
-
-
-# app.add_middleware(SecurityHeadersMiddleware)
 
 
 class RAGMiddleware(BaseHTTPMiddleware):
@@ -139,7 +92,7 @@ class RAGMiddleware(BaseHTTPMiddleware):
             "/ollama/api/chat" in request.url.path
             or "/chat/completions" in request.url.path
         ):
-            log.debug(f"request.url.path: {request.url.path}")
+            logger.debug(f"request.url.path: {request.url.path}")
 
             # Read the original request body
             body = await request.body()
@@ -159,16 +112,16 @@ class RAGMiddleware(BaseHTTPMiddleware):
                 data["messages"], citations = rag_messages(
                     docs=data["docs"],
                     messages=data["messages"],
-                    template=rag_app.state.config.RAG_TEMPLATE,
+                    template=config.rag.template,
                     embedding_function=rag_app.state.EMBEDDING_FUNCTION,
-                    k=rag_app.state.config.TOP_K,
+                    k=config.rag.top_k,
                     reranking_function=rag_app.state.sentence_transformer_rf,
-                    r=rag_app.state.config.RELEVANCE_THRESHOLD,
-                    hybrid_search=rag_app.state.config.ENABLE_RAG_HYBRID_SEARCH,
+                    r=config.rag.relevance_threshold,
+                    hybrid_search=config.rag.enable_hybrid_search,
                 )
                 del data["docs"]
 
-                log.debug(
+                logger.debug(
                     f"data['messages']: {data['messages']}, citations: {citations}"
                 )
 
@@ -228,7 +181,7 @@ class PipelineMiddleware(BaseHTTPMiddleware):
             "/ollama/api/chat" in request.url.path
             or "/chat/completions" in request.url.path
         ):
-            log.debug(f"request.url.path: {request.url.path}")
+            logger.debug(f"request.url.path: {request.url.path}")
 
             # Read the original request body
             body = await request.body()
@@ -271,8 +224,8 @@ class PipelineMiddleware(BaseHTTPMiddleware):
                 try:
                     urlIdx = filter["urlIdx"]
 
-                    url = openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx]
-                    key = openai_app.state.config.OPENAI_API_KEYS[urlIdx]
+                    url = config.openai.base_urls[urlIdx]
+                    key = config.openai.api_keys[urlIdx]
 
                     if key != "":
                         headers = {"Authorization": f"Bearer {key}"}
@@ -382,12 +335,12 @@ async def get_all_models():
     openai_models = []
     ollama_models = []
 
-    if app.state.config.ENABLE_OPENAI_API:
+    if config.openai.enable:
         openai_models = await get_openai_models()
 
         openai_models = openai_models["data"]
 
-    if app.state.config.ENABLE_OLLAMA_API:
+    if config.ollama.enable:
         ollama_models = await get_ollama_models()
 
         ollama_models = [
@@ -454,11 +407,11 @@ async def get_models(user=Depends(get_verified_user)):
         if "pipeline" not in model or model["pipeline"].get("type", None) != "filter"
     ]
 
-    if app.state.config.ENABLE_MODEL_FILTER:
+    if config.model_filter.enabled:
         if user.role == "user":
             models = list(
                 filter(
-                    lambda model: model["id"] in app.state.config.MODEL_FILTER_LIST,
+                    lambda model: model["id"] in config.model_filter.models,
                     models,
                 )
             )
@@ -500,8 +453,8 @@ async def chat_completed(form_data: dict, user=Depends(get_verified_user)):
         try:
             urlIdx = filter["urlIdx"]
 
-            url = openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx]
-            key = openai_app.state.config.OPENAI_API_KEYS[urlIdx]
+            url = config.openai.base_urls[urlIdx]
+            key = config.openai.api_keys[urlIdx]
 
             if key != "":
                 headers = {"Authorization": f"Bearer {key}"}
@@ -537,7 +490,7 @@ async def chat_completed(form_data: dict, user=Depends(get_verified_user)):
 async def get_pipelines_list(user=Depends(get_admin_user)):
     responses = await get_openai_models(raw=True)
 
-    print(responses)
+    logger.info(responses)
     urlIdxs = [
         idx
         for idx, response in enumerate(responses)
@@ -547,7 +500,7 @@ async def get_pipelines_list(user=Depends(get_admin_user)):
     return {
         "data": [
             {
-                "url": openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx],
+                "url": config.openai.base_urls[urlIdx],
                 "idx": urlIdx,
             }
             for urlIdx in urlIdxs
@@ -566,8 +519,8 @@ async def add_pipeline(form_data: AddPipelineForm, user=Depends(get_admin_user))
     try:
         urlIdx = form_data.urlIdx
 
-        url = openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx]
-        key = openai_app.state.config.OPENAI_API_KEYS[urlIdx]
+        url = config.openai.base_urls[urlIdx]
+        key = config.openai.api_keys[urlIdx]
 
         headers = {"Authorization": f"Bearer {key}"}
         r = requests.post(
@@ -605,8 +558,8 @@ async def delete_pipeline(form_data: DeletePipelineForm, user=Depends(get_admin_
     try:
         urlIdx = form_data.urlIdx
 
-        url = openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx]
-        key = openai_app.state.config.OPENAI_API_KEYS[urlIdx]
+        url = config.openai.base_urls[urlIdx]
+        key = config.openai.api_keys[urlIdx]
 
         headers = {"Authorization": f"Bearer {key}"}
         r = requests.delete(
@@ -637,10 +590,10 @@ async def delete_pipeline(form_data: DeletePipelineForm, user=Depends(get_admin_
 async def get_pipelines(urlIdx: Optional[int] = None, user=Depends(get_admin_user)):
     r = None
     try:
-        urlIdx
+        assert urlIdx is not None
 
-        url = openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx]
-        key = openai_app.state.config.OPENAI_API_KEYS[urlIdx]
+        url = config.openai.base_urls[urlIdx]
+        key = config.openai.api_keys[urlIdx]
 
         headers = {"Authorization": f"Bearer {key}"}
         r = requests.get(f"{url}/pipelines", headers=headers)
@@ -672,8 +625,9 @@ async def get_pipeline_valves(
     await get_all_models()
     r = None
     try:
-        url = openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx]
-        key = openai_app.state.config.OPENAI_API_KEYS[urlIdx]
+        assert urlIdx is not None
+        url = config.openai.base_urls[urlIdx]
+        key = config.openai.api_keys[urlIdx]
 
         headers = {"Authorization": f"Bearer {key}"}
         r = requests.get(f"{url}/{pipeline_id}/valves", headers=headers)
@@ -707,8 +661,9 @@ async def get_pipeline_valves_spec(
 
     r = None
     try:
-        url = openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx]
-        key = openai_app.state.config.OPENAI_API_KEYS[urlIdx]
+        assert urlIdx is not None
+        url = config.openai.base_urls[urlIdx]
+        key = config.openai.api_keys[urlIdx]
 
         headers = {"Authorization": f"Bearer {key}"}
         r = requests.get(f"{url}/{pipeline_id}/valves/spec", headers=headers)
@@ -744,8 +699,9 @@ async def update_pipeline_valves(
 
     r = None
     try:
-        url = openai_app.state.config.OPENAI_API_BASE_URLS[urlIdx]
-        key = openai_app.state.config.OPENAI_API_KEYS[urlIdx]
+        assert urlIdx is not None
+        url = config.openai.base_urls[urlIdx]
+        key = config.openai.api_keys[urlIdx]
 
         headers = {"Authorization": f"Bearer {key}"}
         r = requests.post(
@@ -777,86 +733,64 @@ async def update_pipeline_valves(
 
 @app.get("/api/config")
 async def get_app_config():
-    # Checking and Handling the Absence of 'ui' in CONFIG_DATA
-
-    default_locale = "en-US"
-    if "ui" in CONFIG_DATA:
-        default_locale = CONFIG_DATA["ui"].get("default_locale", "en-US")
-
     # The Rest of the Function Now Uses the Variables Defined Above
     return {
         "status": True,
-        "name": WEBUI_NAME,
-        "version": VERSION,
-        "default_locale": default_locale,
-        "default_models": webui_app.state.config.DEFAULT_MODELS,
+        "name": settings.name,
+        "version": __version__,
+        "default_locale": config.ui.default_locale,
+        "default_models": config.ui.default_models,
         "default_prompt_suggestions": webui_app.state.config.DEFAULT_PROMPT_SUGGESTIONS,
         "features": {
-            "auth": WEBUI_AUTH,
+            "auth": settings.auth,
             "auth_trusted_header": bool(webui_app.state.AUTH_TRUSTED_EMAIL_HEADER),
-            "enable_signup": webui_app.state.config.ENABLE_SIGNUP,
-            "enable_web_search": rag_app.state.config.ENABLE_RAG_WEB_SEARCH,
+            "enable_signup": config.ui.enable_signup,
+            "enable_web_search": config.rag.web_search.enable,
             "enable_image_generation": images_app.state.config.ENABLED,
-            "enable_community_sharing": webui_app.state.config.ENABLE_COMMUNITY_SHARING,
-            "enable_admin_export": ENABLE_ADMIN_EXPORT,
+            "enable_community_sharing": config.ui.enable_community_sharing,
+            "enable_admin_export": settings.enable_admin_export,
         },
     }
 
 
 @app.get("/api/config/model/filter")
 async def get_model_filter_config(user=Depends(get_admin_user)):
-    return {
-        "enabled": app.state.config.ENABLE_MODEL_FILTER,
-        "models": app.state.config.MODEL_FILTER_LIST,
-    }
-
-
-class ModelFilterConfigForm(BaseModel):
-    enabled: bool
-    models: List[str]
+    return config.model_filter
 
 
 @app.post("/api/config/model/filter")
 async def update_model_filter_config(
-    form_data: ModelFilterConfigForm, user=Depends(get_admin_user)
+    form_data: ModelFilter, user=Depends(get_admin_user)
 ):
-    app.state.config.ENABLE_MODEL_FILTER = form_data.enabled
-    app.state.config.MODEL_FILTER_LIST = form_data.models
+    config.model_filter.enabled = form_data.enabled
+    config.model_filter.models = form_data.models
 
-    return {
-        "enabled": app.state.config.ENABLE_MODEL_FILTER,
-        "models": app.state.config.MODEL_FILTER_LIST,
-    }
+    return config.model_filter
 
 
 @app.get("/api/webhook")
 async def get_webhook_url(user=Depends(get_admin_user)):
-    return {
-        "url": app.state.config.WEBHOOK_URL,
-    }
+    return {"url": config.webhook_url}
 
 
 class UrlForm(BaseModel):
-    url: str
+    url: HttpUrl
 
 
 @app.post("/api/webhook")
 async def update_webhook_url(form_data: UrlForm, user=Depends(get_admin_user)):
-    app.state.config.WEBHOOK_URL = form_data.url
-    webui_app.state.WEBHOOK_URL = app.state.config.WEBHOOK_URL
-    return {"url": app.state.config.WEBHOOK_URL}
+    config.webhook_url = str(form_data.url)
+    return {"url": config.webhook_url}
 
 
 @app.get("/api/version")
 async def get_app_version():
-    return {
-        "version": VERSION,
-    }
+    return {"version": __version__}
 
 
 @app.get("/api/changelog")
 async def get_app_changelog():
-    return {key: CHANGELOG[key] for idx, key in enumerate(CHANGELOG) if idx < 5}
+    return {key: value for i, (key, value) in enumerate(CHANGELOG.items()) if i < 5}
 
 
 @app.get("/api/version/updates")
@@ -870,7 +804,7 @@ async def get_app_latest_release_version():
                 data = await response.json()
                 latest_version = data["tag_name"]
 
-                return {"current": VERSION, "latest": latest_version[1:]}
+                return {"current": __version__, "latest": latest_version[1:]}
     except aiohttp.ClientError:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -881,8 +815,8 @@ async def get_app_latest_release_version():
 @app.get("/manifest.json")
 async def get_manifest_json():
     return {
-        "name": WEBUI_NAME,
-        "short_name": WEBUI_NAME,
+        "name": settings.name,
+        "short_name": settings.name,
         "start_url": "/",
         "display": "standalone",
         "background_color": "#343541",
@@ -896,12 +830,12 @@ async def get_manifest_json():
 async def get_opensearch_xml():
     xml_content = rf"""
     <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
-    <ShortName>{WEBUI_NAME}</ShortName>
-    <Description>Search {WEBUI_NAME}</Description>
+    <ShortName>{settings.name}</ShortName>
+    <Description>Search {settings.name}</Description>
     <InputEncoding>UTF-8</InputEncoding>
-    <Image width="16" height="16" type="image/x-icon">{WEBUI_URL}/favicon.png</Image>
-    <Url type="text/html" method="get" template="{WEBUI_URL}/?q={"{searchTerms}"}"/>
-    <moz:SearchForm>{WEBUI_URL}</moz:SearchForm>
+    <Image width="16" height="16" type="image/x-icon">{settings.url}/favicon.png</Image>
+    <Url type="text/html" method="get" template="{settings.url}/?q={"{searchTerms}"}"/>
+    <moz:SearchForm>{settings.url}</moz:SearchForm>
     </OpenSearchDescription>
     """
     return Response(content=xml_content, media_type="application/xml")
@@ -912,17 +846,17 @@ async def healthcheck():
     return {"status": True}
 
 
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/static", StaticFiles(directory=settings.static_dir), name="static")
 app.mount("/cache", StaticFiles(directory=CACHE_DIR), name="cache")
 
-if os.path.exists(FRONTEND_BUILD_DIR):
+if settings.frontend_build_dir.exists():
     mimetypes.add_type("text/javascript", ".js")
     app.mount(
         "/",
-        SPAStaticFiles(directory=FRONTEND_BUILD_DIR, html=True),
+        SPAStaticFiles(directory=settings.frontend_build_dir, html=True),
         name="spa-static-files",
     )
 else:
-    log.warning(
-        f"Frontend build directory not found at '{FRONTEND_BUILD_DIR}'. Serving API only."
+    logger.warning(
+        f"Frontend build directory not found at '{settings.frontend_build_dir}'. Serving API only."
     )

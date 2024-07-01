@@ -1,179 +1,92 @@
-from fastapi import (
-    FastAPI,
-    Depends,
-    HTTPException,
-    status,
-    UploadFile,
-    File,
-    Form,
-)
-from fastapi.middleware.cors import CORSMiddleware
-import os, shutil, logging, re
-
-from pathlib import Path
-from typing import List, Union, Sequence
-
-from chromadb.utils.batch_utils import create_batches
-
-from langchain_community.document_loaders import (
-    WebBaseLoader,
-    TextLoader,
-    PyPDFLoader,
-    CSVLoader,
-    BSHTMLLoader,
-    Docx2txtLoader,
-    UnstructuredEPubLoader,
-    UnstructuredWordDocumentLoader,
-    UnstructuredMarkdownLoader,
-    UnstructuredXMLLoader,
-    UnstructuredRSTLoader,
-    UnstructuredExcelLoader,
-    UnstructuredPowerPointLoader,
-    YoutubeLoader,
-)
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-
-import validators
-import urllib.parse
-import socket
-
-
-from pydantic import BaseModel
-from typing import Optional
-import mimetypes
-import uuid
 import json
+import mimetypes
+import os
+import shutil
+import socket
+import urllib.parse
+import uuid
+from typing import List, Optional, Sequence, Union
 
 import sentence_transformers
-
-from omni_webui.apps.webui.models.documents import (
-    Documents,
-    DocumentForm,
-    DocumentResponse,
+import validators
+from chromadb.utils.batch_utils import create_batches
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    Form,
+    HTTPException,
+    UploadFile,
+    status,
 )
-
-from omni_webui.apps.rag.utils import (
-    get_model_path,
-    get_embedding_function,
-    query_doc,
-    query_doc_with_hybrid_search,
-    query_collection,
-    query_collection_with_hybrid_search,
+from fastapi.middleware.cors import CORSMiddleware
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import (
+    BSHTMLLoader,
+    CSVLoader,
+    Docx2txtLoader,
+    PyPDFLoader,
+    TextLoader,
+    UnstructuredEPubLoader,
+    UnstructuredExcelLoader,
+    UnstructuredMarkdownLoader,
+    UnstructuredPowerPointLoader,
+    UnstructuredRSTLoader,
+    UnstructuredXMLLoader,
+    WebBaseLoader,
+    YoutubeLoader,
 )
-
+from langchain_core.document_loaders import BaseLoader
+from loguru import logger
 from omni_webui.apps.rag.search.brave import search_brave
 from omni_webui.apps.rag.search.google_pse import search_google_pse
 from omni_webui.apps.rag.search.main import SearchResult
 from omni_webui.apps.rag.search.searxng import search_searxng
 from omni_webui.apps.rag.search.serper import search_serper
 from omni_webui.apps.rag.search.serpstack import search_serpstack
-
-
+from omni_webui.apps.rag.utils import (
+    get_embedding_function,
+    get_model_path,
+    query_collection,
+    query_collection_with_hybrid_search,
+    query_doc,
+    query_doc_with_hybrid_search,
+)
+from omni_webui.apps.webui.models.documents import (
+    DocumentForm,
+    Documents,
+)
+from omni_webui.config import (
+    CHROMA_CLIENT,
+    DEVICE_TYPE,
+    RAG_EMBEDDING_MODEL_AUTO_UPDATE,
+    RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE,
+    RAG_RERANKING_MODEL_AUTO_UPDATE,
+    RAG_RERANKING_MODEL_TRUST_REMOTE_CODE,
+    UPLOAD_DIR,
+    config,
+    settings,
+)
+from omni_webui.constants import ERROR_MESSAGES
+from omni_webui.utils import get_admin_user, get_current_user
 from omni_webui.utils.misc import (
     calculate_sha256,
     calculate_sha256_string,
-    sanitize_filename,
     extract_folders_after_data_docs,
+    sanitize_filename,
 )
-from omni_webui.utils import get_current_user, get_admin_user
-
-from omni_webui.config import (
-    AppConfig,
-    ENV,
-    SRC_LOG_LEVELS,
-    UPLOAD_DIR,
-    DOCS_DIR,
-    RAG_TOP_K,
-    RAG_RELEVANCE_THRESHOLD,
-    RAG_EMBEDDING_ENGINE,
-    RAG_EMBEDDING_MODEL,
-    RAG_EMBEDDING_MODEL_AUTO_UPDATE,
-    RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE,
-    ENABLE_RAG_HYBRID_SEARCH,
-    ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION,
-    RAG_RERANKING_MODEL,
-    PDF_EXTRACT_IMAGES,
-    RAG_RERANKING_MODEL_AUTO_UPDATE,
-    RAG_RERANKING_MODEL_TRUST_REMOTE_CODE,
-    RAG_OPENAI_API_BASE_URL,
-    RAG_OPENAI_API_KEY,
-    DEVICE_TYPE,
-    CHROMA_CLIENT,
-    CHUNK_SIZE,
-    CHUNK_OVERLAP,
-    RAG_TEMPLATE,
-    ENABLE_RAG_LOCAL_WEB_FETCH,
-    YOUTUBE_LOADER_LANGUAGE,
-    ENABLE_RAG_WEB_SEARCH,
-    RAG_WEB_SEARCH_ENGINE,
-    SEARXNG_QUERY_URL,
-    GOOGLE_PSE_API_KEY,
-    GOOGLE_PSE_ENGINE_ID,
-    BRAVE_SEARCH_API_KEY,
-    SERPSTACK_API_KEY,
-    SERPSTACK_HTTPS,
-    SERPER_API_KEY,
-    RAG_WEB_SEARCH_RESULT_COUNT,
-    RAG_WEB_SEARCH_CONCURRENT_REQUESTS,
-    RAG_EMBEDDING_OPENAI_BATCH_SIZE,
-)
-
-from omni_webui.constants import ERROR_MESSAGES
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["RAG"])
+from pydantic import BaseModel, HttpUrl
 
 app = FastAPI()
 
-app.state.config = AppConfig()
-
-app.state.config.TOP_K = RAG_TOP_K
-app.state.config.RELEVANCE_THRESHOLD = RAG_RELEVANCE_THRESHOLD
-
-app.state.config.ENABLE_RAG_HYBRID_SEARCH = ENABLE_RAG_HYBRID_SEARCH
-app.state.config.ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION = (
-    ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION
-)
-
-app.state.config.CHUNK_SIZE = CHUNK_SIZE
-app.state.config.CHUNK_OVERLAP = CHUNK_OVERLAP
-
-app.state.config.RAG_EMBEDDING_ENGINE = RAG_EMBEDDING_ENGINE
-app.state.config.RAG_EMBEDDING_MODEL = RAG_EMBEDDING_MODEL
-app.state.config.RAG_EMBEDDING_OPENAI_BATCH_SIZE = RAG_EMBEDDING_OPENAI_BATCH_SIZE
-app.state.config.RAG_RERANKING_MODEL = RAG_RERANKING_MODEL
-app.state.config.RAG_TEMPLATE = RAG_TEMPLATE
-
-
-app.state.config.OPENAI_API_BASE_URL = RAG_OPENAI_API_BASE_URL
-app.state.config.OPENAI_API_KEY = RAG_OPENAI_API_KEY
-
-app.state.config.PDF_EXTRACT_IMAGES = PDF_EXTRACT_IMAGES
-
-
-app.state.config.YOUTUBE_LOADER_LANGUAGE = YOUTUBE_LOADER_LANGUAGE
 app.state.YOUTUBE_LOADER_TRANSLATION = None
-
-
-app.state.config.ENABLE_RAG_WEB_SEARCH = ENABLE_RAG_WEB_SEARCH
-app.state.config.RAG_WEB_SEARCH_ENGINE = RAG_WEB_SEARCH_ENGINE
-
-app.state.config.SEARXNG_QUERY_URL = SEARXNG_QUERY_URL
-app.state.config.GOOGLE_PSE_API_KEY = GOOGLE_PSE_API_KEY
-app.state.config.GOOGLE_PSE_ENGINE_ID = GOOGLE_PSE_ENGINE_ID
-app.state.config.BRAVE_SEARCH_API_KEY = BRAVE_SEARCH_API_KEY
-app.state.config.SERPSTACK_API_KEY = SERPSTACK_API_KEY
-app.state.config.SERPSTACK_HTTPS = SERPSTACK_HTTPS
-app.state.config.SERPER_API_KEY = SERPER_API_KEY
-app.state.config.RAG_WEB_SEARCH_RESULT_COUNT = RAG_WEB_SEARCH_RESULT_COUNT
-app.state.config.RAG_WEB_SEARCH_CONCURRENT_REQUESTS = RAG_WEB_SEARCH_CONCURRENT_REQUESTS
 
 
 def update_embedding_model(
     embedding_model: str,
     update_model: bool = False,
 ):
-    if embedding_model and app.state.config.RAG_EMBEDDING_ENGINE == "":
+    if embedding_model and config.rag.embedding_engine == "":
         app.state.sentence_transformer_ef = sentence_transformers.SentenceTransformer(
             get_model_path(embedding_model, update_model),
             device=DEVICE_TYPE,
@@ -198,23 +111,23 @@ def update_reranking_model(
 
 
 update_embedding_model(
-    app.state.config.RAG_EMBEDDING_MODEL,
+    config.rag.embedding_model,
     RAG_EMBEDDING_MODEL_AUTO_UPDATE,
 )
 
 update_reranking_model(
-    app.state.config.RAG_RERANKING_MODEL,
+    config.rag.reranking_model,
     RAG_RERANKING_MODEL_AUTO_UPDATE,
 )
 
 
 app.state.EMBEDDING_FUNCTION = get_embedding_function(
-    app.state.config.RAG_EMBEDDING_ENGINE,
-    app.state.config.RAG_EMBEDDING_MODEL,
+    config.rag.embedding_engine,
+    config.rag.embedding_model,
     app.state.sentence_transformer_ef,
-    app.state.config.OPENAI_API_KEY,
-    app.state.config.OPENAI_API_BASE_URL,
-    app.state.config.RAG_EMBEDDING_OPENAI_BATCH_SIZE,
+    settings.openai_api_key,
+    settings.openai_api_base_url,
+    config.rag.embedding_openai_batch_size,
 )
 
 origins = ["*"]
@@ -245,13 +158,13 @@ class SearchForm(CollectionNameForm):
 async def get_status():
     return {
         "status": True,
-        "chunk_size": app.state.config.CHUNK_SIZE,
-        "chunk_overlap": app.state.config.CHUNK_OVERLAP,
-        "template": app.state.config.RAG_TEMPLATE,
-        "embedding_engine": app.state.config.RAG_EMBEDDING_ENGINE,
-        "embedding_model": app.state.config.RAG_EMBEDDING_MODEL,
-        "reranking_model": app.state.config.RAG_RERANKING_MODEL,
-        "openai_batch_size": app.state.config.RAG_EMBEDDING_OPENAI_BATCH_SIZE,
+        "chunk_size": config.rag.chunk_size,
+        "chunk_overlap": config.rag.chunk_overlap,
+        "template": config.rag.template,
+        "embedding_engine": config.rag.embedding_engine,
+        "embedding_model": config.rag.embedding_model,
+        "reranking_model": config.rag.reranking_model,
+        "openai_batch_size": config.rag.embedding_openai_batch_size,
     }
 
 
@@ -259,12 +172,12 @@ async def get_status():
 async def get_embedding_config(user=Depends(get_admin_user)):
     return {
         "status": True,
-        "embedding_engine": app.state.config.RAG_EMBEDDING_ENGINE,
-        "embedding_model": app.state.config.RAG_EMBEDDING_MODEL,
+        "embedding_engine": config.rag.embedding_engine,
+        "embedding_model": config.rag.embedding_model,
         "openai_config": {
-            "url": app.state.config.OPENAI_API_BASE_URL,
-            "key": app.state.config.OPENAI_API_KEY,
-            "batch_size": app.state.config.RAG_EMBEDDING_OPENAI_BATCH_SIZE,
+            "url": settings.openai_api_base_url,
+            "key": settings.openai_api_key,
+            "batch_size": config.rag.embedding_openai_batch_size,
         },
     }
 
@@ -273,12 +186,12 @@ async def get_embedding_config(user=Depends(get_admin_user)):
 async def get_reraanking_config(user=Depends(get_admin_user)):
     return {
         "status": True,
-        "reranking_model": app.state.config.RAG_RERANKING_MODEL,
+        "reranking_model": config.rag.reranking_model,
     }
 
 
 class OpenAIConfigForm(BaseModel):
-    url: str
+    url: HttpUrl
     key: str
     batch_size: Optional[int] = None
 
@@ -293,46 +206,46 @@ class EmbeddingModelUpdateForm(BaseModel):
 async def update_embedding_config(
     form_data: EmbeddingModelUpdateForm, user=Depends(get_admin_user)
 ):
-    log.info(
-        f"Updating embedding model: {app.state.config.RAG_EMBEDDING_MODEL} to {form_data.embedding_model}"
+    logger.info(
+        f"Updating embedding model: {config.rag.embedding_model} to {form_data.embedding_model}"
     )
     try:
-        app.state.config.RAG_EMBEDDING_ENGINE = form_data.embedding_engine
-        app.state.config.RAG_EMBEDDING_MODEL = form_data.embedding_model
+        config.rag.embedding_engine = form_data.embedding_engine
+        config.rag.embedding_model = form_data.embedding_model
 
-        if app.state.config.RAG_EMBEDDING_ENGINE in ["ollama", "openai"]:
+        if config.rag.embedding_engine in ["ollama", "openai"]:
             if form_data.openai_config is not None:
-                app.state.config.OPENAI_API_BASE_URL = form_data.openai_config.url
-                app.state.config.OPENAI_API_KEY = form_data.openai_config.key
-                app.state.config.RAG_EMBEDDING_OPENAI_BATCH_SIZE = (
+                settings.openai_api_base_url = form_data.openai_config.url
+                settings.openai_api_key = form_data.openai_config.key
+                config.rag.embedding_openai_batch_size = (
                     form_data.openai_config.batch_size
                     if form_data.openai_config.batch_size
                     else 1
                 )
 
-        update_embedding_model(app.state.config.RAG_EMBEDDING_MODEL)
+        update_embedding_model(config.rag.embedding_model)
 
         app.state.EMBEDDING_FUNCTION = get_embedding_function(
-            app.state.config.RAG_EMBEDDING_ENGINE,
-            app.state.config.RAG_EMBEDDING_MODEL,
+            config.rag.embedding_engine,
+            config.rag.embedding_model,
             app.state.sentence_transformer_ef,
-            app.state.config.OPENAI_API_KEY,
-            app.state.config.OPENAI_API_BASE_URL,
-            app.state.config.RAG_EMBEDDING_OPENAI_BATCH_SIZE,
+            settings.openai_api_key,
+            settings.openai_api_base_url,
+            config.rag.embedding_openai_batch_size,
         )
 
         return {
             "status": True,
-            "embedding_engine": app.state.config.RAG_EMBEDDING_ENGINE,
-            "embedding_model": app.state.config.RAG_EMBEDDING_MODEL,
+            "embedding_engine": config.rag.embedding_engine,
+            "embedding_model": config.rag.embedding_model,
             "openai_config": {
-                "url": app.state.config.OPENAI_API_BASE_URL,
-                "key": app.state.config.OPENAI_API_KEY,
-                "batch_size": app.state.config.RAG_EMBEDDING_OPENAI_BATCH_SIZE,
+                "url": settings.openai_api_base_url,
+                "key": settings.openai_api_key,
+                "batch_size": config.rag.embedding_openai_batch_size,
             },
         }
     except Exception as e:
-        log.exception(f"Problem updating embedding model: {e}")
+        logger.exception(f"Problem updating embedding model: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ERROR_MESSAGES.DEFAULT(e),
@@ -347,20 +260,20 @@ class RerankingModelUpdateForm(BaseModel):
 async def update_reranking_config(
     form_data: RerankingModelUpdateForm, user=Depends(get_admin_user)
 ):
-    log.info(
-        f"Updating reranking model: {app.state.config.RAG_RERANKING_MODEL} to {form_data.reranking_model}"
+    logger.info(
+        f"Updating reranking model: {config.rag.reranking_model} to {form_data.reranking_model}"
     )
     try:
-        app.state.config.RAG_RERANKING_MODEL = form_data.reranking_model
+        config.rag.reranking_model = form_data.reranking_model
 
-        update_reranking_model(app.state.config.RAG_RERANKING_MODEL), True
+        update_reranking_model(config.rag.reranking_model), True
 
         return {
             "status": True,
-            "reranking_model": app.state.config.RAG_RERANKING_MODEL,
+            "reranking_model": config.rag.reranking_model,
         }
     except Exception as e:
-        log.exception(f"Problem updating reranking model: {e}")
+        logger.exception(f"Problem updating reranking model: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=ERROR_MESSAGES.DEFAULT(e),
@@ -371,29 +284,29 @@ async def update_reranking_config(
 async def get_rag_config(user=Depends(get_admin_user)):
     return {
         "status": True,
-        "pdf_extract_images": app.state.config.PDF_EXTRACT_IMAGES,
+        "pdf_extract_images": config.rag.pdf_extract_images,
         "chunk": {
-            "chunk_size": app.state.config.CHUNK_SIZE,
-            "chunk_overlap": app.state.config.CHUNK_OVERLAP,
+            "chunk_size": config.rag.chunk_size,
+            "chunk_overlap": config.rag.chunk_overlap,
         },
         "youtube": {
-            "language": app.state.config.YOUTUBE_LOADER_LANGUAGE,
+            "language": config.rag.youtube_loader_language,
             "translation": app.state.YOUTUBE_LOADER_TRANSLATION,
         },
         "web": {
-            "ssl_verification": app.state.config.ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION,
+            "ssl_verification": config.rag.enable_web_loader_ssl_verification,
             "search": {
-                "enabled": app.state.config.ENABLE_RAG_WEB_SEARCH,
-                "engine": app.state.config.RAG_WEB_SEARCH_ENGINE,
-                "searxng_query_url": app.state.config.SEARXNG_QUERY_URL,
-                "google_pse_api_key": app.state.config.GOOGLE_PSE_API_KEY,
-                "google_pse_engine_id": app.state.config.GOOGLE_PSE_ENGINE_ID,
-                "brave_search_api_key": app.state.config.BRAVE_SEARCH_API_KEY,
-                "serpstack_api_key": app.state.config.SERPSTACK_API_KEY,
-                "serpstack_https": app.state.config.SERPSTACK_HTTPS,
-                "serper_api_key": app.state.config.SERPER_API_KEY,
-                "result_count": app.state.config.RAG_WEB_SEARCH_RESULT_COUNT,
-                "concurrent_requests": app.state.config.RAG_WEB_SEARCH_CONCURRENT_REQUESTS,
+                "enabled": config.rag.web_search.enable,
+                "engine": config.rag.web_search.engine,
+                "searxng_query_url": config.rag.web_search.searxng_query_url,
+                "google_pse_api_key": config.rag.web_search.google_pse_api_key,
+                "google_pse_engine_id": config.rag.web_search.google_pse_engine_id,
+                "brave_search_api_key": config.rag.web_search.brave_search_api_key,
+                "serpstack_api_key": config.rag.web_search.serpstack_api_key,
+                "serpstack_https": config.rag.web_search.serpstack_https,
+                "serper_api_key": config.rag.web_search.serper_api_key,
+                "result_count": config.rag.web_search.result_count,
+                "concurrent_requests": config.rag.web_search.concurrent_requests,
             },
         },
     }
@@ -437,68 +350,76 @@ class ConfigUpdateForm(BaseModel):
 
 @app.post("/config/update")
 async def update_rag_config(form_data: ConfigUpdateForm, user=Depends(get_admin_user)):
-    app.state.config.PDF_EXTRACT_IMAGES = (
+    config.rag.pdf_extract_images = (
         form_data.pdf_extract_images
         if form_data.pdf_extract_images is not None
-        else app.state.config.PDF_EXTRACT_IMAGES
+        else config.rag.pdf_extract_images
     )
 
     if form_data.chunk is not None:
-        app.state.config.CHUNK_SIZE = form_data.chunk.chunk_size
-        app.state.config.CHUNK_OVERLAP = form_data.chunk.chunk_overlap
+        config.rag.chunk_size = form_data.chunk.chunk_size
+        config.rag.chunk_overlap = form_data.chunk.chunk_overlap
 
     if form_data.youtube is not None:
-        app.state.config.YOUTUBE_LOADER_LANGUAGE = form_data.youtube.language
+        config.rag.youtube_loader_language = form_data.youtube.language
         app.state.YOUTUBE_LOADER_TRANSLATION = form_data.youtube.translation
 
     if form_data.web is not None:
-        app.state.config.ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION = (
-            form_data.web.web_loader_ssl_verification
+        config.rag.enable_web_loader_ssl_verification = (
+            form_data.web.web_loader_ssl_verification or False
         )
 
-        app.state.config.ENABLE_RAG_WEB_SEARCH = form_data.web.search.enabled
-        app.state.config.RAG_WEB_SEARCH_ENGINE = form_data.web.search.engine
-        app.state.config.SEARXNG_QUERY_URL = form_data.web.search.searxng_query_url
-        app.state.config.GOOGLE_PSE_API_KEY = form_data.web.search.google_pse_api_key
-        app.state.config.GOOGLE_PSE_ENGINE_ID = (
-            form_data.web.search.google_pse_engine_id
+        config.rag.web_search.enable = form_data.web.search.enabled
+        config.rag.web_search.engine = form_data.web.search.engine or ""
+        config.rag.web_search.searxng_query_url = HttpUrl(
+            form_data.web.search.searxng_query_url or "http://localhost:7700"
         )
-        app.state.config.BRAVE_SEARCH_API_KEY = (
-            form_data.web.search.brave_search_api_key
+        config.rag.web_search.google_pse_api_key = (
+            form_data.web.search.google_pse_api_key or ""
         )
-        app.state.config.SERPSTACK_API_KEY = form_data.web.search.serpstack_api_key
-        app.state.config.SERPSTACK_HTTPS = form_data.web.search.serpstack_https
-        app.state.config.SERPER_API_KEY = form_data.web.search.serper_api_key
-        app.state.config.RAG_WEB_SEARCH_RESULT_COUNT = form_data.web.search.result_count
-        app.state.config.RAG_WEB_SEARCH_CONCURRENT_REQUESTS = (
-            form_data.web.search.concurrent_requests
+        config.rag.web_search.google_pse_engine_id = (
+            form_data.web.search.google_pse_engine_id or ""
+        )
+        config.rag.web_search.brave_search_api_key = (
+            form_data.web.search.brave_search_api_key or ""
+        )
+        config.rag.web_search.serpstack_api_key = (
+            form_data.web.search.serpstack_api_key or ""
+        )
+        config.rag.web_search.serpstack_https = (
+            form_data.web.search.serpstack_https or False
+        )
+        config.rag.web_search.serper_api_key = form_data.web.search.serper_api_key or ""
+        config.rag.web_search.result_count = form_data.web.search.result_count or 3
+        config.rag.web_search.concurrent_requests = (
+            form_data.web.search.concurrent_requests or 10
         )
 
     return {
         "status": True,
-        "pdf_extract_images": app.state.config.PDF_EXTRACT_IMAGES,
+        "pdf_extract_images": config.rag.pdf_extract_images,
         "chunk": {
-            "chunk_size": app.state.config.CHUNK_SIZE,
-            "chunk_overlap": app.state.config.CHUNK_OVERLAP,
+            "chunk_size": config.rag.chunk_size,
+            "chunk_overlap": config.rag.chunk_overlap,
         },
         "youtube": {
-            "language": app.state.config.YOUTUBE_LOADER_LANGUAGE,
+            "language": config.rag.youtube_loader_language,
             "translation": app.state.YOUTUBE_LOADER_TRANSLATION,
         },
         "web": {
-            "ssl_verification": app.state.config.ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION,
+            "ssl_verification": config.rag.enable_web_loader_ssl_verification,
             "search": {
-                "enabled": app.state.config.ENABLE_RAG_WEB_SEARCH,
-                "engine": app.state.config.RAG_WEB_SEARCH_ENGINE,
-                "searxng_query_url": app.state.config.SEARXNG_QUERY_URL,
-                "google_pse_api_key": app.state.config.GOOGLE_PSE_API_KEY,
-                "google_pse_engine_id": app.state.config.GOOGLE_PSE_ENGINE_ID,
-                "brave_search_api_key": app.state.config.BRAVE_SEARCH_API_KEY,
-                "serpstack_api_key": app.state.config.SERPSTACK_API_KEY,
-                "serpstack_https": app.state.config.SERPSTACK_HTTPS,
-                "serper_api_key": app.state.config.SERPER_API_KEY,
-                "result_count": app.state.config.RAG_WEB_SEARCH_RESULT_COUNT,
-                "concurrent_requests": app.state.config.RAG_WEB_SEARCH_CONCURRENT_REQUESTS,
+                "enabled": config.rag.web_search.enable,
+                "engine": config.rag.web_search.engine,
+                "searxng_query_url": config.rag.web_search.searxng_query_url,
+                "google_pse_api_key": config.rag.web_search.google_pse_api_key,
+                "google_pse_engine_id": config.rag.web_search.google_pse_engine_id,
+                "brave_search_api_key": config.rag.web_search.brave_search_api_key,
+                "serpstack_api_key": config.rag.web_search.serpstack_api_key,
+                "serpstack_https": config.rag.web_search.serpstack_https,
+                "serper_api_key": config.rag.web_search.serper_api_key,
+                "result_count": config.rag.web_search.result_count,
+                "concurrent_requests": config.rag.web_search.concurrent_requests,
             },
         },
     }
@@ -508,7 +429,7 @@ async def update_rag_config(form_data: ConfigUpdateForm, user=Depends(get_admin_
 async def get_rag_template(user=Depends(get_current_user)):
     return {
         "status": True,
-        "template": app.state.config.RAG_TEMPLATE,
+        "template": config.rag.template,
     }
 
 
@@ -516,10 +437,10 @@ async def get_rag_template(user=Depends(get_current_user)):
 async def get_query_settings(user=Depends(get_admin_user)):
     return {
         "status": True,
-        "template": app.state.config.RAG_TEMPLATE,
-        "k": app.state.config.TOP_K,
-        "r": app.state.config.RELEVANCE_THRESHOLD,
-        "hybrid": app.state.config.ENABLE_RAG_HYBRID_SEARCH,
+        "template": config.rag.template,
+        "k": config.rag.top_k,
+        "r": config.rag.relevance_threshold,
+        "hybrid": config.rag.enable_hybrid_search,
     }
 
 
@@ -534,20 +455,16 @@ class QuerySettingsForm(BaseModel):
 async def update_query_settings(
     form_data: QuerySettingsForm, user=Depends(get_admin_user)
 ):
-    app.state.config.RAG_TEMPLATE = (
-        form_data.template if form_data.template else RAG_TEMPLATE
-    )
-    app.state.config.TOP_K = form_data.k if form_data.k else 4
-    app.state.config.RELEVANCE_THRESHOLD = form_data.r if form_data.r else 0.0
-    app.state.config.ENABLE_RAG_HYBRID_SEARCH = (
-        form_data.hybrid if form_data.hybrid else False
-    )
+    config.rag.template = form_data.template or config.rag.template
+    config.rag.top_k = form_data.k if form_data.k else 4
+    config.rag.relevance_threshold = form_data.r if form_data.r else 0.0
+    config.rag.enable_hybrid_search = form_data.hybrid or False
     return {
         "status": True,
-        "template": app.state.config.RAG_TEMPLATE,
-        "k": app.state.config.TOP_K,
-        "r": app.state.config.RELEVANCE_THRESHOLD,
-        "hybrid": app.state.config.ENABLE_RAG_HYBRID_SEARCH,
+        "template": config.rag.template,
+        "k": config.rag.top_k,
+        "r": config.rag.relevance_threshold,
+        "hybrid": config.rag.enable_hybrid_search,
     }
 
 
@@ -565,26 +482,24 @@ def query_doc_handler(
     user=Depends(get_current_user),
 ):
     try:
-        if app.state.config.ENABLE_RAG_HYBRID_SEARCH:
+        if config.rag.enable_hybrid_search:
             return query_doc_with_hybrid_search(
                 collection_name=form_data.collection_name,
                 query=form_data.query,
                 embedding_function=app.state.EMBEDDING_FUNCTION,
-                k=form_data.k if form_data.k else app.state.config.TOP_K,
+                k=form_data.k or config.rag.top_k,
                 reranking_function=app.state.sentence_transformer_rf,
-                r=(
-                    form_data.r if form_data.r else app.state.config.RELEVANCE_THRESHOLD
-                ),
+                r=form_data.r or config.rag.relevance_threshold,
             )
         else:
             return query_doc(
                 collection_name=form_data.collection_name,
                 query=form_data.query,
                 embedding_function=app.state.EMBEDDING_FUNCTION,
-                k=form_data.k if form_data.k else app.state.config.TOP_K,
+                k=form_data.k or config.rag.top_k,
             )
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.DEFAULT(e),
@@ -605,27 +520,25 @@ def query_collection_handler(
     user=Depends(get_current_user),
 ):
     try:
-        if app.state.config.ENABLE_RAG_HYBRID_SEARCH:
+        if config.rag.enable_hybrid_search:
             return query_collection_with_hybrid_search(
                 collection_names=form_data.collection_names,
                 query=form_data.query,
                 embedding_function=app.state.EMBEDDING_FUNCTION,
-                k=form_data.k if form_data.k else app.state.config.TOP_K,
+                k=form_data.k or config.rag.top_k,
                 reranking_function=app.state.sentence_transformer_rf,
-                r=(
-                    form_data.r if form_data.r else app.state.config.RELEVANCE_THRESHOLD
-                ),
+                r=form_data.r or config.rag.relevance_threshold,
             )
         else:
             return query_collection(
                 collection_names=form_data.collection_names,
                 query=form_data.query,
                 embedding_function=app.state.EMBEDDING_FUNCTION,
-                k=form_data.k if form_data.k else app.state.config.TOP_K,
+                k=form_data.k or config.rag.top_k,
             )
 
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.DEFAULT(e),
@@ -638,7 +551,7 @@ def store_youtube_video(form_data: UrlForm, user=Depends(get_current_user)):
         loader = YoutubeLoader.from_youtube_url(
             form_data.url,
             add_video_info=True,
-            language=app.state.config.YOUTUBE_LOADER_LANGUAGE,
+            language=config.rag.youtube_loader_language,
             translation=app.state.YOUTUBE_LOADER_TRANSLATION,
         )
         data = loader.load()
@@ -654,7 +567,7 @@ def store_youtube_video(form_data: UrlForm, user=Depends(get_current_user)):
             "filename": form_data.url,
         }
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.DEFAULT(e),
@@ -667,7 +580,7 @@ def store_web(form_data: UrlForm, user=Depends(get_current_user)):
     try:
         loader = get_web_loader(
             form_data.url,
-            verify_ssl=app.state.config.ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION,
+            verify_ssl=config.rag.enable_web_loader_ssl_verification,
         )
         data = loader.load()
 
@@ -682,7 +595,7 @@ def store_web(form_data: UrlForm, user=Depends(get_current_user)):
             "filename": form_data.url,
         }
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.DEFAULT(e),
@@ -696,7 +609,7 @@ def get_web_loader(url: Union[str, Sequence[str]], verify_ssl: bool = True):
     return WebBaseLoader(
         url,
         verify_ssl=verify_ssl,
-        requests_per_second=RAG_WEB_SEARCH_CONCURRENT_REQUESTS,
+        requests_per_second=config.rag.web_search.concurrent_requests,
         continue_on_failure=True,
     )
 
@@ -705,7 +618,7 @@ def validate_url(url: Union[str, Sequence[str]]):
     if isinstance(url, str):
         if isinstance(validators.url(url), validators.ValidationError):
             raise ValueError(ERROR_MESSAGES.INVALID_URL)
-        if not ENABLE_RAG_LOCAL_WEB_FETCH:
+        if not settings.enable_rag_local_web_fetch:
             # Local web fetch is disabled, filter out any URLs that resolve to private IP addresses
             parsed_url = urllib.parse.urlparse(url)
             # Get IPv4 and IPv6 addresses
@@ -751,54 +664,54 @@ def search_web(engine: str, query: str) -> list[SearchResult]:
 
     # TODO: add playwright to search the web
     if engine == "searxng":
-        if app.state.config.SEARXNG_QUERY_URL:
+        if config.rag.web_search.searxng_query_url:
             return search_searxng(
-                app.state.config.SEARXNG_QUERY_URL,
+                str(config.rag.web_search.searxng_query_url),
                 query,
-                app.state.config.RAG_WEB_SEARCH_RESULT_COUNT,
+                config.rag.web_search.result_count,
             )
         else:
             raise Exception("No SEARXNG_QUERY_URL found in environment variables")
     elif engine == "google_pse":
         if (
-            app.state.config.GOOGLE_PSE_API_KEY
-            and app.state.config.GOOGLE_PSE_ENGINE_ID
+            config.rag.web_search.google_pse_api_key
+            and config.rag.web_search.google_pse_engine_id
         ):
             return search_google_pse(
-                app.state.config.GOOGLE_PSE_API_KEY,
-                app.state.config.GOOGLE_PSE_ENGINE_ID,
+                config.rag.web_search.google_pse_api_key,
+                config.rag.web_search.google_pse_engine_id,
                 query,
-                app.state.config.RAG_WEB_SEARCH_RESULT_COUNT,
+                config.rag.web_search.result_count,
             )
         else:
             raise Exception(
                 "No GOOGLE_PSE_API_KEY or GOOGLE_PSE_ENGINE_ID found in environment variables"
             )
     elif engine == "brave":
-        if app.state.config.BRAVE_SEARCH_API_KEY:
+        if config.rag.web_search.brave_search_api_key:
             return search_brave(
-                app.state.config.BRAVE_SEARCH_API_KEY,
+                config.rag.web_search.brave_search_api_key,
                 query,
-                app.state.config.RAG_WEB_SEARCH_RESULT_COUNT,
+                config.rag.web_search.result_count,
             )
         else:
             raise Exception("No BRAVE_SEARCH_API_KEY found in environment variables")
     elif engine == "serpstack":
-        if app.state.config.SERPSTACK_API_KEY:
+        if config.rag.web_search.serpstack_api_key:
             return search_serpstack(
-                app.state.config.SERPSTACK_API_KEY,
+                config.rag.web_search.serpstack_api_key,
                 query,
-                app.state.config.RAG_WEB_SEARCH_RESULT_COUNT,
-                https_enabled=app.state.config.SERPSTACK_HTTPS,
+                config.rag.web_search.result_count,
+                https_enabled=config.rag.web_search.serpstack_https,
             )
         else:
             raise Exception("No SERPSTACK_API_KEY found in environment variables")
     elif engine == "serper":
-        if app.state.config.SERPER_API_KEY:
+        if config.rag.web_search.serper_api_key:
             return search_serper(
-                app.state.config.SERPER_API_KEY,
+                config.rag.web_search.serper_api_key,
                 query,
-                app.state.config.RAG_WEB_SEARCH_RESULT_COUNT,
+                config.rag.web_search.result_count,
             )
         else:
             raise Exception("No SERPER_API_KEY found in environment variables")
@@ -809,11 +722,9 @@ def search_web(engine: str, query: str) -> list[SearchResult]:
 @app.post("/web/search")
 def store_web_search(form_data: SearchForm, user=Depends(get_current_user)):
     try:
-        web_results = search_web(
-            app.state.config.RAG_WEB_SEARCH_ENGINE, form_data.query
-        )
+        web_results = search_web(config.rag.web_search.engine, form_data.query)
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
 
         print(e)
         raise HTTPException(
@@ -837,7 +748,7 @@ def store_web_search(form_data: SearchForm, user=Depends(get_current_user)):
             "filenames": urls,
         }
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.DEFAULT(e),
@@ -845,18 +756,17 @@ def store_web_search(form_data: SearchForm, user=Depends(get_current_user)):
 
 
 def store_data_in_vector_db(data, collection_name, overwrite: bool = False) -> bool:
-
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=app.state.config.CHUNK_SIZE,
-        chunk_overlap=app.state.config.CHUNK_OVERLAP,
+        chunk_size=config.rag.chunk_size,
+        chunk_overlap=config.rag.chunk_overlap,
         add_start_index=True,
     )
 
     docs = text_splitter.split_documents(data)
 
     if len(docs) > 0:
-        log.info(f"store_data_in_vector_db {docs}")
-        return store_docs_in_vector_db(docs, collection_name, overwrite), None
+        logger.info(f"store_data_in_vector_db {docs}")
+        return store_docs_in_vector_db(docs, collection_name, overwrite)
     else:
         raise ValueError(ERROR_MESSAGES.EMPTY_CONTENT)
 
@@ -865,8 +775,8 @@ def store_text_in_vector_db(
     text, metadata, collection_name, overwrite: bool = False
 ) -> bool:
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=app.state.config.CHUNK_SIZE,
-        chunk_overlap=app.state.config.CHUNK_OVERLAP,
+        chunk_size=config.rag.chunk_size,
+        chunk_overlap=config.rag.chunk_overlap,
         add_start_index=True,
     )
     docs = text_splitter.create_documents([text], metadatas=[metadata])
@@ -874,7 +784,7 @@ def store_text_in_vector_db(
 
 
 def store_docs_in_vector_db(docs, collection_name, overwrite: bool = False) -> bool:
-    log.info(f"store_docs_in_vector_db {docs} {collection_name}")
+    logger.info(f"store_docs_in_vector_db {docs} {collection_name}")
 
     texts = [doc.page_content for doc in docs]
     metadatas = [doc.metadata for doc in docs]
@@ -883,18 +793,18 @@ def store_docs_in_vector_db(docs, collection_name, overwrite: bool = False) -> b
         if overwrite:
             for collection in CHROMA_CLIENT.list_collections():
                 if collection_name == collection.name:
-                    log.info(f"deleting existing collection {collection_name}")
+                    logger.info(f"deleting existing collection {collection_name}")
                     CHROMA_CLIENT.delete_collection(name=collection_name)
 
         collection = CHROMA_CLIENT.create_collection(name=collection_name)
 
         embedding_func = get_embedding_function(
-            app.state.config.RAG_EMBEDDING_ENGINE,
-            app.state.config.RAG_EMBEDDING_MODEL,
+            config.rag.embedding_engine,
+            config.rag.embedding_model,
             app.state.sentence_transformer_ef,
-            app.state.config.OPENAI_API_KEY,
-            app.state.config.OPENAI_API_BASE_URL,
-            app.state.config.RAG_EMBEDDING_OPENAI_BATCH_SIZE,
+            settings.openai_api_key,
+            settings.openai_api_base_url,
+            config.rag.embedding_openai_batch_size,
         )
 
         embedding_texts = list(map(lambda x: x.replace("\n", " "), texts))
@@ -911,7 +821,7 @@ def store_docs_in_vector_db(docs, collection_name, overwrite: bool = False) -> b
 
         return True
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         if e.__class__.__name__ == "UniqueConstraintError":
             return True
 
@@ -967,10 +877,9 @@ def get_loader(filename: str, file_content_type: str, file_path: str):
         "svelte",
     ]
 
+    loader: BaseLoader
     if file_ext == "pdf":
-        loader = PyPDFLoader(
-            file_path, extract_images=app.state.config.PDF_EXTRACT_IMAGES
-        )
+        loader = PyPDFLoader(file_path, extract_images=config.rag.pdf_extract_images)
     elif file_ext == "csv":
         loader = CSVLoader(file_path)
     elif file_ext == "rst":
@@ -1018,7 +927,7 @@ def store_doc(
 ):
     # "https://www.gutenberg.org/files/1727/1727-h/1727-h.htm"
 
-    log.info(f"file.content_type: {file.content_type}")
+    logger.info(f"file.content_type: {file.content_type}")
     try:
         unsanitized_filename = file.filename
         filename = os.path.basename(unsanitized_filename)
@@ -1030,10 +939,9 @@ def store_doc(
             f.write(contents)
             f.close()
 
-        f = open(file_path, "rb")
-        if collection_name == None:
-            collection_name = calculate_sha256(f)[:63]
-        f.close()
+        with open(file_path, "rb") as f:
+            if collection_name is None:
+                collection_name = calculate_sha256(f)[:63]
 
         loader, known_type = get_loader(filename, file.content_type, file_path)
         data = loader.load()
@@ -1054,7 +962,7 @@ def store_doc(
                 detail=e,
             )
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         if "No pandoc was found" in str(e):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -1078,9 +986,8 @@ def store_text(
     form_data: TextRAGForm,
     user=Depends(get_current_user),
 ):
-
     collection_name = form_data.collection_name
-    if collection_name == None:
+    if collection_name is None:
         collection_name = calculate_sha256_string(form_data.content)
 
     result = store_text_in_vector_db(
@@ -1100,7 +1007,7 @@ def store_text(
 
 @app.get("/scan")
 def scan_docs_dir(user=Depends(get_admin_user)):
-    for path in Path(DOCS_DIR).rglob("./**/*"):
+    for path in settings.docs_dir.rglob("./**/*"):
         try:
             if path.is_file() and not path.name.startswith("."):
                 tags = extract_folders_after_data_docs(path)
@@ -1123,7 +1030,7 @@ def scan_docs_dir(user=Depends(get_admin_user)):
                         sanitized_filename = sanitize_filename(filename)
                         doc = Documents.get_doc_by_name(sanitized_filename)
 
-                        if doc == None:
+                        if doc is None:
                             doc = Documents.insert_new_doc(
                                 user.id,
                                 DocumentForm(
@@ -1150,11 +1057,11 @@ def scan_docs_dir(user=Depends(get_admin_user)):
                                 ),
                             )
                 except Exception as e:
-                    log.exception(e)
+                    logger.exception(e)
                     pass
 
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
 
     return True
 
@@ -1190,26 +1097,23 @@ def reset_upload_dir(user=Depends(get_admin_user)) -> bool:
 
 @app.get("/reset")
 def reset(user=Depends(get_admin_user)) -> bool:
-    folder = f"{UPLOAD_DIR}"
-    for filename in os.listdir(folder):
-        file_path = os.path.join(folder, filename)
+    for path in UPLOAD_DIR.iterdir():
         try:
-            if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)
-            elif os.path.isdir(file_path):
-                shutil.rmtree(file_path)
+            if path.is_file():
+                path.unlink()
+            elif path.is_dir():
+                shutil.rmtree(path)
         except Exception as e:
-            log.error("Failed to delete %s. Reason: %s" % (file_path, e))
-
+            logger.error(f"Failed to delete {path}. Reason: {e}")
     try:
         CHROMA_CLIENT.reset()
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
 
     return True
 
 
-if ENV == "dev":
+if settings.env == "dev":
 
     @app.get("/ef")
     async def get_embeddings():

@@ -23,9 +23,9 @@ import { toast } from 'svelte-sonner';
 import Switch from '$lib/components/common/Switch.svelte';
 import Spinner from '$lib/components/common/Spinner.svelte';
 import Tooltip from '$lib/components/common/Tooltip.svelte';
-import type { GetModelsFunctionType } from '$lib/types';
+import type { GetModelsFunctionType, I18n } from '$lib/types';
 
-const i18n = getContext('i18n');
+const i18n: I18n = getContext('i18n');
 
 export let getModels: GetModelsFunctionType;
 

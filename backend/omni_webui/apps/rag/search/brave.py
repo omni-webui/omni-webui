@@ -1,12 +1,5 @@
-import logging
-
 import requests
-
 from omni_webui.apps.rag.search.main import SearchResult
-from omni_webui.config import SRC_LOG_LEVELS
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["RAG"])
 
 
 def search_brave(api_key: str, query: str, count: int) -> list[SearchResult]:
@@ -22,7 +15,7 @@ def search_brave(api_key: str, query: str, count: int) -> list[SearchResult]:
         "Accept-Encoding": "gzip",
         "X-Subscription-Token": api_key,
     }
-    params = {"q": query, "count": count}
+    params: dict[str, str | int] = {"q": query, "count": count}
 
     response = requests.get(url, headers=headers, params=params)
     response.raise_for_status()

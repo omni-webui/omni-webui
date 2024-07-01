@@ -1,37 +1,24 @@
-from fastapi import Depends, Request, HTTPException, status
-from datetime import datetime, timedelta
-from typing import List, Union, Optional
-from omni_webui.utils import get_current_user, get_admin_user
-from fastapi import APIRouter
-from pydantic import BaseModel
 import json
-import logging
+from typing import List, Optional
 
-from omni_webui.apps.webui.models.users import Users
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from loguru import logger
 from omni_webui.apps.webui.models.chats import (
-    ChatModel,
-    ChatResponse,
-    ChatTitleForm,
     ChatForm,
-    ChatTitleIdResponse,
+    ChatResponse,
     Chats,
+    ChatTitleIdResponse,
 )
-
-
 from omni_webui.apps.webui.models.tags import (
-    TagModel,
-    ChatIdTagModel,
     ChatIdTagForm,
-    ChatTagsResponse,
+    ChatIdTagModel,
+    TagModel,
     Tags,
 )
-
+from omni_webui.config import settings
 from omni_webui.constants import ERROR_MESSAGES
-
-from omni_webui.config import SRC_LOG_LEVELS, ENABLE_ADMIN_EXPORT
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MODELS"])
+from omni_webui.utils import get_admin_user, get_current_user
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -45,7 +32,7 @@ router = APIRouter()
 async def get_session_user_chat_list(
     user=Depends(get_current_user), skip: int = 0, limit: int = 50
 ):
-    return Chats.get_chat_list_by_user_id(user.id, skip, limit)
+    return Chats.get_chat_list_by_user_id(user.id, False, skip, limit)
 
 
 ############################
@@ -55,7 +42,6 @@ async def get_session_user_chat_list(
 
 @router.delete("/", response_model=bool)
 async def delete_all_user_chats(request: Request, user=Depends(get_current_user)):
-
     if (
         user.role == "user"
         and not request.app.state.config.USER_PERMISSIONS["chat"]["deletion"]
@@ -92,9 +78,10 @@ async def get_user_chat_list_by_user_id(
 async def create_new_chat(form_data: ChatForm, user=Depends(get_current_user)):
     try:
         chat = Chats.insert_new_chat(user.id, form_data)
+        assert chat is not None
         return ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=ERROR_MESSAGES.DEFAULT()
         )
@@ -119,7 +106,7 @@ async def get_user_chats(user=Depends(get_current_user)):
 
 
 @router.get("/all/archived", response_model=List[ChatResponse])
-async def get_user_chats(user=Depends(get_current_user)):
+async def get_archived_user_chats(user=Depends(get_current_user)):
     return [
         ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
         for chat in Chats.get_archived_chats_by_user_id(user.id)
@@ -133,7 +120,7 @@ async def get_user_chats(user=Depends(get_current_user)):
 
 @router.get("/all/db", response_model=List[ChatResponse])
 async def get_all_user_chats_in_db(user=Depends(get_admin_user)):
-    if not ENABLE_ADMIN_EXPORT:
+    if not settings.enable_admin_export:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
@@ -206,7 +193,6 @@ class TagNameForm(BaseModel):
 async def get_user_chat_list_by_tag_name(
     form_data: TagNameForm, user=Depends(get_current_user)
 ):
-
     print(form_data)
     chat_ids = [
         chat_id_tag.chat_id
@@ -215,7 +201,9 @@ async def get_user_chat_list_by_tag_name(
         )
     ]
 
-    chats = Chats.get_chat_list_by_chat_ids(chat_ids, form_data.skip, form_data.limit)
+    chats = Chats.get_chat_list_by_chat_ids(
+        chat_ids, form_data.skip or 0, form_data.limit or 50
+    )
 
     if len(chats) == 0:
         Tags.delete_tag_by_tag_name_and_user_id(form_data.name, user.id)
@@ -234,7 +222,7 @@ async def get_all_tags(user=Depends(get_current_user)):
         tags = Tags.get_tags_by_user_id(user.id)
         return tags
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail=ERROR_MESSAGES.DEFAULT()
         )
@@ -271,6 +259,7 @@ async def update_chat_by_id(
         updated_chat = {**json.loads(chat.chat), **form_data.chat}
 
         chat = Chats.update_chat_by_id(id, updated_chat)
+        assert chat is not None
         return ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
     else:
         raise HTTPException(
@@ -286,7 +275,6 @@ async def update_chat_by_id(
 
 @router.delete("/{id}", response_model=bool)
 async def delete_chat_by_id(request: Request, id: str, user=Depends(get_current_user)):
-
     if user.role == "admin":
         result = Chats.delete_chat_by_id(id)
         return result
@@ -310,7 +298,6 @@ async def delete_chat_by_id(request: Request, id: str, user=Depends(get_current_
 async def clone_chat_by_id(id: str, user=Depends(get_current_user)):
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
-
         chat_body = json.loads(chat.chat)
         updated_chat = {
             **chat_body,
@@ -320,6 +307,7 @@ async def clone_chat_by_id(id: str, user=Depends(get_current_user)):
         }
 
         chat = Chats.insert_new_chat(user.id, ChatForm(**{"chat": updated_chat}))
+        assert chat is not None
         return ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
     else:
         raise HTTPException(
@@ -337,6 +325,7 @@ async def archive_chat_by_id(id: str, user=Depends(get_current_user)):
     chat = Chats.get_chat_by_id_and_user_id(id, user.id)
     if chat:
         chat = Chats.toggle_chat_archive_by_id(id)
+        assert chat is not None
         return ChatResponse(**{**chat.model_dump(), "chat": json.loads(chat.chat)})
     else:
         raise HTTPException(
@@ -355,6 +344,7 @@ async def share_chat_by_id(id: str, user=Depends(get_current_user)):
     if chat:
         if chat.share_id:
             shared_chat = Chats.update_shared_chat_by_chat_id(chat.id)
+            assert shared_chat is not None
             return ChatResponse(
                 **{**shared_chat.model_dump(), "chat": json.loads(shared_chat.chat)}
             )
@@ -391,7 +381,7 @@ async def delete_shared_chat_by_id(id: str, user=Depends(get_current_user)):
         result = Chats.delete_shared_chat_by_chat_id(id)
         update_result = Chats.update_chat_share_id_by_id(id, None)
 
-        return result and update_result != None
+        return result and update_result is not None
     else:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -408,7 +398,7 @@ async def delete_shared_chat_by_id(id: str, user=Depends(get_current_user)):
 async def get_chat_tags_by_id(id: str, user=Depends(get_current_user)):
     tags = Tags.get_tags_by_chat_id_and_user_id(id, user.id)
 
-    if tags != None:
+    if tags is not None:
         return tags
     else:
         raise HTTPException(

@@ -96,7 +96,7 @@ onMount(() => {
 		<div class=" w-full" in:fade={{ duration: 200, delay: 300 }}>
 			<Suggestions
 				suggestionPrompts={models[selectedModelIdx]?.info?.meta?.suggestion_prompts ??
-					$config.default_prompt_suggestions}
+					$config?.default_prompt_suggestions}
 				{submitPrompt}
 			/>
 		</div>

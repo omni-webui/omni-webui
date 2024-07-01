@@ -1,14 +1,9 @@
 import json
 
-from peewee import *
+from loguru import logger
+from omni_webui.config import OMNI_WEBUI_DIR, settings
+from peewee import TextField
 from peewee_migrate import Router
-from playhouse.db_url import connect
-from omni_webui.config import SRC_LOG_LEVELS, DATA_DIR, DATABASE_URL, OMNI_WEBUI_DIR
-import os
-import logging
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["DB"])
 
 
 class JSONField(TextField):
@@ -20,20 +15,15 @@ class JSONField(TextField):
             return json.loads(value)
 
 
-# Check if the file exists
-if os.path.exists(f"{DATA_DIR}/ollama.db"):
-    # Rename the file
-    os.rename(f"{DATA_DIR}/ollama.db", f"{DATA_DIR}/webui.db")
-    log.info("Database migrated from Ollama-WebUI successfully.")
-else:
-    pass
+if (ollama_db := settings.data_dir / "ollama.db").exists():
+    ollama_db.rename(settings.data_dir / "webui.db")
+    logger.info("Database migrated from Ollama-WebUI successfully.")
 
-DB = connect(DATABASE_URL)
-log.info(f"Connected to a {DB.__class__.__name__} database.")
+
+logger.info(f"Connected to a {settings.database.__class__.__name__} database.")
 router = Router(
-    DB,
+    settings.database,
     migrate_dir=OMNI_WEBUI_DIR / "apps" / "webui" / "internal" / "migrations",
-    logger=log,
+    logger=logger,
 )
 router.run()
-DB.connect(reuse_if_open=True)

@@ -6,14 +6,27 @@ import { WEBUI_NAME, config } from '$lib/stores';
 
 import { WEBUI_VERSION } from '$lib/constants';
 import { getChangelog } from '$lib/apis';
+import type { I18n } from '$lib/types';
 
 import Modal from './common/Modal.svelte';
 
-const i18n = getContext('i18n');
+const i18n: I18n = getContext('i18n');
 
 export let show = false;
 
-let changelog = null;
+let changelog: {
+	[key: string]: {
+		metadata: {
+			release_date: string;
+		};
+		added?: string[];
+		changed?: string[];
+		deprecated?: string[];
+		removed?: string[];
+		fixed?: string[];
+		security?: string[];
+	};
+} | null = null;
 
 onMount(async () => {
 	const res = await getChangelog();
@@ -32,7 +45,7 @@ onMount(async () => {
 			<button
 				class="self-center"
 				on:click={() => {
-					localStorage.version = $config.version;
+					localStorage.version = $config?.version;
 					show = false;
 				}}
 			>
@@ -61,15 +74,16 @@ onMount(async () => {
 		<div class=" overflow-y-scroll max-h-80 scrollbar-hidden">
 			<div class="mb-3">
 				{#if changelog}
-					{#each Object.keys(changelog) as version}
+					{#each Object.entries(changelog) as [version, changelog_item]}
+					{@const { metadata, ...changes } = changelog_item}
 						<div class=" mb-3 pr-2">
 							<div class="font-bold text-xl mb-1 dark:text-white">
-								v{version} - {changelog[version].date}
+								v{version} - {metadata.release_date}
 							</div>
 
 							<hr class=" dark:border-gray-800 my-2" />
 
-							{#each Object.keys(changelog[version]).filter((section) => section !== 'date') as section}
+							{#each Object.entries(changes) as [section, changes_array]}
 								<div class="">
 									<div
 										class="font-bold uppercase text-xs {section === 'added'
@@ -86,13 +100,14 @@ onMount(async () => {
 									</div>
 
 									<div class="my-2.5 px-1.5">
-										{#each Object.keys(changelog[version][section]) as item}
+										{#each changes_array as item}
+										{@const [title, content] = item.split(': ')}
 											<div class="text-sm mb-2">
 												<div class="font-semibold uppercase">
-													{changelog[version][section][item].title}
+													{title}
 												</div>
 												<div class="mb-2 mt-1">
-													{changelog[version][section][item].content}
+													{content}
 												</div>
 											</div>
 										{/each}
@@ -107,7 +122,7 @@ onMount(async () => {
 		<div class="flex justify-end pt-3 text-sm font-medium">
 			<button
 				on:click={() => {
-					localStorage.version = $config.version;
+					localStorage.version = $config?.version;
 					show = false;
 				}}
 				class=" px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-gray-100 transition rounded-lg"

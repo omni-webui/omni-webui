@@ -1,9 +1,10 @@
-from pathlib import Path
 import hashlib
-import json
 import re
 from datetime import timedelta
-from typing import Optional
+from pathlib import Path
+from typing import Any, Optional, TypedDict
+
+from loguru import logger
 
 
 def get_gravatar_url(email):
@@ -82,39 +83,31 @@ def extract_folders_after_data_docs(path):
     return tags
 
 
-def parse_duration(duration: str) -> Optional[timedelta]:
+def parse_duration(duration: str) -> timedelta | None:
     if duration == "-1" or duration == "0":
         return None
 
     # Regular expression to find number and unit pairs
-    pattern = r"(-?\d+(\.\d+)?)(ms|s|m|h|d|w)"
-    matches = re.findall(pattern, duration)
-
-    if not matches:
+    number_pattern = r"(?P<{}>-?\d+(?:\.\d+)?)"
+    pattern = "".join(
+        f"(?:{number_pattern.format(unit)}{unit[0]})?"
+        for unit in ("weeks", "days", "hours", "minutes", "seconds")
+    )
+    pattern += f"(?:{number_pattern.format('milliseconds')}ms)?"
+    mo = re.match(f"^{pattern}$", duration)
+    if not mo:
         raise ValueError("Invalid duration string")
-
-    total_duration = timedelta()
-
-    for number, _, unit in matches:
-        number = float(number)
-        if unit == "ms":
-            total_duration += timedelta(milliseconds=number)
-        elif unit == "s":
-            total_duration += timedelta(seconds=number)
-        elif unit == "m":
-            total_duration += timedelta(minutes=number)
-        elif unit == "h":
-            total_duration += timedelta(hours=number)
-        elif unit == "d":
-            total_duration += timedelta(days=number)
-        elif unit == "w":
-            total_duration += timedelta(weeks=number)
-
-    return total_duration
+    return timedelta(
+        **{
+            key: float(value)
+            for key, value in mo.groupdict().items()
+            if value is not None
+        }
+    )
 
 
-def parse_ollama_modelfile(model_text):
-    parameters_meta = {
+def parse_ollama_modelfile(model_text: str):
+    parameters_meta: dict[str, type] = {
         "mirostat": int,
         "mirostat_eta": float,
         "mirostat_tau": float,
@@ -144,7 +137,11 @@ def parse_ollama_modelfile(model_text):
         "num_thread": int,
     }
 
-    data = {"base_model_id": None, "params": {}}
+    class Data(TypedDict):
+        base_model_id: Optional[str]
+        params: dict[str, Any]
+
+    data: Data = {"base_model_id": None, "params": {}}
 
     # Parse base model
     base_model_match = re.search(
@@ -172,14 +169,12 @@ def parse_ollama_modelfile(model_text):
             value = param_match.group(1)
 
             try:
-                if param_type == int:
-                    value = int(value)
-                elif param_type == float:
-                    value = float(value)
-                elif param_type == bool:
+                if param_type is bool:
                     value = value.lower() == "true"
+                else:
+                    value = param_type(value)
             except Exception as e:
-                print(e)
+                logger.exception(e)
                 continue
 
             data["params"][param] = value

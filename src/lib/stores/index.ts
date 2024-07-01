@@ -5,8 +5,8 @@ import type { Socket } from 'socket.io-client';
 
 // Backend
 export const WEBUI_NAME = writable(APP_NAME);
-export const config: Writable<Config | undefined> = writable(undefined);
-export const user: Writable<SessionUser | undefined> = writable(undefined);
+export const config: Writable<Config | undefined> = writable();
+export const user: Writable<SessionUser | undefined> = writable();
 
 // Frontend
 export const MODEL_DOWNLOAD_POOL = writable({});
@@ -76,7 +76,7 @@ type Config = {
 	};
 };
 
-type PromptSuggestion = {
+export type PromptSuggestion = {
 	content: string;
 	title: [string, string];
 };

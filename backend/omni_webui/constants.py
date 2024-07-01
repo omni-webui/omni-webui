@@ -9,19 +9,11 @@ class MESSAGES(str, Enum):
     )
 
 
-class WEBHOOK_MESSAGES(str, Enum):
-    DEFAULT = lambda msg="": f"{msg if msg else ''}"
-    USER_SIGNUP = lambda username="": (
-        f"New user signed up: {username}" if username else "New user signed up"
-    )
-
-
 class ERROR_MESSAGES(str, Enum):
     def __str__(self) -> str:
         return super().__str__()
 
     DEFAULT = lambda err="": f"Something went wrong :/\n{err if err else ''}"
-    ENV_VAR_NOT_FOUND = "Required environment variable not found. Terminating now."
     CREATE_USER_ERROR = "Oops! Something went wrong while creating your account. Please try again later. If the issue persists, contact support for assistance."
     DELETE_USER_ERROR = "Oops! Something went wrong. We encountered an issue while trying to delete the user. Please give it another shot."
     EMAIL_MISMATCH = "Uh-oh! This email does not match the email your provider is registered with. Please check your email and try again."

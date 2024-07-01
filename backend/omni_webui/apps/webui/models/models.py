@@ -1,23 +1,12 @@
-import json
-import logging
-from typing import Optional
+import time
+from typing import List, Optional
 
 import peewee as pw
-from peewee import *
-
+from omni_webui.apps.webui.internal.db import JSONField
+from omni_webui.config import settings
+from peewee import BigIntegerField
 from playhouse.shortcuts import model_to_dict
 from pydantic import BaseModel, ConfigDict
-
-from omni_webui.apps.webui.internal.db import DB, JSONField
-
-from typing import List, Union, Optional
-from omni_webui.config import SRC_LOG_LEVELS
-
-import time
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MODELS"])
-
 
 ####################
 # Models DB Schema
@@ -77,7 +66,7 @@ class Model(pw.Model):
     created_at = BigIntegerField()
 
     class Meta:
-        database = DB
+        database = settings.database
 
 
 class ModelModel(BaseModel):
@@ -176,4 +165,4 @@ class ModelsTable:
             return False
 
 
-Models = ModelsTable(DB)
+Models = ModelsTable(settings.database)

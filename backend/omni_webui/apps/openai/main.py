@@ -1,43 +1,25 @@
-from fastapi import FastAPI, Request, Response, HTTPException, Depends
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
-
-import requests
-import aiohttp
 import asyncio
+import hashlib
 import json
-import logging
+from pathlib import Path
+from typing import Literal
 
-from pydantic import BaseModel
-from starlette.background import BackgroundTask
-
+import aiohttp
+import requests
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, StreamingResponse
+from loguru import logger
 from omni_webui.apps.webui.models.models import Models
-from omni_webui.apps.webui.models.users import Users
+from omni_webui.config import CACHE_DIR, config
 from omni_webui.constants import ERROR_MESSAGES
 from omni_webui.utils import (
-    decode_token,
+    get_admin_user,
     get_current_user,
     get_verified_user,
-    get_admin_user,
 )
-from omni_webui.config import (
-    SRC_LOG_LEVELS,
-    ENABLE_OPENAI_API,
-    OPENAI_API_BASE_URLS,
-    OPENAI_API_KEYS,
-    CACHE_DIR,
-    ENABLE_MODEL_FILTER,
-    MODEL_FILTER_LIST,
-    AppConfig,
-)
-from typing import List, Optional
-
-
-import hashlib
-from pathlib import Path
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["OPENAI"])
+from pydantic import BaseModel, HttpUrl
+from starlette.background import BackgroundTask
 
 app = FastAPI()
 app.add_middleware(
@@ -47,16 +29,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-app.state.config = AppConfig()
-
-app.state.config.ENABLE_MODEL_FILTER = ENABLE_MODEL_FILTER
-app.state.config.MODEL_FILTER_LIST = MODEL_FILTER_LIST
-
-app.state.config.ENABLE_OPENAI_API = ENABLE_OPENAI_API
-app.state.config.OPENAI_API_BASE_URLS = OPENAI_API_BASE_URLS
-app.state.config.OPENAI_API_KEYS = OPENAI_API_KEYS
 
 app.state.MODELS = {}
 
@@ -74,55 +46,55 @@ async def check_url(request: Request, call_next):
 
 @app.get("/config")
 async def get_config(user=Depends(get_admin_user)):
-    return {"ENABLE_OPENAI_API": app.state.config.ENABLE_OPENAI_API}
+    return {"ENABLE_OPENAI_API": config.openai.enable}
 
 
 class OpenAIConfigForm(BaseModel):
-    enable_openai_api: Optional[bool] = None
+    enable_openai_api: bool | None = None
 
 
 @app.post("/config/update")
 async def update_config(form_data: OpenAIConfigForm, user=Depends(get_admin_user)):
-    app.state.config.ENABLE_OPENAI_API = form_data.enable_openai_api
-    return {"ENABLE_OPENAI_API": app.state.config.ENABLE_OPENAI_API}
+    config.openai.enable = form_data.enable_openai_api or False
+    return {"ENABLE_OPENAI_API": config.openai.enable}
 
 
 class UrlsUpdateForm(BaseModel):
-    urls: List[str]
+    urls: list[HttpUrl]
 
 
 class KeysUpdateForm(BaseModel):
-    keys: List[str]
+    keys: list[str]
 
 
 @app.get("/urls")
 async def get_openai_urls(user=Depends(get_admin_user)):
-    return {"OPENAI_API_BASE_URLS": app.state.config.OPENAI_API_BASE_URLS}
+    return {"OPENAI_API_BASE_URLS": config.openai.base_urls}
 
 
 @app.post("/urls/update")
 async def update_openai_urls(form_data: UrlsUpdateForm, user=Depends(get_admin_user)):
     await get_all_models()
-    app.state.config.OPENAI_API_BASE_URLS = form_data.urls
-    return {"OPENAI_API_BASE_URLS": app.state.config.OPENAI_API_BASE_URLS}
+    config.openai.base_urls = form_data.urls
+    return {"OPENAI_API_BASE_URLS": config.openai.base_urls}
 
 
 @app.get("/keys")
 async def get_openai_keys(user=Depends(get_admin_user)):
-    return {"OPENAI_API_KEYS": app.state.config.OPENAI_API_KEYS}
+    return {"OPENAI_API_KEYS": config.openai.api_keys}
 
 
 @app.post("/keys/update")
 async def update_openai_key(form_data: KeysUpdateForm, user=Depends(get_admin_user)):
-    app.state.config.OPENAI_API_KEYS = form_data.keys
-    return {"OPENAI_API_KEYS": app.state.config.OPENAI_API_KEYS}
+    config.openai.api_keys = form_data.keys
+    return {"OPENAI_API_KEYS": config.openai.api_keys}
 
 
 @app.post("/audio/speech")
 async def speech(request: Request, user=Depends(get_verified_user)):
     idx = None
     try:
-        idx = app.state.config.OPENAI_API_BASE_URLS.index("https://api.openai.com/v1")
+        idx = config.openai.base_urls.index(HttpUrl("https://api.openai.com/v1"))
         body = await request.body()
         name = hashlib.sha256(body).hexdigest()
 
@@ -136,15 +108,15 @@ async def speech(request: Request, user=Depends(get_verified_user)):
             return FileResponse(file_path)
 
         headers = {}
-        headers["Authorization"] = f"Bearer {app.state.config.OPENAI_API_KEYS[idx]}"
+        headers["Authorization"] = f"Bearer {config.openai.api_keys[idx]}"
         headers["Content-Type"] = "application/json"
-        if "openrouter.ai" in app.state.config.OPENAI_API_BASE_URLS[idx]:
+        if "openrouter.ai" in config.openai.base_urls[idx]:
             headers["HTTP-Referer"] = "https://omni-webui.com/"
             headers["X-Title"] = "Omni WebUI"
         r = None
         try:
             r = requests.post(
-                url=f"{app.state.config.OPENAI_API_BASE_URLS[idx]}/audio/speech",
+                url=f"{config.openai.base_urls[idx]}/audio/speech",
                 data=body,
                 headers=headers,
                 stream=True,
@@ -164,14 +136,14 @@ async def speech(request: Request, user=Depends(get_verified_user)):
             return FileResponse(file_path)
 
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             error_detail = "Omni WebUI: Server Connection Error"
             if r is not None:
                 try:
                     res = r.json()
                     if "error" in res:
                         error_detail = f"External: {res['error']}"
-                except:
+                except requests.exceptions.JSONDecodeError:
                     error_detail = f"External: {e}"
 
             raise HTTPException(
@@ -191,13 +163,13 @@ async def fetch_url(url, key):
                 return await response.json()
     except Exception as e:
         # Handle connection error here
-        log.error(f"Connection error: {e}")
+        logger.error(f"Connection error: {e}")
         return None
 
 
 async def cleanup_response(
-    response: Optional[aiohttp.ClientResponse],
-    session: Optional[aiohttp.ClientSession],
+    response: aiohttp.ClientResponse | None,
+    session: aiohttp.ClientSession | None,
 ):
     if response:
         response.close()
@@ -206,7 +178,7 @@ async def cleanup_response(
 
 
 def merge_models_lists(model_lists):
-    log.debug(f"merge_models_lists {model_lists}")
+    logger.debug(f"merge_models_lists {model_lists}")
     merged_list = []
 
     for idx, models in enumerate(model_lists):
@@ -221,8 +193,7 @@ def merge_models_lists(model_lists):
                         "urlIdx": idx,
                     }
                     for model in models
-                    if "api.openai.com"
-                    not in app.state.config.OPENAI_API_BASE_URLS[idx]
+                    if "api.openai.com" not in config.openai.base_urls[idx]
                     or "gpt" in model["id"]
                 ]
             )
@@ -231,42 +202,38 @@ def merge_models_lists(model_lists):
 
 
 async def get_all_models(raw: bool = False):
-    log.info("get_all_models()")
+    logger.info("get_all_models()")
+
+    models: dict[Literal["data"], list[dict]]
 
     if (
-        len(app.state.config.OPENAI_API_KEYS) == 1
-        and app.state.config.OPENAI_API_KEYS[0] == ""
-    ) or not app.state.config.ENABLE_OPENAI_API:
+        len(config.openai.api_keys) == 1 and config.openai.api_keys[0] == ""
+    ) or not config.openai.enable:
         models = {"data": []}
     else:
         # Check if API KEYS length is same than API URLS length
-        if len(app.state.config.OPENAI_API_KEYS) != len(
-            app.state.config.OPENAI_API_BASE_URLS
-        ):
+        if len(config.openai.api_keys) != len(config.openai.base_urls):
             # if there are more keys than urls, remove the extra keys
-            if len(app.state.config.OPENAI_API_KEYS) > len(
-                app.state.config.OPENAI_API_BASE_URLS
-            ):
-                app.state.config.OPENAI_API_KEYS = app.state.config.OPENAI_API_KEYS[
-                    : len(app.state.config.OPENAI_API_BASE_URLS)
+            if len(config.openai.api_keys) > len(config.openai.base_urls):
+                config.openai.api_keys = config.openai.api_keys[
+                    : len(config.openai.base_urls)
                 ]
             # if there are more urls than keys, add empty keys
             else:
-                app.state.config.OPENAI_API_KEYS += [
+                config.openai.api_keys += [
                     ""
                     for _ in range(
-                        len(app.state.config.OPENAI_API_BASE_URLS)
-                        - len(app.state.config.OPENAI_API_KEYS)
+                        len(config.openai.base_urls) - len(config.openai.api_keys)
                     )
                 ]
 
         tasks = [
-            fetch_url(f"{url}/models", app.state.config.OPENAI_API_KEYS[idx])
-            for idx, url in enumerate(app.state.config.OPENAI_API_BASE_URLS)
+            fetch_url(f"{url}/models", config.openai.api_keys[idx])
+            for idx, url in enumerate(config.openai.base_urls)
         ]
 
         responses = await asyncio.gather(*tasks)
-        log.debug(f"get_all_models:responses() {responses}")
+        logger.debug(f"get_all_models:responses() {responses}")
 
         if raw:
             return responses
@@ -286,7 +253,7 @@ async def get_all_models(raw: bool = False):
             )
         }
 
-        log.debug(f"models: {models}")
+        logger.debug(f"models: {models}")
         app.state.MODELS = {model["id"]: model for model in models["data"]}
 
     return models
@@ -294,22 +261,22 @@ async def get_all_models(raw: bool = False):
 
 @app.get("/models")
 @app.get("/models/{url_idx}")
-async def get_models(url_idx: Optional[int] = None, user=Depends(get_current_user)):
-    if url_idx == None:
+async def get_models(url_idx: int | None = None, user=Depends(get_current_user)):
+    if url_idx is None:
         models = await get_all_models()
-        if app.state.config.ENABLE_MODEL_FILTER:
+        if config.model_filter.enabled:
             if user.role == "user":
                 models["data"] = list(
                     filter(
-                        lambda model: model["id"] in app.state.config.MODEL_FILTER_LIST,
+                        lambda model: model["id"] in config.model_filter.models,
                         models["data"],
                     )
                 )
                 return models
         return models
     else:
-        url = app.state.config.OPENAI_API_BASE_URLS[url_idx]
-        key = app.state.config.OPENAI_API_KEYS[url_idx]
+        url = config.openai.base_urls[url_idx]
+        key = config.openai.api_keys[url_idx]
 
         headers = {}
         headers["Authorization"] = f"Bearer {key}"
@@ -329,14 +296,14 @@ async def get_models(url_idx: Optional[int] = None, user=Depends(get_current_use
 
             return response_data
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             error_detail = "Omni WebUI: Server Connection Error"
             if r is not None:
                 try:
                     res = r.json()
                     if "error" in res:
                         error_detail = f"External: {res['error']}"
-                except:
+                except requests.exceptions.JSONDecodeError:
                     error_detail = f"External: {e}"
 
             raise HTTPException(
@@ -353,65 +320,63 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
     # TODO: Remove below after gpt-4-vision fix from Open AI
     # Try to decode the body of the request from bytes to a UTF-8 string (Require add max_token to fix gpt-4-vision)
 
-    payload = None
+    payload: str | dict | None = None
 
     try:
         if "chat/completions" in path:
-            body = body.decode("utf-8")
-            body = json.loads(body)
+            body_text = body.decode("utf-8")
+            body_json = json.loads(body_text)
 
-            payload = {**body}
+            payload = {**body_json}
 
-            model_id = body.get("model")
+            model_id = body_json.get("model")
             model_info = Models.get_model_by_id(model_id)
 
             if model_info:
-                print(model_info)
+                logger.info(model_info)
                 if model_info.base_model_id:
                     payload["model"] = model_info.base_model_id
 
-                model_info.params = model_info.params.model_dump()
+                model_params = model_info.params.model_dump()
 
                 if model_info.params:
-                    if model_info.params.get("temperature", None):
-                        payload["temperature"] = int(
-                            model_info.params.get("temperature")
-                        )
+                    if model_params.get("temperature", None):
+                        payload["temperature"] = int(model_params.get("temperature"))  # type: ignore
 
-                    if model_info.params.get("top_p", None):
-                        payload["top_p"] = int(model_info.params.get("top_p", None))
+                    if model_params.get("top_p", None):
+                        payload["top_p"] = int(model_params.get("top_p", None))
 
-                    if model_info.params.get("max_tokens", None):
+                    if model_params.get("max_tokens", None):
                         payload["max_tokens"] = int(
-                            model_info.params.get("max_tokens", None)
+                            model_params.get("max_tokens", None)
                         )
 
-                    if model_info.params.get("frequency_penalty", None):
+                    if model_params.get("frequency_penalty", None):
                         payload["frequency_penalty"] = int(
-                            model_info.params.get("frequency_penalty", None)
+                            model_params.get("frequency_penalty", None)
                         )
 
-                    if model_info.params.get("seed", None):
-                        payload["seed"] = model_info.params.get("seed", None)
+                    if model_params.get("seed", None):
+                        payload["seed"] = model_params.get("seed", None)
 
-                    if model_info.params.get("stop", None):
+                    if model_params.get("stop", None):
                         payload["stop"] = (
                             [
                                 bytes(stop, "utf-8").decode("unicode_escape")
-                                for stop in model_info.params["stop"]
+                                for stop in model_params["stop"]
                             ]
-                            if model_info.params.get("stop", None)
+                            if model_params.get("stop", None)
                             else None
                         )
 
-                if model_info.params.get("system", None):
+                if model_params.get("system", None):
                     # Check if the payload already has a system message
                     # If not, add a system message to the payload
                     if payload.get("messages"):
                         for message in payload["messages"]:
                             if message.get("role") == "system":
                                 message["content"] = (
-                                    model_info.params.get("system", None)
+                                    model_params.get("system", None)
                                     + message["content"]
                                 )
                                 break
@@ -420,7 +385,7 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
                                 0,
                                 {
                                     "role": "system",
-                                    "content": model_info.params.get("system", None),
+                                    "content": model_params.get("system", None),
                                 },
                             )
             else:
@@ -438,18 +403,18 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             if payload.get("model") == "gpt-4-vision-preview":
                 if "max_tokens" not in payload:
                     payload["max_tokens"] = 4000
-                log.debug("Modified payload:", payload)
+                logger.debug("Modified payload:", payload)
 
             # Convert the modified body back to JSON
             payload = json.dumps(payload)
 
     except json.JSONDecodeError as e:
-        log.error("Error loading request body into a dictionary:", e)
+        logger.error("Error loading request body into a dictionary:", e)
 
     print(payload)
 
-    url = app.state.config.OPENAI_API_BASE_URLS[idx]
-    key = app.state.config.OPENAI_API_KEYS[idx]
+    url = config.openai.base_urls[idx]
+    key = config.openai.api_keys[idx]
 
     target_url = f"{url}/{path}"
 
@@ -487,15 +452,14 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             response_data = await r.json()
             return response_data
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         error_detail = "Omni WebUI: Server Connection Error"
         if r is not None:
             try:
                 res = await r.json()
-                print(res)
                 if "error" in res:
                     error_detail = f"External: {res['error']['message'] if 'message' in res['error'] else res['error']}"
-            except:
+            except (json.JSONDecodeError, aiohttp.ContentTypeError):
                 error_detail = f"External: {e}"
         raise HTTPException(status_code=r.status if r else 500, detail=error_detail)
     finally:

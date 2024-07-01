@@ -1,10 +1,16 @@
 import base64
+import importlib.metadata
 import os
 import random
 from pathlib import Path
 
 import typer
 import uvicorn
+
+try:
+    __version__ = importlib.metadata.version("omni-webui")
+except importlib.metadata.PackageNotFoundError:
+    __version__ = "0.0.0"
 
 app = typer.Typer()
 
@@ -17,6 +23,7 @@ if (frontend_build_dir := Path(__file__).parent / "frontend").exists():
 def serve(
     host: str = "0.0.0.0",
     port: int = 8080,
+    reload: bool = False,
 ):
     if os.getenv("WEBUI_SECRET_KEY") is None:
         typer.echo(
@@ -40,9 +47,14 @@ def serve(
                 "/usr/local/lib/python3.11/site-packages/nvidia/cudnn/lib",
             ]
         )
-    import omni_webui.main  # we need set environment variables before importing main
 
-    uvicorn.run(omni_webui.main.app, host=host, port=port, forwarded_allow_ips="*")
+    uvicorn.run(
+        "omni_webui.main:app",
+        host=host,
+        port=port,
+        forwarded_allow_ips="*",
+        reload=reload,
+    )
 
 
 @app.command()
@@ -52,7 +64,11 @@ def dev(
     reload: bool = True,
 ):
     uvicorn.run(
-        "omni_webui.main:app", host=host, port=port, reload=reload, forwarded_allow_ips="*"
+        "omni_webui.main:app",
+        host=host,
+        port=port,
+        reload=reload,
+        forwarded_allow_ips="*",
     )
 
 

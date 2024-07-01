@@ -1,11 +1,12 @@
-from pydantic import BaseModel, ConfigDict
-from peewee import Model, CharField, TextField, BigIntegerField
-from playhouse.shortcuts import model_to_dict
-from typing import List, Optional
 import time
+from typing import List, Optional
 
-from omni_webui.apps.webui.internal.db import DB, JSONField
+from omni_webui.apps.webui.internal.db import JSONField
 from omni_webui.apps.webui.models.chats import Chats
+from omni_webui.config import settings
+from peewee import BigIntegerField, CharField, Model, TextField
+from playhouse.shortcuts import model_to_dict
+from pydantic import BaseModel, ConfigDict
 
 ####################
 # User DB Schema
@@ -27,7 +28,7 @@ class User(Model):
     settings = JSONField(null=True)
 
     class Meta:
-        database = DB
+        database = settings.database
 
 
 class UserSettings(BaseModel):
@@ -131,11 +132,8 @@ class UsersTable:
         return User.select().count()
 
     def get_first_user(self) -> UserModel:
-        try:
-            user = User.select().order_by(User.created_at).first()
-            return UserModel(**model_to_dict(user))
-        except:
-            return None
+        user = User.select().order_by(User.created_at).first()
+        return UserModel(**model_to_dict(user))
 
     def update_user_role_by_id(self, id: str, role: str) -> Optional[UserModel]:
         try:
@@ -197,12 +195,12 @@ class UsersTable:
         except:
             return False
 
-    def update_user_api_key_by_id(self, id: str, api_key: str) -> str:
+    def update_user_api_key_by_id(self, id: str, api_key: str) -> bool:
         try:
             query = User.update(api_key=api_key).where(User.id == id)
             result = query.execute()
 
-            return True if result == 1 else False
+            return result == 1
         except:
             return False
 
@@ -214,4 +212,4 @@ class UsersTable:
             return None
 
 
-Users = UsersTable(DB)
+Users = UsersTable(settings.database)

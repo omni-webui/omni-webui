@@ -1,21 +1,12 @@
-from pydantic import BaseModel
-from peewee import *
-from playhouse.shortcuts import model_to_dict
-from typing import List, Union, Optional
-import time
-import logging
-
-from omni_webui.utils import decode_token
-from omni_webui.utils.misc import get_gravatar_url
-
-from omni_webui.apps.webui.internal.db import DB
-
 import json
+import time
+from typing import List, Optional
 
-from omni_webui.config import SRC_LOG_LEVELS
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MODELS"])
+from loguru import logger
+from omni_webui.config import settings
+from peewee import BigIntegerField, CharField, Model, TextField
+from playhouse.shortcuts import model_to_dict
+from pydantic import BaseModel
 
 ####################
 # Documents DB Schema
@@ -32,7 +23,7 @@ class Document(Model):
     timestamp = BigIntegerField()
 
     class Meta:
-        database = DB
+        database = settings.database
 
 
 class DocumentModel(BaseModel):
@@ -124,7 +115,7 @@ class DocumentsTable:
             doc = Document.get(Document.name == form_data.name)
             return DocumentModel(**model_to_dict(doc))
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             return None
 
     def update_doc_content_by_name(
@@ -132,6 +123,7 @@ class DocumentsTable:
     ) -> Optional[DocumentModel]:
         try:
             doc = self.get_doc_by_name(name)
+            assert doc is not None
             doc_content = json.loads(doc.content if doc.content else "{}")
             doc_content = {**doc_content, **updated}
 
@@ -144,7 +136,7 @@ class DocumentsTable:
             doc = Document.get(Document.name == name)
             return DocumentModel(**model_to_dict(doc))
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             return None
 
     def delete_doc_by_name(self, name: str) -> bool:
@@ -157,4 +149,4 @@ class DocumentsTable:
             return False
 
 
-Documents = DocumentsTable(DB)
+Documents = DocumentsTable(settings.database)

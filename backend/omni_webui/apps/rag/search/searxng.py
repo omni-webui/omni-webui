@@ -1,18 +1,11 @@
-import logging
 import requests
-
-from typing import List
-
+from loguru import logger
 from omni_webui.apps.rag.search.main import SearchResult
-from omni_webui.config import SRC_LOG_LEVELS
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["RAG"])
 
 
 def search_searxng(
     query_url: str, query: str, count: int, **kwargs
-) -> List[SearchResult]:
+) -> list[SearchResult]:
     """
     Search a SearXNG instance for a given query and return the results as a list of SearchResult objects.
 
@@ -56,7 +49,7 @@ def search_searxng(
         # Strip all query parameters from the URL
         query_url = query_url.split("?")[0]
 
-    log.debug(f"searching {query_url}")
+    logger.debug(f"searching {query_url}")
 
     response = requests.get(
         query_url,

@@ -1,13 +1,5 @@
-import json
-import logging
-
 import requests
-
 from omni_webui.apps.rag.search.main import SearchResult
-from omni_webui.config import SRC_LOG_LEVELS
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["RAG"])
 
 
 def search_google_pse(
@@ -23,7 +15,7 @@ def search_google_pse(
     url = "https://www.googleapis.com/customsearch/v1"
 
     headers = {"Content-Type": "application/json"}
-    params = {
+    params: dict[str, str | int] = {
         "cx": search_engine_id,
         "q": query,
         "key": api_key,

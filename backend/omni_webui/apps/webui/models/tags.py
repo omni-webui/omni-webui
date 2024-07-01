@@ -1,19 +1,12 @@
-from pydantic import BaseModel
-from typing import List, Union, Optional
-from peewee import *
-from playhouse.shortcuts import model_to_dict
-
-import json
-import uuid
 import time
-import logging
+import uuid
+from typing import List, Optional
 
-from omni_webui.apps.webui.internal.db import DB
-
-from omni_webui.config import SRC_LOG_LEVELS
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MODELS"])
+from loguru import logger
+from omni_webui.config import settings
+from peewee import BigIntegerField, CharField, Model, TextField
+from playhouse.shortcuts import model_to_dict
+from pydantic import BaseModel
 
 ####################
 # Tag DB Schema
@@ -27,7 +20,7 @@ class Tag(Model):
     data = TextField(null=True)
 
     class Meta:
-        database = DB
+        database = settings.database
 
 
 class ChatIdTag(Model):
@@ -38,7 +31,7 @@ class ChatIdTag(Model):
     timestamp = BigIntegerField()
 
     class Meta:
-        database = DB
+        database = settings.database
 
 
 class TagModel(BaseModel):
@@ -88,7 +81,7 @@ class TagTable:
                 return tag
             else:
                 return None
-        except Exception as e:
+        except Exception:
             return None
 
     def get_tag_by_name_and_user_id(
@@ -97,16 +90,16 @@ class TagTable:
         try:
             tag = Tag.get(Tag.name == name, Tag.user_id == user_id)
             return TagModel(**model_to_dict(tag))
-        except Exception as e:
+        except Exception:
             return None
 
     def add_tag_to_chat(
         self, user_id: str, form_data: ChatIdTagForm
     ) -> Optional[ChatIdTagModel]:
         tag = self.get_tag_by_name_and_user_id(form_data.tag_name, user_id)
-        if tag == None:
+        if tag is None:
             tag = self.insert_new_tag(form_data.tag_name, user_id)
-
+        assert tag is not None
         id = str(uuid.uuid4())
         chatIdTag = ChatIdTagModel(
             **{
@@ -160,7 +153,7 @@ class TagTable:
 
     def get_chat_ids_by_tag_name_and_user_id(
         self, tag_name: str, user_id: str
-    ) -> Optional[ChatIdTagModel]:
+    ) -> list[ChatIdTagModel]:
         return [
             ChatIdTagModel(**model_to_dict(chat_id_tag))
             for chat_id_tag in ChatIdTag.select()
@@ -183,7 +176,7 @@ class TagTable:
                 (ChatIdTag.tag_name == tag_name) & (ChatIdTag.user_id == user_id)
             )
             res = query.execute()  # Remove the rows, return number of rows removed.
-            log.debug(f"res: {res}")
+            logger.debug(f"res: {res}")
 
             tag_count = self.count_chat_ids_by_tag_name_and_user_id(tag_name, user_id)
             if tag_count == 0:
@@ -195,7 +188,7 @@ class TagTable:
 
             return True
         except Exception as e:
-            log.error(f"delete_tag: {e}")
+            logger.error(f"delete_tag: {e}")
             return False
 
     def delete_tag_by_tag_name_and_chat_id_and_user_id(
@@ -208,7 +201,7 @@ class TagTable:
                 & (ChatIdTag.user_id == user_id)
             )
             res = query.execute()  # Remove the rows, return number of rows removed.
-            log.debug(f"res: {res}")
+            logger.debug(f"res: {res}")
 
             tag_count = self.count_chat_ids_by_tag_name_and_user_id(tag_name, user_id)
             if tag_count == 0:
@@ -220,7 +213,7 @@ class TagTable:
 
             return True
         except Exception as e:
-            log.error(f"delete_tag: {e}")
+            logger.error(f"delete_tag: {e}")
             return False
 
     def delete_tags_by_chat_id_and_user_id(self, chat_id: str, user_id: str) -> bool:
@@ -228,10 +221,10 @@ class TagTable:
 
         for tag in tags:
             self.delete_tag_by_tag_name_and_chat_id_and_user_id(
-                tag.tag_name, chat_id, user_id
+                tag.name, chat_id, user_id
             )
 
         return True
 
 
-Tags = TagTable(DB)
+Tags = TagTable(settings.database)

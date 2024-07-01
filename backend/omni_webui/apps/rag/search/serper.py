@@ -1,13 +1,7 @@
 import json
-import logging
 
 import requests
-
 from omni_webui.apps.rag.search.main import SearchResult
-from omni_webui.config import SRC_LOG_LEVELS
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["RAG"])
 
 
 def search_serper(api_key: str, query: str, count: int) -> list[SearchResult]:

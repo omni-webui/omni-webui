@@ -1,30 +1,25 @@
+import operator
 import os
-import logging
+from typing import Any, List, Optional, Sequence, Union
+
 import requests
-
-from typing import List, Union
-
-from omni_webui.apps.ollama.main import (
-    generate_ollama_embeddings,
-    GenerateEmbeddingsForm,
-)
-
 from huggingface_hub import snapshot_download
-
-from langchain_core.documents import Document
-from langchain_community.retrievers import BM25Retriever
 from langchain.retrievers import (
     ContextualCompressionRetriever,
     EnsembleRetriever,
 )
-
-from typing import Optional
-
-
-from omni_webui.config import SRC_LOG_LEVELS, CHROMA_CLIENT
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["RAG"])
+from langchain_community.retrievers import BM25Retriever
+from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
+from langchain_core.documents import BaseDocumentCompressor, Document
+from langchain_core.pydantic_v1 import Extra
+from langchain_core.retrievers import BaseRetriever
+from loguru import logger
+from omni_webui.apps.ollama.main import (
+    GenerateEmbeddingsForm,
+    generate_ollama_embeddings,
+)
+from omni_webui.config import CHROMA_CLIENT
+from sentence_transformers import util
 
 
 def query_doc(
@@ -33,19 +28,16 @@ def query_doc(
     embedding_function,
     k: int,
 ):
-    try:
-        collection = CHROMA_CLIENT.get_collection(name=collection_name)
-        query_embeddings = embedding_function(query)
+    collection = CHROMA_CLIENT.get_collection(name=collection_name)
+    query_embeddings = embedding_function(query)
 
-        result = collection.query(
-            query_embeddings=[query_embeddings],
-            n_results=k,
-        )
+    result = collection.query(
+        query_embeddings=[query_embeddings],
+        n_results=k,
+    )
 
-        log.info(f"query_doc:result {result}")
-        return result
-    except Exception as e:
-        raise e
+    logger.info(f"query_doc:result {result}")
+    return result
 
 
 def query_doc_with_hybrid_search(
@@ -56,48 +48,45 @@ def query_doc_with_hybrid_search(
     reranking_function,
     r: float,
 ):
-    try:
-        collection = CHROMA_CLIENT.get_collection(name=collection_name)
-        documents = collection.get()  # get all documents
+    collection = CHROMA_CLIENT.get_collection(name=collection_name)
+    documents = collection.get()  # get all documents
 
-        bm25_retriever = BM25Retriever.from_texts(
-            texts=documents.get("documents"),
-            metadatas=documents.get("metadatas"),
-        )
-        bm25_retriever.k = k
+    bm25_retriever = BM25Retriever.from_texts(
+        texts=documents.get("documents"),
+        metadatas=documents.get("metadatas"),
+    )
+    bm25_retriever.k = k
 
-        chroma_retriever = ChromaRetriever(
-            collection=collection,
-            embedding_function=embedding_function,
-            top_n=k,
-        )
+    chroma_retriever = ChromaRetriever(
+        collection=collection,
+        embedding_function=embedding_function,
+        top_n=k,
+    )
 
-        ensemble_retriever = EnsembleRetriever(
-            retrievers=[bm25_retriever, chroma_retriever], weights=[0.5, 0.5]
-        )
+    ensemble_retriever = EnsembleRetriever(
+        retrievers=[bm25_retriever, chroma_retriever], weights=[0.5, 0.5]
+    )
 
-        compressor = RerankCompressor(
-            embedding_function=embedding_function,
-            top_n=k,
-            reranking_function=reranking_function,
-            r_score=r,
-        )
+    compressor = RerankCompressor(
+        embedding_function=embedding_function,
+        top_n=k,
+        reranking_function=reranking_function,
+        r_score=r,
+    )
 
-        compression_retriever = ContextualCompressionRetriever(
-            base_compressor=compressor, base_retriever=ensemble_retriever
-        )
+    compression_retriever = ContextualCompressionRetriever(
+        base_compressor=compressor, base_retriever=ensemble_retriever
+    )
 
-        result = compression_retriever.invoke(query)
-        result = {
-            "distances": [[d.metadata.get("score") for d in result]],
-            "documents": [[d.page_content for d in result]],
-            "metadatas": [[d.metadata for d in result]],
-        }
+    result = compression_retriever.invoke(query)
+    result = {
+        "distances": [[d.metadata.get("score") for d in result]],
+        "documents": [[d.page_content for d in result]],
+        "metadatas": [[d.metadata for d in result]],
+    }
 
-        log.info(f"query_doc_with_hybrid_search:result {result}")
-        return result
-    except Exception as e:
-        raise e
+    logger.info(f"query_doc_with_hybrid_search:result {result}")
+    return result
 
 
 def merge_and_sort_query_results(query_results, k, reverse=False):
@@ -150,14 +139,15 @@ def query_collection(
     results = []
     for collection_name in collection_names:
         try:
-            result = query_doc(
-                collection_name=collection_name,
-                query=query,
-                k=k,
-                embedding_function=embedding_function,
+            results.append(
+                query_doc(
+                    collection_name=collection_name,
+                    query=query,
+                    k=k,
+                    embedding_function=embedding_function,
+                )
             )
-            results.append(result)
-        except:
+        except Exception:
             pass
     return merge_and_sort_query_results(results, k=k)
 
@@ -173,16 +163,17 @@ def query_collection_with_hybrid_search(
     results = []
     for collection_name in collection_names:
         try:
-            result = query_doc_with_hybrid_search(
-                collection_name=collection_name,
-                query=query,
-                embedding_function=embedding_function,
-                k=k,
-                reranking_function=reranking_function,
-                r=r,
+            results.append(
+                query_doc_with_hybrid_search(
+                    collection_name=collection_name,
+                    query=query,
+                    embedding_function=embedding_function,
+                    k=k,
+                    reranking_function=reranking_function,
+                    r=r,
+                )
             )
-            results.append(result)
-        except:
+        except Exception:
             pass
     return merge_and_sort_query_results(results, k=k, reverse=True)
 
@@ -205,21 +196,19 @@ def get_embedding_function(
         return lambda query: embedding_function.encode(query).tolist()
     elif embedding_engine in ["ollama", "openai"]:
         if embedding_engine == "ollama":
-            func = lambda query: generate_ollama_embeddings(
-                GenerateEmbeddingsForm(
-                    **{
-                        "model": embedding_model,
-                        "prompt": query,
-                    }
+
+            def func(query):
+                return generate_ollama_embeddings(
+                    GenerateEmbeddingsForm(
+                        **{"model": embedding_model, "prompt": query}
+                    )
                 )
-            )
         elif embedding_engine == "openai":
-            func = lambda query: generate_openai_embeddings(
-                model=embedding_model,
-                text=query,
-                key=openai_key,
-                url=openai_url,
-            )
+
+            def func(query):
+                return generate_openai_embeddings(
+                    model=embedding_model, text=query, key=openai_key, url=openai_url
+                )
 
         def generate_multiple(query, f):
             if isinstance(query, list):
@@ -246,7 +235,7 @@ def rag_messages(
     r,
     hybrid_search,
 ):
-    log.debug(f"docs: {docs} {messages} {embedding_function} {reranking_function}")
+    logger.debug(f"docs: {docs} {messages} {embedding_function} {reranking_function}")
 
     last_user_message_idx = None
     for i in range(len(messages) - 1, -1, -1):
@@ -287,7 +276,7 @@ def rag_messages(
 
         collection_names = set(collection_names).difference(extracted_collections)
         if not collection_names:
-            log.debug(f"skipping {doc} as it has already been extracted")
+            logger.debug(f"skipping {doc} as it has already been extracted")
             continue
 
         try:
@@ -311,7 +300,7 @@ def rag_messages(
                         k=k,
                     )
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             context = None
 
         if context:
@@ -338,7 +327,7 @@ def rag_messages(
                         }
                     )
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
 
     context_string = context_string.strip()
 
@@ -348,7 +337,7 @@ def rag_messages(
         query=query,
     )
 
-    log.debug(f"ra_content: {ra_content}")
+    logger.debug(f"ra_content: {ra_content}")
 
     if content_type == "list":
         new_content = []
@@ -382,8 +371,8 @@ def get_model_path(model: str, update_model: bool = False):
         "local_files_only": local_files_only,
     }
 
-    log.debug(f"model: {model}")
-    log.debug(f"snapshot_kwargs: {snapshot_kwargs}")
+    logger.debug(f"model: {model}")
+    logger.debug(f"snapshot_kwargs: {snapshot_kwargs}")
 
     # Inspiration from upstream sentence_transformers
     if (
@@ -402,10 +391,10 @@ def get_model_path(model: str, update_model: bool = False):
     # Attempt to query the huggingface_hub library to determine the local path and/or to update
     try:
         model_repo_path = snapshot_download(**snapshot_kwargs)
-        log.debug(f"model_repo_path: {model_repo_path}")
+        logger.debug(f"model_repo_path: {model_repo_path}")
         return model_repo_path
     except Exception as e:
-        log.exception(f"Cannot determine model snapshot path: {e}")
+        logger.exception(f"Cannot determine model snapshot path: {e}")
         return model
 
 
@@ -425,7 +414,7 @@ def generate_openai_embeddings(
 
 def generate_openai_batch_embeddings(
     model: str, texts: list[str], key: str, url: str = "https://api.openai.com/v1"
-) -> Optional[list[list[float]]]:
+) -> list[list[float]]:
     try:
         r = requests.post(
             f"{url}/embeddings",
@@ -440,16 +429,10 @@ def generate_openai_batch_embeddings(
         if "data" in data:
             return [elem["embedding"] for elem in data["data"]]
         else:
-            raise "Something went wrong :/"
+            raise Exception("Something went wrong :/")
     except Exception as e:
-        print(e)
-        return None
-
-
-from typing import Any
-
-from langchain_core.retrievers import BaseRetriever
-from langchain_core.callbacks import CallbackManagerForRetrieverRun
+        logger.exception(e)
+        return []
 
 
 class ChromaRetriever(BaseRetriever):
@@ -483,17 +466,6 @@ class ChromaRetriever(BaseRetriever):
                 )
             )
         return results
-
-
-import operator
-
-from typing import Optional, Sequence
-
-from langchain_core.documents import BaseDocumentCompressor, Document
-from langchain_core.callbacks import Callbacks
-from langchain_core.pydantic_v1 import Extra
-
-from sentence_transformers import util
 
 
 class RerankCompressor(BaseDocumentCompressor):

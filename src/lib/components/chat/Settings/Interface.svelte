@@ -1,14 +1,14 @@
 <script lang="ts">
 import { getBackendConfig } from '$lib/apis';
 import { setDefaultPromptSuggestions } from '$lib/apis/configs';
-import { config, models, settings, user } from '$lib/stores';
+import { config, models, settings, user, type PromptSuggestion } from '$lib/stores';
 import { createEventDispatcher, onMount, getContext } from 'svelte';
 import { toast } from 'svelte-sonner';
 import Tooltip from '$lib/components/common/Tooltip.svelte';
-import type { SaveSettingsFunctionType } from '$lib/types';
+import type { SaveSettingsFunctionType, I18n } from '$lib/types';
 const dispatch = createEventDispatcher();
 
-const i18n = getContext('i18n');
+const i18n: I18n = getContext('i18n');
 
 export let saveSettings: SaveSettingsFunctionType;
 
@@ -23,7 +23,7 @@ let splitLargeChunks = false;
 
 // Interface
 let defaultModelId = '';
-let promptSuggestions = [];
+let promptSuggestions: PromptSuggestion[] = [];
 let showUsername = false;
 let chatBubble = true;
 let chatDirection: 'LTR' | 'RTL' = 'LTR';
@@ -86,7 +86,7 @@ const toggleChangeChatDirection = async () => {
 };
 
 const updateInterfaceHandler = async () => {
-	if ($user.role === 'admin') {
+	if ($user?.role === 'admin') {
 		promptSuggestions = await setDefaultPromptSuggestions(localStorage.token, promptSuggestions);
 		await config.set(await getBackendConfig());
 	}
@@ -104,8 +104,8 @@ const updateInterfaceHandler = async () => {
 };
 
 onMount(async () => {
-	if ($user.role === 'admin') {
-		promptSuggestions = $config?.default_prompt_suggestions;
+	if ($user?.role === 'admin') {
+		promptSuggestions = $config?.default_prompt_suggestions ?? [];
 	}
 
 	titleAutoGenerate = $settings?.title?.auto ?? true;
@@ -121,7 +121,7 @@ onMount(async () => {
 	splitLargeChunks = $settings.splitLargeChunks ?? false;
 	chatDirection = $settings.chatDirection ?? 'LTR';
 
-	defaultModelId = ($settings?.models ?? ['']).at(0);
+	defaultModelId = ($settings?.models ?? ['']).at(0) ?? '';
 });
 </script>
 

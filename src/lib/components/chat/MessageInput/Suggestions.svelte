@@ -1,20 +1,26 @@
 <script lang="ts">
 import Bolt from '$lib/components/icons/Bolt.svelte';
 import { onMount, getContext } from 'svelte';
+import type { PromptSuggestion } from '$lib/stores';
+import type { I18n } from '$lib/types';
 
-const i18n = getContext('i18n');
+const i18n: I18n = getContext('i18n');
 
 export let submitPrompt: (prompt: string) => void;
-export let suggestionPrompts = [];
+export let suggestionPrompts: PromptSuggestion[] = [];
 
 let prompts = [];
 
-$: prompts = suggestionPrompts
-	.reduce((acc, current) => [...acc, ...[current]], [])
-	.sort(() => Math.random() - 0.5);
-// suggestionPrompts.length <= 4
-// 	? suggestionPrompts
-// 	: suggestionPrompts.sort(() => Math.random() - 0.5).slice(0, 4);
+// https://stackoverflow.com/a/12646864/5434822
+function shuffleArray(array: PromptSuggestion[]) {
+	for (let i = array.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[array[i], array[j]] = [array[j], array[i]];
+	}
+	return array;
+}
+
+$: prompts = shuffleArray([...suggestionPrompts]);
 
 onMount(() => {
 	const containerElement = document.getElementById('suggestions-container');
@@ -98,13 +104,6 @@ onMount(() => {
 				</button>
 			</div>
 		{/each}
-
-		<!-- <div class="snap-center shrink-0">
-		<img
-			class="shrink-0 w-80 h-40 rounded-lg shadow-xl bg-white"
-			src="https://images.unsplash.com/photo-1604999565976-8913ad2ddb7c?ixlib=rb-1.2.1&amp;ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&amp;auto=format&amp;fit=crop&amp;w=320&amp;h=160&amp;q=80"
-		/>
-	</div> -->
 	</div>
 </div>
 

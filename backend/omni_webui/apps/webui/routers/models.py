@@ -1,14 +1,14 @@
-from fastapi import Depends, FastAPI, HTTPException, status, Request
-from datetime import datetime, timedelta
-from typing import List, Union, Optional
+from typing import List, Optional
 
-from fastapi import APIRouter
-from pydantic import BaseModel
-import json
-from omni_webui.apps.webui.models.models import Models, ModelModel, ModelForm, ModelResponse
-
-from omni_webui.utils import get_verified_user, get_admin_user
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from omni_webui.apps.webui.models.models import (
+    ModelForm,
+    ModelModel,
+    ModelResponse,
+    Models,
+)
 from omni_webui.constants import ERROR_MESSAGES
+from omni_webui.utils import get_admin_user, get_verified_user
 
 router = APIRouter()
 

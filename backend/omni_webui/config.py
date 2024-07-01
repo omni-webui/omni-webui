@@ -1,493 +1,110 @@
-import os
-import sys
-import logging
-import importlib.metadata
-import pkgutil
-import chromadb
-import datetime
-from chromadb import Settings
-from base64 import b64encode
-from bs4 import BeautifulSoup
-from typing import TypeVar, Generic, Union
-from pydantic import BaseModel
-from typing import Optional
-
-from pathlib import Path
 import json
-import yaml
-
-import markdown
-import requests
+import logging
+import os
+import re
 import shutil
+from importlib.metadata import metadata
+from pathlib import Path
+from typing import Any, Literal, Optional, TypedDict
 
-from secrets import token_bytes
-from omni_webui.constants import ERROR_MESSAGES
-
-####################################
-# Load .env file
-####################################
+import chromadb
+import keepachangelog
+import requests
+from chromadb import Settings as ChromaSettings
+from loguru import logger
+from peewee import SqliteDatabase
+from playhouse.db_url import connect
+from pydantic import (
+    BaseModel,
+    EmailStr,
+    Field,
+    HttpUrl,
+    ValidationError,
+    computed_field,
+    model_validator,
+)
+from pydantic_settings import BaseSettings
 
 OMNI_WEBUI_DIR = Path(__file__).parent
 BASE_DIR = OMNI_WEBUI_DIR.parent.parent  # the path containing the backend/
 
-print(BASE_DIR)
 
-try:
-    from dotenv import load_dotenv, find_dotenv
+class Settings(BaseSettings):
+    """Settings from environment variables"""
 
-    load_dotenv(find_dotenv(str(BASE_DIR / ".env")))
-except ImportError:
-    print("dotenv not installed, skipping...")
-
-
-####################################
-# LOGGING
-####################################
-
-log_levels = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
-
-GLOBAL_LOG_LEVEL = os.environ.get("GLOBAL_LOG_LEVEL", "").upper()
-if GLOBAL_LOG_LEVEL in log_levels:
-    logging.basicConfig(stream=sys.stdout, level=GLOBAL_LOG_LEVEL, force=True)
-else:
-    GLOBAL_LOG_LEVEL = "INFO"
-
-log = logging.getLogger(__name__)
-log.info(f"GLOBAL_LOG_LEVEL: {GLOBAL_LOG_LEVEL}")
-
-log_sources = [
-    "AUDIO",
-    "COMFYUI",
-    "CONFIG",
-    "DB",
-    "IMAGES",
-    "MAIN",
-    "MODELS",
-    "OLLAMA",
-    "OPENAI",
-    "RAG",
-    "WEBHOOK",
-]
-
-SRC_LOG_LEVELS = {}
-
-for source in log_sources:
-    log_env_var = source + "_LOG_LEVEL"
-    SRC_LOG_LEVELS[source] = os.environ.get(log_env_var, "").upper()
-    if SRC_LOG_LEVELS[source] not in log_levels:
-        SRC_LOG_LEVELS[source] = GLOBAL_LOG_LEVEL
-    log.info(f"{log_env_var}: {SRC_LOG_LEVELS[source]}")
-
-log.setLevel(SRC_LOG_LEVELS["CONFIG"])
-
-webui_name = "Omni WebUI"
-WEBUI_NAME = os.environ.get("WEBUI_NAME", webui_name)
-if WEBUI_NAME != webui_name:
-    WEBUI_NAME += f" ({webui_name})"
-
-WEBUI_URL = os.environ.get("WEBUI_URL", "http://localhost:3000")
-
-WEBUI_FAVICON_URL = "https://omni-webui.com/favicon.png"
-
-
-####################################
-# ENV (dev,test,prod)
-####################################
-
-ENV = os.environ.get("ENV", "dev")
-
-try:
-    PACKAGE_DATA = json.loads((BASE_DIR / "package.json").read_text())
-except:
-    try:
-        PACKAGE_DATA = {"version": importlib.metadata.version("omni-webui")}
-    except importlib.metadata.PackageNotFoundError:
-        PACKAGE_DATA = {"version": "0.0.0"}
-
-VERSION = PACKAGE_DATA["version"]
-
-
-# Function to parse each section
-def parse_section(section):
-    items = []
-    for li in section.find_all("li"):
-        # Extract raw HTML string
-        raw_html = str(li)
-
-        # Extract text without HTML tags
-        text = li.get_text(separator=" ", strip=True)
-
-        # Split into title and content
-        parts = text.split(": ", 1)
-        title = parts[0].strip() if len(parts) > 1 else ""
-        content = parts[1].strip() if len(parts) > 1 else text
-
-        items.append({"title": title, "content": content, "raw": raw_html})
-    return items
-
-
-try:
-    changelog_path = BASE_DIR / "CHANGELOG.md"
-    with open(str(changelog_path.absolute()), "r", encoding="utf8") as file:
-        changelog_content = file.read()
-
-except:
-    changelog_content = (pkgutil.get_data("omni_webui", "CHANGELOG.md") or b"").decode()
-
-
-# Convert markdown content to HTML
-html_content = markdown.markdown(changelog_content)
-
-# Parse the HTML content
-soup = BeautifulSoup(html_content, "html.parser")
-
-# Initialize JSON structure
-changelog_json = {}
-
-# Iterate over each version
-for version in soup.find_all("h2"):
-    version_text = version.get_text().strip()
-    if version_text == "Unreleased":
-        version_number = "Unreleased"
-        date = datetime.date.today().isoformat()
-    else:
-        version_number = version_text.strip().split(" - ")[0][1:-1]  # Remove brackets
-        date = version_text.strip().split(" - ")[1]
-
-    version_data = {"date": date}
-
-    # Find the next sibling that is a h3 tag (section title)
-    current = version.find_next_sibling()
-
-    while current and current.name != "h2":
-        if current.name == "h3":
-            section_title = current.get_text().lower()  # e.g., "added", "fixed"
-            section_items = parse_section(current.find_next_sibling("ul"))
-            version_data[section_title] = section_items
-
-        # Move to the next element
-        current = current.find_next_sibling()
-
-    changelog_json[version_number] = version_data
-
-
-CHANGELOG = changelog_json
-
-
-####################################
-# WEBUI_BUILD_HASH
-####################################
-
-WEBUI_BUILD_HASH = os.environ.get("WEBUI_BUILD_HASH", "dev-build")
-
-####################################
-# DATA/FRONTEND BUILD DIR
-####################################
-
-DATA_DIR = Path(os.getenv("DATA_DIR", OMNI_WEBUI_DIR / "data")).resolve()
-FRONTEND_BUILD_DIR = Path(os.getenv("FRONTEND_BUILD_DIR", BASE_DIR / "build")).resolve()
-
-RESET_CONFIG_ON_START = (
-    os.environ.get("RESET_CONFIG_ON_START", "False").lower() == "true"
-)
-if RESET_CONFIG_ON_START:
-    try:
-        os.remove(f"{DATA_DIR}/config.json")
-        with open(f"{DATA_DIR}/config.json", "w") as f:
-            f.write("{}")
-    except:
-        pass
-
-try:
-    CONFIG_DATA = json.loads((DATA_DIR / "config.json").read_text())
-except:
-    CONFIG_DATA = {}
-
-
-####################################
-# Config helpers
-####################################
-
-
-def save_config():
-    try:
-        with open(f"{DATA_DIR}/config.json", "w") as f:
-            json.dump(CONFIG_DATA, f, indent="\t")
-    except Exception as e:
-        log.exception(e)
-
-
-def get_config_value(config_path: str):
-    path_parts = config_path.split(".")
-    cur_config = CONFIG_DATA
-    for key in path_parts:
-        if key in cur_config:
-            cur_config = cur_config[key]
-        else:
-            return None
-    return cur_config
-
-
-T = TypeVar("T")
-
-
-class PersistentConfig(Generic[T]):
-    def __init__(self, env_name: str, config_path: str, env_value: T):
-        self.env_name = env_name
-        self.config_path = config_path
-        self.env_value = env_value
-        self.config_value = get_config_value(config_path)
-        if self.config_value is not None:
-            log.info(f"'{env_name}' loaded from config.json")
-            self.value = self.config_value
-        else:
-            self.value = env_value
-
-    def __str__(self):
-        return str(self.value)
-
-    @property
-    def __dict__(self):
-        raise TypeError(
-            "PersistentConfig object cannot be converted to dict, use config_get or .value instead."
-        )
-
-    def __getattribute__(self, item):
-        if item == "__dict__":
-            raise TypeError(
-                "PersistentConfig object cannot be converted to dict, use config_get or .value instead."
-            )
-        return super().__getattribute__(item)
-
-    def save(self):
-        # Don't save if the value is the same as the env value and the config value
-        if self.env_value == self.value:
-            if self.config_value == self.value:
-                return
-        log.info(f"Saving '{self.env_name}' to config.json")
-        path_parts = self.config_path.split(".")
-        config = CONFIG_DATA
-        for key in path_parts[:-1]:
-            if key not in config:
-                config[key] = {}
-            config = config[key]
-        config[path_parts[-1]] = self.value
-        save_config()
-        self.config_value = self.value
-
-
-class AppConfig:
-    _state: dict[str, PersistentConfig]
-
-    def __init__(self):
-        super().__setattr__("_state", {})
-
-    def __setattr__(self, key, value):
-        if isinstance(value, PersistentConfig):
-            self._state[key] = value
-        else:
-            self._state[key].value = value
-            self._state[key].save()
-
-    def __getattr__(self, key):
-        return self._state[key].value
-
-
-####################################
-# WEBUI_AUTH (Required for security)
-####################################
-
-WEBUI_AUTH = os.environ.get("WEBUI_AUTH", "True").lower() == "true"
-WEBUI_AUTH_TRUSTED_EMAIL_HEADER = os.environ.get(
-    "WEBUI_AUTH_TRUSTED_EMAIL_HEADER", None
-)
-JWT_EXPIRES_IN = PersistentConfig(
-    "JWT_EXPIRES_IN", "auth.jwt_expiry", os.environ.get("JWT_EXPIRES_IN", "-1")
-)
-
-####################################
-# Static DIR
-####################################
-
-STATIC_DIR = Path(os.getenv("STATIC_DIR", OMNI_WEBUI_DIR / "static")).resolve()
-
-frontend_favicon = FRONTEND_BUILD_DIR / "favicon.png"
-if frontend_favicon.exists():
-    shutil.copyfile(frontend_favicon, STATIC_DIR / "favicon.png")
-else:
-    logging.warning(f"Frontend favicon not found at {frontend_favicon}")
-
-####################################
-# CUSTOM_NAME
-####################################
-
-CUSTOM_NAME = os.environ.get("CUSTOM_NAME", "")
-
-if CUSTOM_NAME:
-    try:
-        r = requests.get(f"https://api.omni-webui.com/api/v1/custom/{CUSTOM_NAME}")
-        data = r.json()
-        if r.ok:
-            if "logo" in data:
-                WEBUI_FAVICON_URL = url = (
-                    f"https://api.omni-webui.com{data['logo']}"
-                    if data["logo"][0] == "/"
-                    else data["logo"]
-                )
-
-                r = requests.get(url, stream=True)
-                if r.status_code == 200:
-                    with open(f"{STATIC_DIR}/favicon.png", "wb") as f:
-                        r.raw.decode_content = True
-                        shutil.copyfileobj(r.raw, f)
-
-            WEBUI_NAME = data["name"]
-    except Exception as e:
-        log.exception(e)
-        pass
-
-
-####################################
-# File Upload DIR
-####################################
-
-UPLOAD_DIR = f"{DATA_DIR}/uploads"
-Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
-
-
-####################################
-# Cache DIR
-####################################
-
-CACHE_DIR = f"{DATA_DIR}/cache"
-Path(CACHE_DIR).mkdir(parents=True, exist_ok=True)
-
-
-####################################
-# Docs DIR
-####################################
-
-DOCS_DIR = os.getenv("DOCS_DIR", f"{DATA_DIR}/docs")
-Path(DOCS_DIR).mkdir(parents=True, exist_ok=True)
-
-####################################
-# OLLAMA_BASE_URL
-####################################
-
-
-ENABLE_OLLAMA_API = PersistentConfig(
-    "ENABLE_OLLAMA_API",
-    "ollama.enable",
-    os.environ.get("ENABLE_OLLAMA_API", "True").lower() == "true",
-)
-
-OLLAMA_API_BASE_URL = os.environ.get(
-    "OLLAMA_API_BASE_URL", "http://localhost:11434/api"
-)
-
-OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "")
-K8S_FLAG = os.environ.get("K8S_FLAG", "")
-USE_OLLAMA_DOCKER = os.environ.get("USE_OLLAMA_DOCKER", "false")
-
-if OLLAMA_BASE_URL == "" and OLLAMA_API_BASE_URL != "":
-    OLLAMA_BASE_URL = (
-        OLLAMA_API_BASE_URL[:-4]
-        if OLLAMA_API_BASE_URL.endswith("/api")
-        else OLLAMA_API_BASE_URL
+    name: str = Field(default="Omni WebUI", alias="webui_name")
+    url: HttpUrl = Field(default=HttpUrl("http://localhost:8000"), alias="webui_url")
+    favicon_url: HttpUrl = Field(
+        default=HttpUrl("https://omni-webui.com/favicon.png"), alias="webui_favicon_url"
     )
+    build_hash: str = Field(default="dev-build", alias="webui_build_hash")
+    auth: bool = Field(default=True, alias="webui_auth")
+    webui_auth_trusted_email_header: str = ""
+    webui_secret_key: str = "t0p-s3cr3t"
+    ollama_api_base_url: HttpUrl = HttpUrl("http://localhost:11434/api")
 
-if ENV == "prod":
-    if OLLAMA_BASE_URL == "/ollama" and not K8S_FLAG:
-        if USE_OLLAMA_DOCKER.lower() == "true":
-            # if you use all-in-one docker container (Omni WebUI + Ollama)
-            # with the docker build arg USE_OLLAMA=true (--build-arg="USE_OLLAMA=true") this only works with http://localhost:11434
-            OLLAMA_BASE_URL = "http://localhost:11434"
-        else:
-            OLLAMA_BASE_URL = "http://host.docker.internal:11434"
-    elif K8S_FLAG:
-        OLLAMA_BASE_URL = "http://ollama-service.omni-webui.svc.cluster.local:11434"
+    custom_name: str = ""
+
+    env: Literal["dev", "prod"] = "dev"
+    data_dir: Path = OMNI_WEBUI_DIR / "data"
+    frontend_build_dir: Path = BASE_DIR / "build"
+    static_dir: Path = OMNI_WEBUI_DIR / "static"
+    docs_dir: Path = Path("")
+
+    database_url: str = ""
+
+    openai_api_key: str = ""
+    openai_api_base_url: HttpUrl = HttpUrl("https://api.openai.com/v1")
+    enable_admin_export: bool = True
+    enable_rag_local_web_fetch: bool = False
+
+    @model_validator(mode="after")
+    def default_settings(self):
+        if self.database_url == "":
+            self.database_url = f"sqlite:///{self.data_dir / "webui.db"}"
+        if self.docs_dir == Path(""):
+            self.docs_dir = self.data_dir / "docs"
+        if self.auth and self.webui_secret_key == "":
+            raise ValidationError("Secret key is required for authentication")
+        return self
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def database(self) -> SqliteDatabase:
+        engine = connect(self.database_url)
+        engine.connect(reuse_if_open=True)
+        return engine
 
 
-OLLAMA_BASE_URLS = os.environ.get("OLLAMA_BASE_URLS", "")
-OLLAMA_BASE_URLS = OLLAMA_BASE_URLS if OLLAMA_BASE_URLS != "" else OLLAMA_BASE_URL
-
-OLLAMA_BASE_URLS = [url.strip() for url in OLLAMA_BASE_URLS.split(";")]
-OLLAMA_BASE_URLS = PersistentConfig(
-    "OLLAMA_BASE_URLS", "ollama.base_urls", OLLAMA_BASE_URLS
-)
-
-####################################
-# OPENAI_API
-####################################
+settings = Settings()
 
 
-ENABLE_OPENAI_API = PersistentConfig(
-    "ENABLE_OPENAI_API",
-    "openai.enable",
-    os.environ.get("ENABLE_OPENAI_API", "True").lower() == "true",
-)
+class PromptSuggestion(TypedDict):
+    title: list[str]
+    content: str
 
 
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-OPENAI_API_BASE_URL = os.environ.get("OPENAI_API_BASE_URL", "")
+class Auth(BaseSettings):
+    jwt_expiry: str = "-1"
+    admin_email: EmailStr | None = None
+    show_admin_details: bool = True
 
 
-if OPENAI_API_BASE_URL == "":
-    OPENAI_API_BASE_URL = "https://api.openai.com/v1"
+class UserPermission(BaseSettings):
+    deletion: bool = True
 
-OPENAI_API_KEYS = os.environ.get("OPENAI_API_KEYS", "")
-OPENAI_API_KEYS = OPENAI_API_KEYS if OPENAI_API_KEYS != "" else OPENAI_API_KEY
 
-OPENAI_API_KEYS = [url.strip() for url in OPENAI_API_KEYS.split(";")]
-OPENAI_API_KEYS = PersistentConfig(
-    "OPENAI_API_KEYS", "openai.api_keys", OPENAI_API_KEYS
-)
+class UserPermissions(BaseSettings):
+    chat: UserPermission = UserPermission()
 
-OPENAI_API_BASE_URLS = os.environ.get("OPENAI_API_BASE_URLS", "")
-OPENAI_API_BASE_URLS = (
-    OPENAI_API_BASE_URLS if OPENAI_API_BASE_URLS != "" else OPENAI_API_BASE_URL
-)
 
-OPENAI_API_BASE_URLS = [
-    url.strip() if url != "" else "https://api.openai.com/v1"
-    for url in OPENAI_API_BASE_URLS.split(";")
-]
-OPENAI_API_BASE_URLS = PersistentConfig(
-    "OPENAI_API_BASE_URLS", "openai.api_base_urls", OPENAI_API_BASE_URLS
-)
-
-OPENAI_API_KEY = ""
-
-try:
-    OPENAI_API_KEY = OPENAI_API_KEYS.value[
-        OPENAI_API_BASE_URLS.value.index("https://api.openai.com/v1")
-    ]
-except:
-    pass
-
-OPENAI_API_BASE_URL = "https://api.openai.com/v1"
-
-####################################
-# WEBUI
-####################################
-
-ENABLE_SIGNUP = PersistentConfig(
-    "ENABLE_SIGNUP",
-    "ui.enable_signup",
-    (
-        False
-        if not WEBUI_AUTH
-        else os.environ.get("ENABLE_SIGNUP", "True").lower() == "true"
-    ),
-)
-DEFAULT_MODELS = PersistentConfig(
-    "DEFAULT_MODELS", "ui.default_models", os.environ.get("DEFAULT_MODELS", None)
-)
-
-DEFAULT_PROMPT_SUGGESTIONS = PersistentConfig(
-    "DEFAULT_PROMPT_SUGGESTIONS",
-    "ui.prompt_suggestions",
-    [
+class UI(BaseSettings):
+    default_locale: str = "en-US"
+    default_user_role: Literal["pending", "user", "admin"] = "pending"
+    default_models: str = "llama3"
+    enable_signup: bool = True
+    enable_community_sharing: bool = True
+    prompt_suggestions: list[PromptSuggestion] = [
         {
             "title": ["Help me study", "vocabulary for a college entrance exam"],
             "content": "Help me study vocabulary: write a sentence for me to fill in the blank, and I'll try to pick the correct option.",
@@ -515,48 +132,280 @@ DEFAULT_PROMPT_SUGGESTIONS = PersistentConfig(
             "title": ["Overcome procrastination", "give me tips"],
             "content": "Could you start by asking me about instances when I procrastinate the most and then give me some suggestions to overcome it?",
         },
-    ],
-)
+        {
+            "title": ["Grammar check", "rewrite it for better readability "],
+            "content": 'Check the following sentence for grammar and clarity: "[sentence]". Rewrite it for better readability while maintaining its original meaning.',
+        },
+    ]
+    user_permissions: UserPermissions = UserPermissions()
 
-DEFAULT_USER_ROLE = PersistentConfig(
-    "DEFAULT_USER_ROLE",
-    "ui.default_user_role",
-    os.getenv("DEFAULT_USER_ROLE", "pending"),
-)
 
-USER_PERMISSIONS_CHAT_DELETION = (
-    os.environ.get("USER_PERMISSIONS_CHAT_DELETION", "True").lower() == "true"
-)
+class Ollama(BaseSettings, env_prefix="ollama_"):
+    enable: bool = Field(default=True, alias="enable_ollama_api")
+    base_urls: list[HttpUrl] = [HttpUrl("http://localhost:11434")]
 
-USER_PERMISSIONS = PersistentConfig(
-    "USER_PERMISSIONS",
-    "ui.user_permissions",
-    {"chat": {"deletion": USER_PERMISSIONS_CHAT_DELETION}},
-)
 
-ENABLE_MODEL_FILTER = PersistentConfig(
-    "ENABLE_MODEL_FILTER",
-    "model_filter.enable",
-    os.environ.get("ENABLE_MODEL_FILTER", "False").lower() == "true",
-)
-MODEL_FILTER_LIST = os.environ.get("MODEL_FILTER_LIST", "")
-MODEL_FILTER_LIST = PersistentConfig(
-    "MODEL_FILTER_LIST",
-    "model_filter.list",
-    [model.strip() for model in MODEL_FILTER_LIST.split(";")],
-)
+class OpenAI(BaseSettings):
+    enable: bool = Field(default=True, alias="enable_openai_api")
+    api_keys: list[str] = []
+    base_urls: list[HttpUrl] = [HttpUrl("https://api.openai.com/v1")]
 
-WEBHOOK_URL = PersistentConfig(
-    "WEBHOOK_URL", "webhook_url", os.environ.get("WEBHOOK_URL", "")
-)
 
-ENABLE_ADMIN_EXPORT = os.environ.get("ENABLE_ADMIN_EXPORT", "True").lower() == "true"
+class WebSearch(BaseSettings):
+    enable: bool = Field(default=False, alias="enable_web_search")
+    engine: str = ""
+    serpstack_api_key: str = ""
+    serpstack_https: bool = True
+    serper_api_key: str = ""
+    searxng_query_url: HttpUrl = HttpUrl("https://localhost:7700")
+    google_pse_api_key: str = ""
+    google_pse_engine_id: str = ""
+    brave_search_api_key: str = ""
+    concurrent_requests: int = 10
+    result_count: int = 3
 
-ENABLE_COMMUNITY_SHARING = PersistentConfig(
-    "ENABLE_COMMUNITY_SHARING",
-    "ui.enable_community_sharing",
-    os.environ.get("ENABLE_COMMUNITY_SHARING", "True").lower() == "true",
-)
+
+class RAG(BaseSettings, env_prefix="rag_"):
+    template: str = """Use the following context as your learned knowledge, inside <context></context> XML tags.
+<context>
+    [context]
+</context>
+
+When answer to user:
+- If you don't know, just say that you don't know.
+- If you don't know when you are not sure, ask for clarification.
+Avoid mentioning that you obtained the information from the context.
+And answer according to the language of the user's question.
+
+Given the context information, answer the query.
+Query: [query]"""
+    chunk_size: int = Field(default=1500, alias="chunk_size")
+    chunk_overlap: int = Field(default=100, alias="chunk_overlap")
+    embedding_engine: str = ""
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    reranking_model: str = ""
+    youtube_loader_language: list[str] = ["en"]
+    top_k: int = 5
+    embedding_openai_batch_size: int = 1
+    web_search: WebSearch = WebSearch()
+    enable_web_loader_ssl_verification: bool = True
+    enable_hybrid_search: bool = False
+    pdf_extract_images: bool = False
+    relevance_threshold: float = 0.0
+
+    @model_validator(mode="after")
+    def default_settings(self):
+        if self.reranking_model != "":
+            logger.info(f"Reranking model set: {self.reranking_model}")
+        return self
+
+
+class ImageGeneration(BaseSettings):
+    enable: bool = Field(default=False, alias="enable_image_generation")
+    steps: int = 50
+    size: str = "512x512"
+    comfyui_base_url: HttpUrl = HttpUrl("http://localhost:8000")
+    automatic1111_base_url: HttpUrl = HttpUrl("http://localhost:8000")
+
+
+class ModelFilter(BaseSettings):
+    enabled: bool = Field(default=False, alias="enable_model_filter")
+    models: list[str] = []
+
+
+def config_json_path():
+    return settings.data_dir / "config.json"
+
+
+class Config(BaseSettings, json_file=config_json_path()):
+    version: Literal[0] = 0
+    ui: UI = UI()
+    webhook_url: str = ""
+    auth: Auth = Auth()
+    ollama: Ollama = Ollama()
+    openai: OpenAI = OpenAI()
+    rag: RAG = RAG()
+    image_generation: ImageGeneration = ImageGeneration()
+    model_filter: ModelFilter = ModelFilter()
+
+    def __init__(self):
+        super().__init__()
+
+        def get_setattr(cls):
+            def __setattr__(this, name: str, value: Any) -> None:
+                super(cls, this).__setattr__(name, value)
+                self.save()
+
+            return __setattr__
+
+        def get_delattr(cls):
+            def __delattr__(this, name: str) -> None:
+                super(cls, this).__delattr__(name)
+                self.save()
+
+            return __delattr__
+
+        for cls in (Auth, UI, Ollama, RAG, ImageGeneration, OpenAI, ModelFilter):
+            cls.__setattr__ = get_setattr(cls)
+            cls.__delattr__ = get_delattr(cls)
+            name = (
+                re.sub(
+                    r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", "_", cls.__name__
+                ).lower()
+                if cls.__name__ != "OpenAI"
+                else "openai"
+            )
+            setattr(self, name, cls())
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        super().__setattr__(name, value)
+        if not isinstance(getattr(self, name), BaseModel):
+            self.save()
+
+    def __delattr__(self, name: str) -> None:
+        super().__delattr__(name)
+        self.save()
+
+    def save(self):
+        with (config_json_path()).open("w") as f:
+            f.write(self.model_dump_json(indent=4, exclude_defaults=True))
+
+
+config = Config()
+
+changelog: str = re.findall(
+    r"^# Changelog[\s\S]*",
+    metadata("omni_webui")["Description"],
+    re.MULTILINE,
+)[0]
+CHANGELOG = keepachangelog.to_dict(changelog.splitlines(), show_unreleased=True)
+
+####################################
+# DATA/FRONTEND BUILD DIR
+####################################
+
+DATA_DIR = Path(os.getenv("DATA_DIR", OMNI_WEBUI_DIR / "data")).resolve()
+
+CONFIG_DATA = config.model_dump()
+
+####################################
+# Config helpers
+####################################
+
+
+def save_config():
+    try:
+        with open(f"{DATA_DIR}/config.json", "w") as f:
+            json.dump(CONFIG_DATA, f, indent="\t")
+    except Exception as e:
+        logger.exception(e)
+
+
+def get_config_value(config_path: str):
+    path_parts = config_path.split(".")
+    cur_config = CONFIG_DATA
+    for key in path_parts:
+        if key in cur_config:
+            cur_config = cur_config[key]
+        else:
+            return None
+    return cur_config
+
+
+frontend_favicon = settings.frontend_build_dir / "favicon.png"
+if frontend_favicon.exists():
+    shutil.copyfile(frontend_favicon, settings.static_dir / "favicon.png")
+else:
+    logging.warning(f"Frontend favicon not found at {frontend_favicon}")
+
+####################################
+# CUSTOM_NAME
+####################################
+if settings.custom_name:
+    try:
+        r = requests.get(
+            f"https://api.omni-webui.com/api/v1/custom/{settings.custom_name}"
+        )
+        data = r.json()
+        if r.ok:
+            if "logo" in data:
+                settings.favicon_url = url = (
+                    f"https://api.omni-webui.com{data['logo']}"
+                    if data["logo"][0] == "/"
+                    else data["logo"]
+                )
+
+                r = requests.get(url, stream=True)
+                if r.status_code == 200:
+                    with (settings.static_dir / "favicon.png").open("wb") as fp:
+                        shutil.copyfileobj(r.raw, fp)
+
+            settings.name = data["name"]
+    except Exception as e:
+        logger.exception(e)
+        pass
+
+
+####################################
+# File Upload DIR
+####################################
+
+UPLOAD_DIR = settings.data_dir / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+
+####################################
+# Cache DIR
+####################################
+
+CACHE_DIR = settings.data_dir / "cache"
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+####################################
+# Docs DIR
+####################################
+
+settings.docs_dir.mkdir(parents=True, exist_ok=True)
+
+####################################
+# OLLAMA_BASE_URL
+####################################
+
+
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "")
+K8S_FLAG = os.environ.get("K8S_FLAG", "")
+USE_OLLAMA_DOCKER = os.environ.get("USE_OLLAMA_DOCKER", "false")
+
+if OLLAMA_BASE_URL == "":
+    OLLAMA_BASE_URL = (
+        str(settings.ollama_api_base_url)[:-4]
+        if settings.ollama_api_base_url.path == "/api"
+        else str(settings.ollama_api_base_url)
+    )
+
+if settings.env == "prod":
+    if OLLAMA_BASE_URL == "/ollama" and not K8S_FLAG:
+        if USE_OLLAMA_DOCKER.lower() == "true":
+            # if you use all-in-one docker container (Omni WebUI + Ollama)
+            # with the docker build arg USE_OLLAMA=true (--build-arg="USE_OLLAMA=true") this only works with http://localhost:11434
+            OLLAMA_BASE_URL = "http://localhost:11434"
+        else:
+            OLLAMA_BASE_URL = "http://host.docker.internal:11434"
+    elif K8S_FLAG:
+        OLLAMA_BASE_URL = "http://ollama-service.omni-webui.svc.cluster.local:11434"
+
+
+def separated_env(env_name: str, separator: str = ";"):
+    env_value = os.environ.get(env_name, "")
+    return [url.strip() for url in env_value.split(separator)] if env_value else []
+
+
+####################################
+# OPENAI_API
+####################################
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+OPENAI_API_BASE_URL = "https://api.openai.com/v1"
 
 
 class BannerModel(BaseModel):
@@ -568,39 +417,10 @@ class BannerModel(BaseModel):
     timestamp: int
 
 
-WEBUI_BANNERS = PersistentConfig(
-    "WEBUI_BANNERS",
-    "ui.banners",
-    [BannerModel(**banner) for banner in json.loads("[]")],
-)
-
-
-SHOW_ADMIN_DETAILS = PersistentConfig(
-    "SHOW_ADMIN_DETAILS",
-    "auth.admin.show",
-    os.environ.get("SHOW_ADMIN_DETAILS", "true").lower() == "true",
-)
-
-ADMIN_EMAIL = PersistentConfig(
-    "ADMIN_EMAIL",
-    "auth.admin.email",
-    os.environ.get("ADMIN_EMAIL", None),
-)
-
-
 ####################################
 # WEBUI_SECRET_KEY
 ####################################
 
-WEBUI_SECRET_KEY = os.environ.get(
-    "WEBUI_SECRET_KEY",
-    os.environ.get(
-        "WEBUI_JWT_SECRET_KEY", "t0p-s3cr3t"
-    ),  # DEPRECATED: remove at next major version
-)
-
-if WEBUI_AUTH and WEBUI_SECRET_KEY == "":
-    raise ValueError(ERROR_MESSAGES.ENV_VAR_NOT_FOUND)
 
 ####################################
 # RAG
@@ -612,55 +432,17 @@ CHROMA_DATABASE = os.environ.get("CHROMA_DATABASE", chromadb.DEFAULT_DATABASE)
 CHROMA_HTTP_HOST = os.environ.get("CHROMA_HTTP_HOST", "")
 CHROMA_HTTP_PORT = int(os.environ.get("CHROMA_HTTP_PORT", "8000"))
 # Comma-separated list of header=value pairs
-CHROMA_HTTP_HEADERS = os.environ.get("CHROMA_HTTP_HEADERS", "")
-if CHROMA_HTTP_HEADERS:
+CHROMA_HTTP_HEADERS: dict[str, str] | None
+if chroma_http_headers := os.getenv("CHROMA_HTTP_HEADERS"):
     CHROMA_HTTP_HEADERS = dict(
-        [pair.split("=") for pair in CHROMA_HTTP_HEADERS.split(",")]
+        pair.split("=", 1) for pair in chroma_http_headers.split(",")
     )
 else:
     CHROMA_HTTP_HEADERS = None
 CHROMA_HTTP_SSL = os.environ.get("CHROMA_HTTP_SSL", "false").lower() == "true"
 # this uses the model defined in the Dockerfile ENV variable. If you dont use docker or docker based deployments such as k8s, the default embedding model will be used (sentence-transformers/all-MiniLM-L6-v2)
 
-RAG_TOP_K = PersistentConfig(
-    "RAG_TOP_K", "rag.top_k", int(os.environ.get("RAG_TOP_K", "5"))
-)
-RAG_RELEVANCE_THRESHOLD = PersistentConfig(
-    "RAG_RELEVANCE_THRESHOLD",
-    "rag.relevance_threshold",
-    float(os.environ.get("RAG_RELEVANCE_THRESHOLD", "0.0")),
-)
-
-ENABLE_RAG_HYBRID_SEARCH = PersistentConfig(
-    "ENABLE_RAG_HYBRID_SEARCH",
-    "rag.enable_hybrid_search",
-    os.environ.get("ENABLE_RAG_HYBRID_SEARCH", "").lower() == "true",
-)
-
-ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION = PersistentConfig(
-    "ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION",
-    "rag.enable_web_loader_ssl_verification",
-    os.environ.get("ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION", "True").lower() == "true",
-)
-
-RAG_EMBEDDING_ENGINE = PersistentConfig(
-    "RAG_EMBEDDING_ENGINE",
-    "rag.embedding_engine",
-    os.environ.get("RAG_EMBEDDING_ENGINE", ""),
-)
-
-PDF_EXTRACT_IMAGES = PersistentConfig(
-    "PDF_EXTRACT_IMAGES",
-    "rag.pdf_extract_images",
-    os.environ.get("PDF_EXTRACT_IMAGES", "False").lower() == "true",
-)
-
-RAG_EMBEDDING_MODEL = PersistentConfig(
-    "RAG_EMBEDDING_MODEL",
-    "rag.embedding_model",
-    os.environ.get("RAG_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"),
-)
-log.info(f"Embedding model set: {RAG_EMBEDDING_MODEL.value}"),
+logger.info(f"Embedding model set: {config.rag.embedding_model}")
 
 RAG_EMBEDDING_MODEL_AUTO_UPDATE = (
     os.environ.get("RAG_EMBEDDING_MODEL_AUTO_UPDATE", "").lower() == "true"
@@ -669,20 +451,6 @@ RAG_EMBEDDING_MODEL_AUTO_UPDATE = (
 RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE = (
     os.environ.get("RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE", "").lower() == "true"
 )
-
-RAG_EMBEDDING_OPENAI_BATCH_SIZE = PersistentConfig(
-    "RAG_EMBEDDING_OPENAI_BATCH_SIZE",
-    "rag.embedding_openai_batch_size",
-    os.environ.get("RAG_EMBEDDING_OPENAI_BATCH_SIZE", 1),
-)
-
-RAG_RERANKING_MODEL = PersistentConfig(
-    "RAG_RERANKING_MODEL",
-    "rag.reranking_model",
-    os.environ.get("RAG_RERANKING_MODEL", ""),
-)
-if RAG_RERANKING_MODEL.value != "":
-    log.info(f"Reranking model set: {RAG_RERANKING_MODEL.value}"),
 
 RAG_RERANKING_MODEL_AUTO_UPDATE = (
     os.environ.get("RAG_RERANKING_MODEL_AUTO_UPDATE", "").lower() == "true"
@@ -701,143 +469,24 @@ if CHROMA_HTTP_HOST != "":
         ssl=CHROMA_HTTP_SSL,
         tenant=CHROMA_TENANT,
         database=CHROMA_DATABASE,
-        settings=Settings(allow_reset=True, anonymized_telemetry=False),
+        settings=ChromaSettings(allow_reset=True, anonymized_telemetry=False),
     )
 else:
     CHROMA_CLIENT = chromadb.PersistentClient(
         path=CHROMA_DATA_PATH,
-        settings=Settings(allow_reset=True, anonymized_telemetry=False),
+        settings=ChromaSettings(allow_reset=True, anonymized_telemetry=False),
         tenant=CHROMA_TENANT,
         database=CHROMA_DATABASE,
     )
 
 
 # device type embedding models - "cpu" (default), "cuda" (nvidia gpu required) or "mps" (apple silicon) - choosing this right can lead to better performance
-USE_CUDA = os.environ.get("USE_CUDA_DOCKER", "false")
+USE_CUDA = os.getenv("USE_CUDA_DOCKER", "false")
 
 if USE_CUDA.lower() == "true":
     DEVICE_TYPE = "cuda"
 else:
     DEVICE_TYPE = "cpu"
-
-CHUNK_SIZE = PersistentConfig(
-    "CHUNK_SIZE", "rag.chunk_size", int(os.environ.get("CHUNK_SIZE", "1500"))
-)
-CHUNK_OVERLAP = PersistentConfig(
-    "CHUNK_OVERLAP",
-    "rag.chunk_overlap",
-    int(os.environ.get("CHUNK_OVERLAP", "100")),
-)
-
-DEFAULT_RAG_TEMPLATE = """Use the following context as your learned knowledge, inside <context></context> XML tags.
-<context>
-    [context]
-</context>
-
-When answer to user:
-- If you don't know, just say that you don't know.
-- If you don't know when you are not sure, ask for clarification.
-Avoid mentioning that you obtained the information from the context.
-And answer according to the language of the user's question.
-
-Given the context information, answer the query.
-Query: [query]"""
-
-RAG_TEMPLATE = PersistentConfig(
-    "RAG_TEMPLATE",
-    "rag.template",
-    os.environ.get("RAG_TEMPLATE", DEFAULT_RAG_TEMPLATE),
-)
-
-RAG_OPENAI_API_BASE_URL = PersistentConfig(
-    "RAG_OPENAI_API_BASE_URL",
-    "rag.openai_api_base_url",
-    os.getenv("RAG_OPENAI_API_BASE_URL", OPENAI_API_BASE_URL),
-)
-RAG_OPENAI_API_KEY = PersistentConfig(
-    "RAG_OPENAI_API_KEY",
-    "rag.openai_api_key",
-    os.getenv("RAG_OPENAI_API_KEY", OPENAI_API_KEY),
-)
-
-ENABLE_RAG_LOCAL_WEB_FETCH = (
-    os.getenv("ENABLE_RAG_LOCAL_WEB_FETCH", "False").lower() == "true"
-)
-
-YOUTUBE_LOADER_LANGUAGE = PersistentConfig(
-    "YOUTUBE_LOADER_LANGUAGE",
-    "rag.youtube_loader_language",
-    os.getenv("YOUTUBE_LOADER_LANGUAGE", "en").split(","),
-)
-
-
-ENABLE_RAG_WEB_SEARCH = PersistentConfig(
-    "ENABLE_RAG_WEB_SEARCH",
-    "rag.web.search.enable",
-    os.getenv("ENABLE_RAG_WEB_SEARCH", "False").lower() == "true",
-)
-
-RAG_WEB_SEARCH_ENGINE = PersistentConfig(
-    "RAG_WEB_SEARCH_ENGINE",
-    "rag.web.search.engine",
-    os.getenv("RAG_WEB_SEARCH_ENGINE", ""),
-)
-
-SEARXNG_QUERY_URL = PersistentConfig(
-    "SEARXNG_QUERY_URL",
-    "rag.web.search.searxng_query_url",
-    os.getenv("SEARXNG_QUERY_URL", ""),
-)
-
-GOOGLE_PSE_API_KEY = PersistentConfig(
-    "GOOGLE_PSE_API_KEY",
-    "rag.web.search.google_pse_api_key",
-    os.getenv("GOOGLE_PSE_API_KEY", ""),
-)
-
-GOOGLE_PSE_ENGINE_ID = PersistentConfig(
-    "GOOGLE_PSE_ENGINE_ID",
-    "rag.web.search.google_pse_engine_id",
-    os.getenv("GOOGLE_PSE_ENGINE_ID", ""),
-)
-
-BRAVE_SEARCH_API_KEY = PersistentConfig(
-    "BRAVE_SEARCH_API_KEY",
-    "rag.web.search.brave_search_api_key",
-    os.getenv("BRAVE_SEARCH_API_KEY", ""),
-)
-
-SERPSTACK_API_KEY = PersistentConfig(
-    "SERPSTACK_API_KEY",
-    "rag.web.search.serpstack_api_key",
-    os.getenv("SERPSTACK_API_KEY", ""),
-)
-
-SERPSTACK_HTTPS = PersistentConfig(
-    "SERPSTACK_HTTPS",
-    "rag.web.search.serpstack_https",
-    os.getenv("SERPSTACK_HTTPS", "True").lower() == "true",
-)
-
-SERPER_API_KEY = PersistentConfig(
-    "SERPER_API_KEY",
-    "rag.web.search.serper_api_key",
-    os.getenv("SERPER_API_KEY", ""),
-)
-
-
-RAG_WEB_SEARCH_RESULT_COUNT = PersistentConfig(
-    "RAG_WEB_SEARCH_RESULT_COUNT",
-    "rag.web.search.result_count",
-    int(os.getenv("RAG_WEB_SEARCH_RESULT_COUNT", "3")),
-)
-
-RAG_WEB_SEARCH_CONCURRENT_REQUESTS = PersistentConfig(
-    "RAG_WEB_SEARCH_CONCURRENT_REQUESTS",
-    "rag.web.search.concurrent_requests",
-    int(os.getenv("RAG_WEB_SEARCH_CONCURRENT_REQUESTS", "10")),
-)
-
 
 ####################################
 # Transcribe
@@ -848,88 +497,3 @@ WHISPER_MODEL_DIR = os.getenv("WHISPER_MODEL_DIR", f"{CACHE_DIR}/whisper/models"
 WHISPER_MODEL_AUTO_UPDATE = (
     os.environ.get("WHISPER_MODEL_AUTO_UPDATE", "").lower() == "true"
 )
-
-
-####################################
-# Images
-####################################
-
-IMAGE_GENERATION_ENGINE = PersistentConfig(
-    "IMAGE_GENERATION_ENGINE",
-    "image_generation.engine",
-    os.getenv("IMAGE_GENERATION_ENGINE", ""),
-)
-
-ENABLE_IMAGE_GENERATION = PersistentConfig(
-    "ENABLE_IMAGE_GENERATION",
-    "image_generation.enable",
-    os.environ.get("ENABLE_IMAGE_GENERATION", "").lower() == "true",
-)
-AUTOMATIC1111_BASE_URL = PersistentConfig(
-    "AUTOMATIC1111_BASE_URL",
-    "image_generation.automatic1111.base_url",
-    os.getenv("AUTOMATIC1111_BASE_URL", ""),
-)
-
-COMFYUI_BASE_URL = PersistentConfig(
-    "COMFYUI_BASE_URL",
-    "image_generation.comfyui.base_url",
-    os.getenv("COMFYUI_BASE_URL", ""),
-)
-
-IMAGES_OPENAI_API_BASE_URL = PersistentConfig(
-    "IMAGES_OPENAI_API_BASE_URL",
-    "image_generation.openai.api_base_url",
-    os.getenv("IMAGES_OPENAI_API_BASE_URL", OPENAI_API_BASE_URL),
-)
-IMAGES_OPENAI_API_KEY = PersistentConfig(
-    "IMAGES_OPENAI_API_KEY",
-    "image_generation.openai.api_key",
-    os.getenv("IMAGES_OPENAI_API_KEY", OPENAI_API_KEY),
-)
-
-IMAGE_SIZE = PersistentConfig(
-    "IMAGE_SIZE", "image_generation.size", os.getenv("IMAGE_SIZE", "512x512")
-)
-
-IMAGE_STEPS = PersistentConfig(
-    "IMAGE_STEPS", "image_generation.steps", int(os.getenv("IMAGE_STEPS", 50))
-)
-
-IMAGE_GENERATION_MODEL = PersistentConfig(
-    "IMAGE_GENERATION_MODEL",
-    "image_generation.model",
-    os.getenv("IMAGE_GENERATION_MODEL", ""),
-)
-
-####################################
-# Audio
-####################################
-
-AUDIO_OPENAI_API_BASE_URL = PersistentConfig(
-    "AUDIO_OPENAI_API_BASE_URL",
-    "audio.openai.api_base_url",
-    os.getenv("AUDIO_OPENAI_API_BASE_URL", OPENAI_API_BASE_URL),
-)
-AUDIO_OPENAI_API_KEY = PersistentConfig(
-    "AUDIO_OPENAI_API_KEY",
-    "audio.openai.api_key",
-    os.getenv("AUDIO_OPENAI_API_KEY", OPENAI_API_KEY),
-)
-AUDIO_OPENAI_API_MODEL = PersistentConfig(
-    "AUDIO_OPENAI_API_MODEL",
-    "audio.openai.api_model",
-    os.getenv("AUDIO_OPENAI_API_MODEL", "tts-1"),
-)
-AUDIO_OPENAI_API_VOICE = PersistentConfig(
-    "AUDIO_OPENAI_API_VOICE",
-    "audio.openai.api_voice",
-    os.getenv("AUDIO_OPENAI_API_VOICE", "alloy"),
-)
-
-
-####################################
-# Database
-####################################
-
-DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DATA_DIR}/webui.db")

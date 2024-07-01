@@ -1,62 +1,38 @@
+import asyncio
+import json
+import os
+import random
+import re
+import time
+from typing import List, Optional, Union
+from urllib.parse import urlparse
+
+import aiohttp
+import requests
 from fastapi import (
-    FastAPI,
-    Request,
-    Response,
-    HTTPException,
     Depends,
-    status,
-    UploadFile,
+    FastAPI,
     File,
-    BackgroundTasks,
+    HTTPException,
+    Request,
+    UploadFile,
 )
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
-from fastapi.concurrency import run_in_threadpool
-
-from pydantic import BaseModel, ConfigDict
-
-import os
-import re
-import copy
-import random
-import requests
-import json
-import uuid
-import aiohttp
-import asyncio
-import logging
-import time
-from urllib.parse import urlparse
-from typing import Optional, List, Union
-
-from starlette.background import BackgroundTask
-
+from loguru import logger
 from omni_webui.apps.webui.models.models import Models
-from omni_webui.apps.webui.models.users import Users
+from omni_webui.config import (
+    UPLOAD_DIR,
+    config,
+)
 from omni_webui.constants import ERROR_MESSAGES
 from omni_webui.utils import (
-    decode_token,
-    get_current_user,
-    get_verified_user,
     get_admin_user,
-)
-
-from omni_webui.utils.models import get_model_id_from_custom_model_id
-
-
-from omni_webui.config import (
-    SRC_LOG_LEVELS,
-    OLLAMA_BASE_URLS,
-    ENABLE_OLLAMA_API,
-    ENABLE_MODEL_FILTER,
-    MODEL_FILTER_LIST,
-    UPLOAD_DIR,
-    AppConfig,
+    get_verified_user,
 )
 from omni_webui.utils.misc import calculate_sha256
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["OLLAMA"])
+from pydantic import BaseModel, ConfigDict, HttpUrl
+from starlette.background import BackgroundTask
 
 app = FastAPI()
 app.add_middleware(
@@ -67,13 +43,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.state.config = AppConfig()
-
-app.state.config.ENABLE_MODEL_FILTER = ENABLE_MODEL_FILTER
-app.state.config.MODEL_FILTER_LIST = MODEL_FILTER_LIST
-
-app.state.config.ENABLE_OLLAMA_API = ENABLE_OLLAMA_API
-app.state.config.OLLAMA_BASE_URLS = OLLAMA_BASE_URLS
+app.state.config = config
 app.state.MODELS = {}
 
 
@@ -116,7 +86,7 @@ async def update_config(form_data: OllamaConfigForm, user=Depends(get_admin_user
 
 @app.get("/urls")
 async def get_ollama_api_urls(user=Depends(get_admin_user)):
-    return {"OLLAMA_BASE_URLS": app.state.config.OLLAMA_BASE_URLS}
+    return {"OLLAMA_BASE_URLS": config.ollama.base_urls}
 
 
 class UrlUpdateForm(BaseModel):
@@ -125,10 +95,10 @@ class UrlUpdateForm(BaseModel):
 
 @app.post("/urls/update")
 async def update_ollama_api_url(form_data: UrlUpdateForm, user=Depends(get_admin_user)):
-    app.state.config.OLLAMA_BASE_URLS = form_data.urls
+    config.ollama.base_urls = [HttpUrl(url) for url in form_data.urls]
 
-    log.info(f"app.state.config.OLLAMA_BASE_URLS: {app.state.config.OLLAMA_BASE_URLS}")
-    return {"OLLAMA_BASE_URLS": app.state.config.OLLAMA_BASE_URLS}
+    logger.info(f"{config.ollama.base_urls = }")
+    return {"OLLAMA_BASE_URLS": config.ollama.base_urls}
 
 
 async def fetch_url(url):
@@ -139,7 +109,7 @@ async def fetch_url(url):
                 return await response.json()
     except Exception as e:
         # Handle connection error here
-        log.error(f"Connection error: {e}")
+        logger.error(f"Connection error: {e}")
         return None
 
 
@@ -153,7 +123,7 @@ async def cleanup_response(
         await session.close()
 
 
-async def post_streaming_url(url: str, payload: str):
+async def post_streaming_url(url: str, payload: bytes):
     r = None
     try:
         session = aiohttp.ClientSession(trust_env=True)
@@ -173,7 +143,7 @@ async def post_streaming_url(url: str, payload: str):
                 res = await r.json()
                 if "error" in res:
                     error_detail = f"Ollama: {res['error']}"
-            except:
+            except (json.JSONDecodeError, aiohttp.ContentTypeError):
                 error_detail = f"Ollama: {e}"
 
         raise HTTPException(
@@ -202,12 +172,10 @@ def merge_models_lists(model_lists):
 
 
 async def get_all_models():
-    log.info("get_all_models()")
+    logger.info("get_all_models()")
 
     if app.state.config.ENABLE_OLLAMA_API:
-        tasks = [
-            fetch_url(f"{url}/api/tags") for url in app.state.config.OLLAMA_BASE_URLS
-        ]
+        tasks = [fetch_url(f"{url}/api/tags") for url in config.ollama.base_urls]
         responses = await asyncio.gather(*tasks)
 
         models = {
@@ -231,22 +199,21 @@ async def get_all_models():
 async def get_ollama_tags(
     url_idx: Optional[int] = None, user=Depends(get_verified_user)
 ):
-    if url_idx == None:
+    if url_idx is None:
         models = await get_all_models()
 
-        if app.state.config.ENABLE_MODEL_FILTER:
+        if config.model_filter.enabled:
             if user.role == "user":
                 models["models"] = list(
                     filter(
-                        lambda model: model["name"]
-                        in app.state.config.MODEL_FILTER_LIST,
+                        lambda model: model["name"] in config.model_filter.models,
                         models["models"],
                     )
                 )
                 return models
         return models
     else:
-        url = app.state.config.OLLAMA_BASE_URLS[url_idx]
+        url = config.ollama.base_urls[url_idx]
 
         r = None
         try:
@@ -255,14 +222,14 @@ async def get_ollama_tags(
 
             return r.json()
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             error_detail = "Omni WebUI: Server Connection Error"
             if r is not None:
                 try:
                     res = r.json()
                     if "error" in res:
                         error_detail = f"Ollama: {res['error']}"
-                except:
+                except requests.exceptions.JSONDecodeError:
                     error_detail = f"Ollama: {e}"
 
             raise HTTPException(
@@ -275,13 +242,9 @@ async def get_ollama_tags(
 @app.get("/api/version/{url_idx}")
 async def get_ollama_versions(url_idx: Optional[int] = None):
     if app.state.config.ENABLE_OLLAMA_API:
-        if url_idx == None:
-
+        if url_idx is None:
             # returns lowest version
-            tasks = [
-                fetch_url(f"{url}/api/version")
-                for url in app.state.config.OLLAMA_BASE_URLS
-            ]
+            tasks = [fetch_url(f"{url}/api/version") for url in config.ollama.base_urls]
             responses = await asyncio.gather(*tasks)
             responses = list(filter(lambda x: x is not None, responses))
 
@@ -300,7 +263,7 @@ async def get_ollama_versions(url_idx: Optional[int] = None):
                     detail=ERROR_MESSAGES.OLLAMA_NOT_FOUND,
                 )
         else:
-            url = app.state.config.OLLAMA_BASE_URLS[url_idx]
+            url = config.ollama.base_urls[url_idx]
 
             r = None
             try:
@@ -309,14 +272,14 @@ async def get_ollama_versions(url_idx: Optional[int] = None):
 
                 return r.json()
             except Exception as e:
-                log.exception(e)
+                logger.exception(e)
                 error_detail = "Omni WebUI: Server Connection Error"
                 if r is not None:
                     try:
                         res = r.json()
                         if "error" in res:
                             error_detail = f"Ollama: {res['error']}"
-                    except:
+                    except (json.JSONDecodeError, aiohttp.ContentTypeError):
                         error_detail = f"Ollama: {e}"
 
                 raise HTTPException(
@@ -336,15 +299,13 @@ class ModelNameForm(BaseModel):
 async def pull_model(
     form_data: ModelNameForm, url_idx: int = 0, user=Depends(get_admin_user)
 ):
-    url = app.state.config.OLLAMA_BASE_URLS[url_idx]
-    log.info(f"url: {url}")
-
-    r = None
+    url = config.ollama.base_urls[url_idx]
+    logger.info(f"url: {url}")
 
     # Admin should be able to pull models from any source
     payload = {**form_data.model_dump(exclude_none=True), "insecure": True}
 
-    return await post_streaming_url(f"{url}/api/pull", json.dumps(payload))
+    return await post_streaming_url(f"{url}/api/pull", json.dumps(payload).encode())
 
 
 class PushModelForm(BaseModel):
@@ -360,7 +321,7 @@ async def push_model(
     url_idx: Optional[int] = None,
     user=Depends(get_admin_user),
 ):
-    if url_idx == None:
+    if url_idx is None:
         if form_data.name in app.state.MODELS:
             url_idx = app.state.MODELS[form_data.name]["urls"][0]
         else:
@@ -369,8 +330,8 @@ async def push_model(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.name),
             )
 
-    url = app.state.config.OLLAMA_BASE_URLS[url_idx]
-    log.debug(f"url: {url}")
+    url = config.ollama.base_urls[url_idx]
+    logger.debug(f"url: {url}")
 
     return await post_streaming_url(
         f"{url}/api/push", form_data.model_dump_json(exclude_none=True).encode()
@@ -389,9 +350,9 @@ class CreateModelForm(BaseModel):
 async def create_model(
     form_data: CreateModelForm, url_idx: int = 0, user=Depends(get_admin_user)
 ):
-    log.debug(f"form_data: {form_data}")
-    url = app.state.config.OLLAMA_BASE_URLS[url_idx]
-    log.info(f"url: {url}")
+    logger.debug(f"form_data: {form_data}")
+    url = config.ollama.base_urls[url_idx]
+    logger.info(f"url: {url}")
 
     return await post_streaming_url(
         f"{url}/api/create", form_data.model_dump_json(exclude_none=True).encode()
@@ -410,7 +371,7 @@ async def copy_model(
     url_idx: Optional[int] = None,
     user=Depends(get_admin_user),
 ):
-    if url_idx == None:
+    if url_idx is None:
         if form_data.source in app.state.MODELS:
             url_idx = app.state.MODELS[form_data.source]["urls"][0]
         else:
@@ -419,8 +380,8 @@ async def copy_model(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.source),
             )
 
-    url = app.state.config.OLLAMA_BASE_URLS[url_idx]
-    log.info(f"url: {url}")
+    url = config.ollama.base_urls[url_idx]
+    logger.info(f"url: {url}")
 
     try:
         r = requests.request(
@@ -430,18 +391,18 @@ async def copy_model(
         )
         r.raise_for_status()
 
-        log.debug(f"r.text: {r.text}")
+        logger.debug(f"r.text: {r.text}")
 
         return True
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         error_detail = "Omni WebUI: Server Connection Error"
         if r is not None:
             try:
                 res = r.json()
                 if "error" in res:
                     error_detail = f"Ollama: {res['error']}"
-            except:
+            except requests.exceptions.JSONDecodeError:
                 error_detail = f"Ollama: {e}"
 
         raise HTTPException(
@@ -457,7 +418,7 @@ async def delete_model(
     url_idx: Optional[int] = None,
     user=Depends(get_admin_user),
 ):
-    if url_idx == None:
+    if url_idx is None:
         if form_data.name in app.state.MODELS:
             url_idx = app.state.MODELS[form_data.name]["urls"][0]
         else:
@@ -466,8 +427,8 @@ async def delete_model(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.name),
             )
 
-    url = app.state.config.OLLAMA_BASE_URLS[url_idx]
-    log.info(f"url: {url}")
+    url = config.ollama.base_urls[url_idx]
+    logger.info(f"url: {url}")
 
     try:
         r = requests.request(
@@ -477,18 +438,18 @@ async def delete_model(
         )
         r.raise_for_status()
 
-        log.debug(f"r.text: {r.text}")
+        logger.debug(f"r.text: {r.text}")
 
         return True
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         error_detail = "Omni WebUI: Server Connection Error"
         if r is not None:
             try:
                 res = r.json()
                 if "error" in res:
                     error_detail = f"Ollama: {res['error']}"
-            except:
+            except requests.exceptions.JSONDecodeError:
                 error_detail = f"Ollama: {e}"
 
         raise HTTPException(
@@ -506,8 +467,8 @@ async def show_model_info(form_data: ModelNameForm, user=Depends(get_verified_us
         )
 
     url_idx = random.choice(app.state.MODELS[form_data.name]["urls"])
-    url = app.state.config.OLLAMA_BASE_URLS[url_idx]
-    log.info(f"url: {url}")
+    url = config.ollama.base_urls[url_idx]
+    logger.info(f"url: {url}")
 
     try:
         r = requests.request(
@@ -519,14 +480,14 @@ async def show_model_info(form_data: ModelNameForm, user=Depends(get_verified_us
 
         return r.json()
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         error_detail = "Omni WebUI: Server Connection Error"
         if r is not None:
             try:
                 res = r.json()
                 if "error" in res:
                     error_detail = f"Ollama: {res['error']}"
-            except:
+            except requests.exceptions.JSONDecodeError:
                 error_detail = f"Ollama: {e}"
 
         raise HTTPException(
@@ -549,7 +510,7 @@ async def generate_embeddings(
     url_idx: Optional[int] = None,
     user=Depends(get_verified_user),
 ):
-    if url_idx == None:
+    if url_idx is None:
         model = form_data.model
 
         if ":" not in model:
@@ -563,8 +524,8 @@ async def generate_embeddings(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.model),
             )
 
-    url = app.state.config.OLLAMA_BASE_URLS[url_idx]
-    log.info(f"url: {url}")
+    url = config.ollama.base_urls[url_idx]
+    logger.info(f"url: {url}")
 
     try:
         r = requests.request(
@@ -576,14 +537,14 @@ async def generate_embeddings(
 
         return r.json()
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         error_detail = "Omni WebUI: Server Connection Error"
         if r is not None:
             try:
                 res = r.json()
                 if "error" in res:
                     error_detail = f"Ollama: {res['error']}"
-            except:
+            except requests.exceptions.JSONDecodeError:
                 error_detail = f"Ollama: {e}"
 
         raise HTTPException(
@@ -596,10 +557,9 @@ def generate_ollama_embeddings(
     form_data: GenerateEmbeddingsForm,
     url_idx: Optional[int] = None,
 ):
+    logger.info(f"generate_ollama_embeddings {form_data}")
 
-    log.info(f"generate_ollama_embeddings {form_data}")
-
-    if url_idx == None:
+    if url_idx is None:
         model = form_data.model
 
         if ":" not in model:
@@ -613,8 +573,8 @@ def generate_ollama_embeddings(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.model),
             )
 
-    url = app.state.config.OLLAMA_BASE_URLS[url_idx]
-    log.info(f"url: {url}")
+    url = config.ollama.base_urls[url_idx]
+    logger.info(f"url: {url}")
 
     try:
         r = requests.request(
@@ -626,30 +586,30 @@ def generate_ollama_embeddings(
 
         data = r.json()
 
-        log.info(f"generate_ollama_embeddings {data}")
+        logger.info(f"generate_ollama_embeddings {data}")
 
         if "embedding" in data:
             return data["embedding"]
         else:
-            raise "Something went wrong :/"
+            raise Exception("Something went wrong :/")
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         error_detail = "Omni WebUI: Server Connection Error"
         if r is not None:
             try:
                 res = r.json()
                 if "error" in res:
                     error_detail = f"Ollama: {res['error']}"
-            except:
+            except requests.exceptions.JSONDecodeError:
                 error_detail = f"Ollama: {e}"
 
-        raise error_detail
+        raise Exception(error_detail)
 
 
 class GenerateCompletionForm(BaseModel):
     model: str
     prompt: str
-    images: Optional[List[str]] = None
+    images: Optional[list[str]] = None
     format: Optional[str] = None
     options: Optional[dict] = None
     system: Optional[str] = None
@@ -657,18 +617,17 @@ class GenerateCompletionForm(BaseModel):
     context: Optional[str] = None
     stream: Optional[bool] = True
     raw: Optional[bool] = None
-    keep_alive: Optional[Union[int, str]] = None
+    keep_alive: int | str | None = None
 
 
 @app.post("/api/generate")
 @app.post("/api/generate/{url_idx}")
 async def generate_completion(
     form_data: GenerateCompletionForm,
-    url_idx: Optional[int] = None,
+    url_idx: int | None = None,
     user=Depends(get_verified_user),
 ):
-
-    if url_idx == None:
+    if url_idx is None:
         model = form_data.model
 
         if ":" not in model:
@@ -682,8 +641,8 @@ async def generate_completion(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.model),
             )
 
-    url = app.state.config.OLLAMA_BASE_URLS[url_idx]
-    log.info(f"url: {url}")
+    url = config.ollama.base_urls[url_idx]
+    logger.info(f"url: {url}")
 
     return await post_streaming_url(
         f"{url}/api/generate", form_data.model_dump_json(exclude_none=True).encode()
@@ -713,12 +672,7 @@ async def generate_chat_completion(
     url_idx: Optional[int] = None,
     user=Depends(get_verified_user),
 ):
-
-    log.debug(
-        "form_data.model_dump_json(exclude_none=True).encode(): {0} ".format(
-            form_data.model_dump_json(exclude_none=True).encode()
-        )
-    )
+    logger.debug(f"{form_data.model_dump_json(exclude_none=True) = }")
 
     payload = {
         **form_data.model_dump(exclude_none=True),
@@ -732,91 +686,76 @@ async def generate_chat_completion(
         if model_info.base_model_id:
             payload["model"] = model_info.base_model_id
 
-        model_info.params = model_info.params.model_dump()
+        model_params = model_info.params.model_dump()
 
-        if model_info.params:
+        if model_params:
             payload["options"] = {}
 
-            if model_info.params.get("mirostat", None):
-                payload["options"]["mirostat"] = model_info.params.get("mirostat", None)
+            if model_params.get("mirostat"):
+                payload["options"]["mirostat"] = model_params.get("mirostat")
 
-            if model_info.params.get("mirostat_eta", None):
-                payload["options"]["mirostat_eta"] = model_info.params.get(
-                    "mirostat_eta", None
+            if model_params.get("mirostat_eta"):
+                payload["options"]["mirostat_eta"] = model_params.get("mirostat_eta")
+
+            if model_params.get("mirostat_tau"):
+                payload["options"]["mirostat_tau"] = model_params.get("mirostat_tau")
+
+            if model_params.get("num_ctx"):
+                payload["options"]["num_ctx"] = model_params.get("num_ctx")
+
+            if model_params.get("repeat_last_n"):
+                payload["options"]["repeat_last_n"] = model_params.get("repeat_last_n")
+
+            if model_params.get("frequency_penalty"):
+                payload["options"]["repeat_penalty"] = model_params.get(
+                    "frequency_penalty"
                 )
 
-            if model_info.params.get("mirostat_tau", None):
+            if model_params.get("temperature"):
+                payload["options"]["temperature"] = model_params.get("temperature")
 
-                payload["options"]["mirostat_tau"] = model_info.params.get(
-                    "mirostat_tau", None
-                )
+            if model_params.get("seed"):
+                payload["options"]["seed"] = model_params.get("seed")
 
-            if model_info.params.get("num_ctx", None):
-                payload["options"]["num_ctx"] = model_info.params.get("num_ctx", None)
-
-            if model_info.params.get("repeat_last_n", None):
-                payload["options"]["repeat_last_n"] = model_info.params.get(
-                    "repeat_last_n", None
-                )
-
-            if model_info.params.get("frequency_penalty", None):
-                payload["options"]["repeat_penalty"] = model_info.params.get(
-                    "frequency_penalty", None
-                )
-
-            if model_info.params.get("temperature", None):
-                payload["options"]["temperature"] = model_info.params.get(
-                    "temperature", None
-                )
-
-            if model_info.params.get("seed", None):
-                payload["options"]["seed"] = model_info.params.get("seed", None)
-
-            if model_info.params.get("stop", None):
+            if model_params.get("stop", None):
                 payload["options"]["stop"] = (
                     [
                         bytes(stop, "utf-8").decode("unicode_escape")
-                        for stop in model_info.params["stop"]
+                        for stop in model_params["stop"]
                     ]
-                    if model_info.params.get("stop", None)
+                    if model_params.get("stop")
                     else None
                 )
 
-            if model_info.params.get("tfs_z", None):
-                payload["options"]["tfs_z"] = model_info.params.get("tfs_z", None)
+            if model_params.get("tfs_z"):
+                payload["options"]["tfs_z"] = model_params.get("tfs_z")
 
-            if model_info.params.get("max_tokens", None):
-                payload["options"]["num_predict"] = model_info.params.get(
-                    "max_tokens", None
-                )
+            if model_params.get("max_tokens"):
+                payload["options"]["num_predict"] = model_params.get("max_tokens")
 
-            if model_info.params.get("top_k", None):
-                payload["options"]["top_k"] = model_info.params.get("top_k", None)
+            if model_params.get("top_k"):
+                payload["options"]["top_k"] = model_params.get("top_k")
 
-            if model_info.params.get("top_p", None):
-                payload["options"]["top_p"] = model_info.params.get("top_p", None)
+            if model_params.get("top_p"):
+                payload["options"]["top_p"] = model_params.get("top_p")
 
-            if model_info.params.get("use_mmap", None):
-                payload["options"]["use_mmap"] = model_info.params.get("use_mmap", None)
+            if model_params.get("use_mmap"):
+                payload["options"]["use_mmap"] = model_params.get("use_mmap")
 
-            if model_info.params.get("use_mlock", None):
-                payload["options"]["use_mlock"] = model_info.params.get(
-                    "use_mlock", None
-                )
+            if model_params.get("use_mlock"):
+                payload["options"]["use_mlock"] = model_params.get("use_mlock")
 
-            if model_info.params.get("num_thread", None):
-                payload["options"]["num_thread"] = model_info.params.get(
-                    "num_thread", None
-                )
+            if model_params.get("num_thread"):
+                payload["options"]["num_thread"] = model_params("num_thread")
 
-        if model_info.params.get("system", None):
+        if model_params.get("system"):
             # Check if the payload already has a system message
             # If not, add a system message to the payload
             if payload.get("messages"):
                 for message in payload["messages"]:
                     if message.get("role") == "system":
                         message["content"] = (
-                            model_info.params.get("system", None) + message["content"]
+                            model_params.get("system") + message["content"]
                         )
                         break
                 else:
@@ -824,11 +763,11 @@ async def generate_chat_completion(
                         0,
                         {
                             "role": "system",
-                            "content": model_info.params.get("system", None),
+                            "content": model_params.get("system"),
                         },
                     )
 
-    if url_idx == None:
+    if url_idx is None:
         if ":" not in payload["model"]:
             payload["model"] = f"{payload['model']}:latest"
 
@@ -840,12 +779,12 @@ async def generate_chat_completion(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.model),
             )
 
-    url = app.state.config.OLLAMA_BASE_URLS[url_idx]
-    log.info(f"url: {url}")
+    url = config.ollama.base_urls[url_idx]
+    logger.info(f"url: {url}")
 
     print(payload)
 
-    return await post_streaming_url(f"{url}/api/chat", json.dumps(payload))
+    return await post_streaming_url(f"{url}/api/chat", json.dumps(payload).encode())
 
 
 # TODO: we should update this part once Ollama supports other types
@@ -870,7 +809,6 @@ async def generate_openai_chat_completion(
     url_idx: Optional[int] = None,
     user=Depends(get_verified_user),
 ):
-
     payload = {
         **form_data.model_dump(exclude_none=True),
     }
@@ -883,33 +821,31 @@ async def generate_openai_chat_completion(
         if model_info.base_model_id:
             payload["model"] = model_info.base_model_id
 
-        model_info.params = model_info.params.model_dump()
+        model_params = model_info.params.model_dump()
 
-        if model_info.params:
-            payload["temperature"] = model_info.params.get("temperature", None)
-            payload["top_p"] = model_info.params.get("top_p", None)
-            payload["max_tokens"] = model_info.params.get("max_tokens", None)
-            payload["frequency_penalty"] = model_info.params.get(
-                "frequency_penalty", None
-            )
-            payload["seed"] = model_info.params.get("seed", None)
+        if model_params:
+            payload["temperature"] = model_params.get("temperature", None)
+            payload["top_p"] = model_params.get("top_p", None)
+            payload["max_tokens"] = model_params.get("max_tokens", None)
+            payload["frequency_penalty"] = model_params.get("frequency_penalty", None)
+            payload["seed"] = model_params.get("seed", None)
             payload["stop"] = (
                 [
                     bytes(stop, "utf-8").decode("unicode_escape")
-                    for stop in model_info.params["stop"]
+                    for stop in model_params["stop"]
                 ]
-                if model_info.params.get("stop", None)
+                if model_params.get("stop", None)
                 else None
             )
 
-        if model_info.params.get("system", None):
+        if model_params.get("system", None):
             # Check if the payload already has a system message
             # If not, add a system message to the payload
             if payload.get("messages"):
                 for message in payload["messages"]:
                     if message.get("role") == "system":
                         message["content"] = (
-                            model_info.params.get("system", None) + message["content"]
+                            model_params.get("system", None) + message["content"]
                         )
                         break
                 else:
@@ -917,11 +853,11 @@ async def generate_openai_chat_completion(
                         0,
                         {
                             "role": "system",
-                            "content": model_info.params.get("system", None),
+                            "content": model_params.get("system", None),
                         },
                     )
 
-    if url_idx == None:
+    if url_idx is None:
         if ":" not in payload["model"]:
             payload["model"] = f"{payload['model']}:latest"
 
@@ -933,10 +869,12 @@ async def generate_openai_chat_completion(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.model),
             )
 
-    url = app.state.config.OLLAMA_BASE_URLS[url_idx]
-    log.info(f"url: {url}")
+    url = config.ollama.base_urls[url_idx]
+    logger.info(f"url: {url}")
 
-    return await post_streaming_url(f"{url}/v1/chat/completions", json.dumps(payload))
+    return await post_streaming_url(
+        f"{url}/v1/chat/completions", json.dumps(payload).encode()
+    )
 
 
 @app.get("/v1/models")
@@ -945,15 +883,14 @@ async def get_openai_models(
     url_idx: Optional[int] = None,
     user=Depends(get_verified_user),
 ):
-    if url_idx == None:
+    if url_idx is None:
         models = await get_all_models()
 
-        if app.state.config.ENABLE_MODEL_FILTER:
+        if config.model_filter.enabled:
             if user.role == "user":
                 models["models"] = list(
                     filter(
-                        lambda model: model["name"]
-                        in app.state.config.MODEL_FILTER_LIST,
+                        lambda model: model["name"] in config.model_filter.models,
                         models["models"],
                     )
                 )
@@ -972,7 +909,7 @@ async def get_openai_models(
         }
 
     else:
-        url = app.state.config.OLLAMA_BASE_URLS[url_idx]
+        url = config.ollama.base_urls[url_idx]
         try:
             r = requests.request(method="GET", url=f"{url}/api/tags")
             r.raise_for_status()
@@ -993,14 +930,14 @@ async def get_openai_models(
             }
 
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             error_detail = "Omni WebUI: Server Connection Error"
             if r is not None:
                 try:
                     res = r.json()
                     if "error" in res:
                         error_detail = f"Ollama: {res['error']}"
-                except:
+                except requests.exceptions.JSONDecodeError:
                     error_detail = f"Ollama: {e}"
 
             raise HTTPException(
@@ -1026,7 +963,7 @@ def parse_huggingface_url(hf_url):
         path_components = parsed_url.path.split("/")
 
         # Extract the desired output
-        user_repo = "/".join(path_components[1:3])
+        "/".join(path_components[1:3])
         model_file = path_components[-1]
 
         return model_file
@@ -1095,7 +1032,6 @@ async def download_model(
     form_data: UrlForm,
     url_idx: Optional[int] = None,
 ):
-
     allowed_hosts = ["https://huggingface.co/", "https://github.com/"]
 
     if not any(form_data.url.startswith(host) for host in allowed_hosts):
@@ -1104,9 +1040,9 @@ async def download_model(
             detail="Invalid file_url. Only URLs from allowed hosts are permitted.",
         )
 
-    if url_idx == None:
+    if url_idx is None:
         url_idx = 0
-    url = app.state.config.OLLAMA_BASE_URLS[url_idx]
+    url = config.ollama.base_urls[url_idx]
 
     file_name = parse_huggingface_url(form_data.url)
 
@@ -1123,9 +1059,9 @@ async def download_model(
 @app.post("/models/upload")
 @app.post("/models/upload/{url_idx}")
 def upload_model(file: UploadFile = File(...), url_idx: Optional[int] = None):
-    if url_idx == None:
+    if url_idx is None:
         url_idx = 0
-    ollama_url = app.state.config.OLLAMA_BASE_URLS[url_idx]
+    ollama_url = config.ollama.base_urls[url_idx]
 
     file_path = f"{UPLOAD_DIR}/{file.filename}"
 
@@ -1185,137 +1121,3 @@ def upload_model(file: UploadFile = File(...), url_idx: Optional[int] = None):
             yield f"data: {json.dumps(res)}\n\n"
 
     return StreamingResponse(file_process_stream(), media_type="text/event-stream")
-
-
-# async def upload_model(file: UploadFile = File(), url_idx: Optional[int] = None):
-#     if url_idx == None:
-#         url_idx = 0
-#     url = app.state.config.OLLAMA_BASE_URLS[url_idx]
-
-#     file_location = os.path.join(UPLOAD_DIR, file.filename)
-#     total_size = file.size
-
-#     async def file_upload_generator(file):
-#         print(file)
-#         try:
-#             async with aiofiles.open(file_location, "wb") as f:
-#                 completed_size = 0
-#                 while True:
-#                     chunk = await file.read(1024*1024)
-#                     if not chunk:
-#                         break
-#                     await f.write(chunk)
-#                     completed_size += len(chunk)
-#                     progress = (completed_size / total_size) * 100
-
-#                     print(progress)
-#                     yield f'data: {json.dumps({"status": "uploading", "percentage": progress, "total": total_size, "completed": completed_size, "done": False})}\n'
-#         except Exception as e:
-#             print(e)
-#             yield f"data: {json.dumps({'status': 'error', 'message': str(e)})}\n"
-#         finally:
-#             await file.close()
-#             print("done")
-#             yield f'data: {json.dumps({"status": "completed", "percentage": 100, "total": total_size, "completed": completed_size, "done": True})}\n'
-
-#     return StreamingResponse(
-#         file_upload_generator(copy.deepcopy(file)), media_type="text/event-stream"
-#     )
-
-
-@app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def deprecated_proxy(
-    path: str, request: Request, user=Depends(get_verified_user)
-):
-    url = app.state.config.OLLAMA_BASE_URLS[0]
-    target_url = f"{url}/{path}"
-
-    body = await request.body()
-    headers = dict(request.headers)
-
-    if user.role in ["user", "admin"]:
-        if path in ["pull", "delete", "push", "copy", "create"]:
-            if user.role != "admin":
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-                )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=ERROR_MESSAGES.ACCESS_PROHIBITED,
-        )
-
-    headers.pop("host", None)
-    headers.pop("authorization", None)
-    headers.pop("origin", None)
-    headers.pop("referer", None)
-
-    r = None
-
-    def get_request():
-        nonlocal r
-
-        request_id = str(uuid.uuid4())
-        try:
-            REQUEST_POOL.append(request_id)
-
-            def stream_content():
-                try:
-                    if path == "generate":
-                        data = json.loads(body.decode("utf-8"))
-
-                        if data.get("stream", True):
-                            yield json.dumps({"id": request_id, "done": False}) + "\n"
-
-                    elif path == "chat":
-                        yield json.dumps({"id": request_id, "done": False}) + "\n"
-
-                    for chunk in r.iter_content(chunk_size=8192):
-                        if request_id in REQUEST_POOL:
-                            yield chunk
-                        else:
-                            log.warning("User: canceled request")
-                            break
-                finally:
-                    if hasattr(r, "close"):
-                        r.close()
-                        if request_id in REQUEST_POOL:
-                            REQUEST_POOL.remove(request_id)
-
-            r = requests.request(
-                method=request.method,
-                url=target_url,
-                data=body,
-                headers=headers,
-                stream=True,
-            )
-
-            r.raise_for_status()
-
-            # r.close()
-
-            return StreamingResponse(
-                stream_content(),
-                status_code=r.status_code,
-                headers=dict(r.headers),
-            )
-        except Exception as e:
-            raise e
-
-    try:
-        return await run_in_threadpool(get_request)
-    except Exception as e:
-        error_detail = "Omni WebUI: Server Connection Error"
-        if r is not None:
-            try:
-                res = r.json()
-                if "error" in res:
-                    error_detail = f"Ollama: {res['error']}"
-            except:
-                error_detail = f"Ollama: {e}"
-
-        raise HTTPException(
-            status_code=r.status_code if r else 500,
-            detail=error_detail,
-        )

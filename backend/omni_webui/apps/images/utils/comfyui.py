@@ -1,19 +1,12 @@
-import websocket  # NOTE: websocket-client (https://github.com/websocket-client/websocket-client)
-import uuid
 import json
-import urllib.request
-import urllib.parse
 import random
-import logging
-
-from omni_webui.config import SRC_LOG_LEVELS
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["COMFYUI"])
-
-from pydantic import BaseModel
-
+import urllib.parse
+import urllib.request
 from typing import Optional
+
+import websocket  # NOTE: websocket-client (https://github.com/websocket-client/websocket-client)
+from loguru import logger
+from pydantic import BaseModel
 
 COMFYUI_DEFAULT_PROMPT = """
 {
@@ -127,7 +120,7 @@ COMFYUI_DEFAULT_PROMPT = """
 
 
 def queue_prompt(prompt, client_id, base_url):
-    log.info("queue_prompt")
+    logger.info("queue_prompt")
     p = {"prompt": prompt, "client_id": client_id}
     data = json.dumps(p).encode("utf-8")
     req = urllib.request.Request(f"{base_url}/prompt", data=data)
@@ -135,7 +128,7 @@ def queue_prompt(prompt, client_id, base_url):
 
 
 def get_image(filename, subfolder, folder_type, base_url):
-    log.info("get_image")
+    logger.info("get_image")
     data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
     url_values = urllib.parse.urlencode(data)
     with urllib.request.urlopen(f"{base_url}/view?{url_values}") as response:
@@ -143,14 +136,14 @@ def get_image(filename, subfolder, folder_type, base_url):
 
 
 def get_image_url(filename, subfolder, folder_type, base_url):
-    log.info("get_image")
+    logger.info("get_image")
     data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
     url_values = urllib.parse.urlencode(data)
     return f"{base_url}/view?{url_values}"
 
 
 def get_history(prompt_id, base_url):
-    log.info("get_history")
+    logger.info("get_history")
     with urllib.request.urlopen(f"{base_url}/history/{prompt_id}") as response:
         return json.loads(response.read())
 
@@ -218,15 +211,15 @@ def comfyui_generate_image(
     try:
         ws = websocket.WebSocket()
         ws.connect(f"{ws_url}/ws?clientId={client_id}")
-        log.info("WebSocket connection established.")
+        logger.info("WebSocket connection established.")
     except Exception as e:
-        log.exception(f"Failed to connect to WebSocket server: {e}")
+        logger.exception(f"Failed to connect to WebSocket server: {e}")
         return None
 
     try:
         images = get_images(ws, comfyui_prompt, client_id, base_url)
     except Exception as e:
-        log.exception(f"Error while receiving images: {e}")
+        logger.exception(f"Error while receiving images: {e}")
         images = None
 
     ws.close()

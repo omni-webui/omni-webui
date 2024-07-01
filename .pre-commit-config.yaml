@@ -2,37 +2,44 @@
 # See https://pre-commit.com/hooks.html for more hooks
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.2.0
+    rev: v4.6.0
     hooks:
     -   id: trailing-whitespace
     -   id: end-of-file-fixer
     -   id: check-yaml
     -   id: check-added-large-files
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.8
+    rev: v0.5.0
     hooks:
     -   id: ruff
         args: [--fix]
     -   id: ruff-format
 -   repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.10.0
+    rev: v1.10.1
     hooks:
     -   id: mypy
         additional_dependencies:
+        -   pydantic-settings
         -   types-markdown
         -   types-requests
         -   types-peewee
         -   types-pyyaml
+-   repo: https://github.com/biomejs/pre-commit
+    rev: v0.4.0
+    hooks:
+    -   id: biome-format
+        additional_dependencies:
+        -   "@biomejs/biome@1.8.3"
 -   repo: https://github.com/pre-commit/mirrors-eslint
-    rev: v9.4.0
+    rev: v9.6.0
     hooks:
     -   id: eslint
         additional_dependencies:
-        -   eslint@9.4.0
+        -   eslint@9.6.0
         -   eslint-plugin-cypress@3.3.0
-        -   eslint-plugin-svelte@2.39.3
-        -   '@typescript-eslint/eslint-plugin@7.13.0'
-        -   '@typescript-eslint/parser@7.13.0'
-        -   globals@15.4.0
+        -   eslint-plugin-svelte@2.41.0
+        -   '@typescript-eslint/eslint-plugin@7.14.1'
+        -   '@typescript-eslint/parser@7.14.1'
+        -   globals@15.6.0
         files: \.([jt]s|svelte)?$
         types: [file]

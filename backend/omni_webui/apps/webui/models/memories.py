@@ -1,13 +1,11 @@
-from pydantic import BaseModel
-from peewee import *
-from playhouse.shortcuts import model_to_dict
-from typing import List, Union, Optional
-
-from omni_webui.apps.webui.internal.db import DB
-from omni_webui.apps.webui.models.chats import Chats
-
 import time
 import uuid
+from typing import Optional
+
+from omni_webui.config import settings
+from peewee import BigIntegerField, CharField, Model, TextField
+from playhouse.shortcuts import model_to_dict
+from pydantic import BaseModel
 
 ####################
 # Memory DB Schema
@@ -22,7 +20,7 @@ class Memory(Model):
     created_at = BigIntegerField()
 
     class Meta:
-        database = DB
+        database = settings.database
 
 
 class MemoryModel(BaseModel):
@@ -65,19 +63,13 @@ class MemoriesTable:
         else:
             return None
 
-    def get_memories(self) -> List[MemoryModel]:
-        try:
-            memories = Memory.select()
-            return [MemoryModel(**model_to_dict(memory)) for memory in memories]
-        except:
-            return None
+    def get_memories(self) -> list[MemoryModel]:
+        memories = Memory.select()
+        return [MemoryModel(**model_to_dict(memory)) for memory in memories]
 
-    def get_memories_by_user_id(self, user_id: str) -> List[MemoryModel]:
-        try:
-            memories = Memory.select().where(Memory.user_id == user_id)
-            return [MemoryModel(**model_to_dict(memory)) for memory in memories]
-        except:
-            return None
+    def get_memories_by_user_id(self, user_id: str) -> list[MemoryModel]:
+        memories = Memory.select().where(Memory.user_id == user_id)
+        return [MemoryModel(**model_to_dict(memory)) for memory in memories]
 
     def get_memory_by_id(self, id) -> Optional[MemoryModel]:
         try:
@@ -115,4 +107,4 @@ class MemoriesTable:
             return False
 
 
-Memories = MemoriesTable(DB)
+Memories = MemoriesTable(settings.database)

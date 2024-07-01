@@ -1,39 +1,32 @@
-import logging
-
-from fastapi import Request, UploadFile, File
-from fastapi import Depends, HTTPException, status
-
-from fastapi import APIRouter
-from pydantic import BaseModel
 import re
 import uuid
-import csv
 
-
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from loguru import logger
 from omni_webui.apps.webui.models.auths import (
-    SigninForm,
-    SignupForm,
     AddUserForm,
-    UpdateProfileForm,
-    UpdatePasswordForm,
-    UserResponse,
-    SigninResponse,
-    Auths,
     ApiKey,
+    Auths,
+    SigninForm,
+    SigninResponse,
+    SignupForm,
+    UpdatePasswordForm,
+    UpdateProfileForm,
+    UserResponse,
 )
 from omni_webui.apps.webui.models.users import Users
-
+from omni_webui.config import config, settings
+from omni_webui.constants import ERROR_MESSAGES
 from omni_webui.utils import (
-    get_password_hash,
-    get_current_user,
-    get_admin_user,
-    create_token,
     create_api_key,
+    create_token,
+    get_admin_user,
+    get_current_user,
+    get_password_hash,
 )
 from omni_webui.utils.misc import parse_duration, validate_email_format
 from omni_webui.utils.webhook import post_webhook
-from omni_webui.constants import ERROR_MESSAGES, WEBHOOK_MESSAGES
-from omni_webui.config import WEBUI_AUTH, WEBUI_AUTH_TRUSTED_EMAIL_HEADER
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -84,7 +77,7 @@ async def update_profile(
 async def update_password(
     form_data: UpdatePasswordForm, session_user=Depends(get_current_user)
 ):
-    if WEBUI_AUTH_TRUSTED_EMAIL_HEADER:
+    if settings.webui_auth_trusted_email_header:
         raise HTTPException(400, detail=ERROR_MESSAGES.ACTION_PROHIBITED)
     if session_user:
         user = Auths.authenticate_user(session_user.email, form_data.password)
@@ -105,11 +98,13 @@ async def update_password(
 
 @router.post("/signin", response_model=SigninResponse)
 async def signin(request: Request, form_data: SigninForm):
-    if WEBUI_AUTH_TRUSTED_EMAIL_HEADER:
-        if WEBUI_AUTH_TRUSTED_EMAIL_HEADER not in request.headers:
+    if settings.webui_auth_trusted_email_header:
+        if settings.webui_auth_trusted_email_header not in request.headers:
             raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_TRUSTED_HEADER)
 
-        trusted_email = request.headers[WEBUI_AUTH_TRUSTED_EMAIL_HEADER].lower()
+        trusted_email = request.headers[
+            settings.webui_auth_trusted_email_header
+        ].lower()
         if not Users.get_user_by_email(trusted_email.lower()):
             await signup(
                 request,
@@ -118,7 +113,7 @@ async def signin(request: Request, form_data: SigninForm):
                 ),
             )
         user = Auths.authenticate_user_by_trusted_header(trusted_email)
-    elif WEBUI_AUTH == False:
+    elif not settings:
         admin_email = "admin@localhost"
         admin_password = "admin"
 
@@ -140,7 +135,7 @@ async def signin(request: Request, form_data: SigninForm):
     if user:
         token = create_token(
             data={"id": user.id},
-            expires_delta=parse_duration(request.app.state.config.JWT_EXPIRES_IN),
+            expires_delta=parse_duration(config.auth.jwt_expiry),
         )
 
         return {
@@ -163,7 +158,7 @@ async def signin(request: Request, form_data: SigninForm):
 
 @router.post("/signup", response_model=SigninResponse)
 async def signup(request: Request, form_data: SignupForm):
-    if not request.app.state.config.ENABLE_SIGNUP and WEBUI_AUTH:
+    if not config.ui.enable_signup and settings.auth:
         raise HTTPException(
             status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.ACCESS_PROHIBITED
         )
@@ -177,34 +172,31 @@ async def signup(request: Request, form_data: SignupForm):
         raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_TAKEN)
 
     try:
-        role = (
-            "admin"
-            if Users.get_num_users() == 0
-            else request.app.state.config.DEFAULT_USER_ROLE
-        )
+        role = "admin" if Users.get_num_users() == 0 else config.ui.default_user_role
         hashed = get_password_hash(form_data.password)
         user = Auths.insert_new_auth(
             form_data.email.lower(),
             hashed,
             form_data.name,
-            form_data.profile_image_url,
+            form_data.profile_image_url or "/user.png",
             role,
         )
 
         if user:
             token = create_token(
                 data={"id": user.id},
-                expires_delta=parse_duration(request.app.state.config.JWT_EXPIRES_IN),
+                expires_delta=parse_duration(config.auth.jwt_expiry),
             )
             # response.set_cookie(key='token', value=token, httponly=True)
 
-            if request.app.state.config.WEBHOOK_URL:
+            if config.webhook_url:
+                message = f"New user signed up: {user.name}"
                 post_webhook(
-                    request.app.state.config.WEBHOOK_URL,
-                    WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
+                    config.webhook_url,
+                    message,
                     {
                         "action": "signup",
-                        "message": WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
+                        "message": message,
                         "user": user.model_dump_json(exclude_none=True),
                     },
                 )
@@ -231,7 +223,6 @@ async def signup(request: Request, form_data: SignupForm):
 
 @router.post("/add", response_model=SigninResponse)
 async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
-
     if not validate_email_format(form_data.email.lower()):
         raise HTTPException(
             status.HTTP_400_BAD_REQUEST, detail=ERROR_MESSAGES.INVALID_EMAIL_FORMAT
@@ -241,15 +232,14 @@ async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
         raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_TAKEN)
 
     try:
-
-        print(form_data)
+        logger.info(form_data)
         hashed = get_password_hash(form_data.password)
         user = Auths.insert_new_auth(
             form_data.email.lower(),
             hashed,
             form_data.name,
-            form_data.profile_image_url,
-            form_data.role,
+            form_data.profile_image_url or "/user.png",
+            form_data.role or "pending",
         )
 
         if user:
@@ -276,11 +266,11 @@ async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
 
 @router.get("/admin/details")
 async def get_admin_details(request: Request, user=Depends(get_current_user)):
-    if request.app.state.config.SHOW_ADMIN_DETAILS:
-        admin_email = request.app.state.config.ADMIN_EMAIL
+    if config.auth.show_admin_details:
+        admin_email = config.auth.admin_email
         admin_name = None
 
-        print(admin_email, admin_name)
+        logger.info(admin_email, admin_name)
 
         if admin_email:
             admin = Users.get_user_by_email(admin_email)
@@ -308,11 +298,11 @@ async def get_admin_details(request: Request, user=Depends(get_current_user)):
 @router.get("/admin/config")
 async def get_admin_config(request: Request, user=Depends(get_admin_user)):
     return {
-        "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
-        "ENABLE_SIGNUP": request.app.state.config.ENABLE_SIGNUP,
-        "DEFAULT_USER_ROLE": request.app.state.config.DEFAULT_USER_ROLE,
-        "JWT_EXPIRES_IN": request.app.state.config.JWT_EXPIRES_IN,
-        "ENABLE_COMMUNITY_SHARING": request.app.state.config.ENABLE_COMMUNITY_SHARING,
+        "SHOW_ADMIN_DETAILS": config.auth.show_admin_details,
+        "ENABLE_SIGNUP": config.ui.enable_signup,
+        "DEFAULT_USER_ROLE": config.ui.default_user_role,
+        "JWT_EXPIRES_IN": config.auth.jwt_expiry,
+        "ENABLE_COMMUNITY_SHARING": config.ui.enable_community_sharing,
     }
 
 
@@ -328,28 +318,26 @@ class AdminConfig(BaseModel):
 async def update_admin_config(
     request: Request, form_data: AdminConfig, user=Depends(get_admin_user)
 ):
-    request.app.state.config.SHOW_ADMIN_DETAILS = form_data.SHOW_ADMIN_DETAILS
-    request.app.state.config.ENABLE_SIGNUP = form_data.ENABLE_SIGNUP
+    config.auth.show_admin_details = form_data.SHOW_ADMIN_DETAILS
+    config.ui.enable_signup = form_data.ENABLE_SIGNUP
 
     if form_data.DEFAULT_USER_ROLE in ["pending", "user", "admin"]:
-        request.app.state.config.DEFAULT_USER_ROLE = form_data.DEFAULT_USER_ROLE
+        config.ui.default_user_role = form_data.DEFAULT_USER_ROLE  # type: ignore[assignment]
 
     pattern = r"^(-1|0|(-?\d+(\.\d+)?)(ms|s|m|h|d|w))$"
 
     # Check if the input string matches the pattern
     if re.match(pattern, form_data.JWT_EXPIRES_IN):
-        request.app.state.config.JWT_EXPIRES_IN = form_data.JWT_EXPIRES_IN
+        config.auth.jwt_expiry = form_data.JWT_EXPIRES_IN
 
-    request.app.state.config.ENABLE_COMMUNITY_SHARING = (
-        form_data.ENABLE_COMMUNITY_SHARING
-    )
+    config.ui.enable_community_sharing = form_data.ENABLE_COMMUNITY_SHARING
 
     return {
-        "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
-        "ENABLE_SIGNUP": request.app.state.config.ENABLE_SIGNUP,
-        "DEFAULT_USER_ROLE": request.app.state.config.DEFAULT_USER_ROLE,
-        "JWT_EXPIRES_IN": request.app.state.config.JWT_EXPIRES_IN,
-        "ENABLE_COMMUNITY_SHARING": request.app.state.config.ENABLE_COMMUNITY_SHARING,
+        "SHOW_ADMIN_DETAILS": config.auth.show_admin_details,
+        "ENABLE_SIGNUP": config.ui.enable_signup,
+        "DEFAULT_USER_ROLE": config.ui.default_user_role,
+        "JWT_EXPIRES_IN": config.auth.jwt_expiry,
+        "ENABLE_COMMUNITY_SHARING": config.ui.enable_community_sharing,
     }
 
 

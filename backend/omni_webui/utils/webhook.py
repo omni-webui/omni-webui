@@ -1,11 +1,10 @@
 import json
+
 import requests
-import logging
+from loguru import logger
 
-from omni_webui.config import SRC_LOG_LEVELS, VERSION, WEBUI_FAVICON_URL, WEBUI_NAME
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["WEBHOOK"])
+from omni_webui import __version__
+from omni_webui.config import settings
 
 
 def post_webhook(url: str, message: str, event_data: dict) -> bool:
@@ -25,7 +24,7 @@ def post_webhook(url: str, message: str, event_data: dict) -> bool:
                 {"name": name, "value": value}
                 for name, value in json.loads(event_data.get("user", {})).items()
             ]
-            payload = {
+            payload: dict[str, str | dict[str, str | bool | list[dict[str, str]]]] = {  # type: ignore
                 "@type": "MessageCard",
                 "@context": "http://schema.org/extensions",
                 "themeColor": "0076D7",
@@ -33,8 +32,8 @@ def post_webhook(url: str, message: str, event_data: dict) -> bool:
                 "sections": [
                     {
                         "activityTitle": message,
-                        "activitySubtitle": f"{WEBUI_NAME} ({VERSION}) - {action}",
-                        "activityImage": WEBUI_FAVICON_URL,
+                        "activitySubtitle": f"{settings.name} ({__version__}) - {action}",
+                        "activityImage": settings.favicon_url,
                         "facts": facts,
                         "markdown": True,
                     }
@@ -44,11 +43,11 @@ def post_webhook(url: str, message: str, event_data: dict) -> bool:
         else:
             payload = {**event_data}
 
-        log.debug(f"payload: {payload}")
+        logger.debug(f"payload: {payload}")
         r = requests.post(url, json=payload)
         r.raise_for_status()
-        log.debug(f"r.text: {r.text}")
+        logger.debug(f"r.text: {r.text}")
         return True
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         return False

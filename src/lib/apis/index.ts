@@ -35,9 +35,11 @@ export const getModels = async (token: string = '') => {
 			// If both a and b have the position property
 			if (a.info?.meta?.position !== undefined && b.info?.meta?.position !== undefined) {
 				return a.info.meta.position - b.info.meta.position;
-			} else if (a.info?.meta?.position !== undefined) { // If only a has the position property, it should come first
+			} else if (a.info?.meta?.position !== undefined) {
+				// If only a has the position property, it should come first
 				return -1;
-			} else if (b.info?.meta?.position !== undefined) { // If only b has the position property, it should come first
+			} else if (b.info?.meta?.position !== undefined) {
+				// If only b has the position property, it should come first
 				return 1;
 			}
 
@@ -380,27 +382,15 @@ export const getBackendConfig = async () => {
 };
 
 export const getChangelog = async () => {
-	let error = null;
-
 	const res = await fetch(`${WEBUI_BASE_URL}/api/changelog`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json'
 		}
-	})
-		.then(async (res) => {
-			if (!res.ok) throw await res.json();
-			return res.json();
-		})
-		.catch((err) => {
-			console.log(err);
-			error = err;
-			return null;
-		});
-
-	if (error) {
-		throw error;
-	}
+	}).then(async (res) => {
+		if (!res.ok) throw await res.json();
+		return res.json();
+	});
 
 	return res;
 };

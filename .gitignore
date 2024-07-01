@@ -309,3 +309,5 @@ cypress/screenshots
 
 # Omni WebUI
 .webui_secret_key
+config.toml
+config.json

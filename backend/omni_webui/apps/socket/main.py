@@ -1,7 +1,8 @@
-import socketio
 import asyncio
+from typing import Any
 
-
+import socketio
+from loguru import logger
 from omni_webui.apps.webui.models.users import Users
 from omni_webui.utils import decode_token
 
@@ -12,14 +13,14 @@ app = socketio.ASGIApp(sio, socketio_path="/ws/socket.io")
 
 
 USER_POOL = {}
-USAGE_POOL = {}
+USAGE_POOL: dict[str, Any] = {}
 # Timeout duration in seconds
 TIMEOUT_DURATION = 3
 
 
 @sio.event
 async def connect(sid, environ, auth):
-    print("connect ", sid)
+    logger.info("connect ", sid)
 
     user = None
     if auth and "token" in auth:
@@ -68,7 +69,7 @@ def get_models_in_use():
     models_in_use = []
     for model_id, data in USAGE_POOL.items():
         models_in_use.append(model_id)
-    print(f"Models in use: {models_in_use}")
+    logger.info(f"Models in use: {models_in_use}")
 
     return models_in_use
 

@@ -1,15 +1,10 @@
-from pydantic import BaseModel
-from peewee import *
-from playhouse.shortcuts import model_to_dict
-from typing import List, Union, Optional
 import time
+from typing import List, Optional
 
-from omni_webui.utils import decode_token
-from omni_webui.utils.misc import get_gravatar_url
-
-from omni_webui.apps.webui.internal.db import DB
-
-import json
+from omni_webui.config import settings
+from peewee import BigIntegerField, CharField, Model, TextField
+from playhouse.shortcuts import model_to_dict
+from pydantic import BaseModel
 
 ####################
 # Prompts DB Schema
@@ -24,7 +19,7 @@ class Prompt(Model):
     timestamp = BigIntegerField()
 
     class Meta:
-        database = DB
+        database = settings.database
 
 
 class PromptModel(BaseModel):
@@ -47,7 +42,6 @@ class PromptForm(BaseModel):
 
 
 class PromptsTable:
-
     def __init__(self, db):
         self.db = db
         self.db.create_tables([Prompt])
@@ -115,4 +109,4 @@ class PromptsTable:
             return False
 
 
-Prompts = PromptsTable(DB)
+Prompts = PromptsTable(settings.database)

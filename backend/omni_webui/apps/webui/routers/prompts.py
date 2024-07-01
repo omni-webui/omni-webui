@@ -1,15 +1,9 @@
-from fastapi import Depends, FastAPI, HTTPException, status
-from datetime import datetime, timedelta
-from typing import List, Union, Optional
+from typing import List, Optional
 
-from fastapi import APIRouter
-from pydantic import BaseModel
-import json
-
-from omni_webui.apps.webui.models.prompts import Prompts, PromptForm, PromptModel
-
-from omni_webui.utils import get_current_user, get_admin_user
+from fastapi import APIRouter, Depends, HTTPException, status
+from omni_webui.apps.webui.models.prompts import PromptForm, PromptModel, Prompts
 from omni_webui.constants import ERROR_MESSAGES
+from omni_webui.utils import get_admin_user, get_current_user
 
 router = APIRouter()
 
@@ -31,7 +25,7 @@ async def get_prompts(user=Depends(get_current_user)):
 @router.post("/create", response_model=Optional[PromptModel])
 async def create_new_prompt(form_data: PromptForm, user=Depends(get_admin_user)):
     prompt = Prompts.get_prompt_by_command(form_data.command)
-    if prompt == None:
+    if prompt is None:
         prompt = Prompts.insert_new_prompt(user.id, form_data)
 
         if prompt:

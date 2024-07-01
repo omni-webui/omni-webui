@@ -1,36 +1,23 @@
-from fastapi import Response, Request
-from fastapi import Depends, FastAPI, HTTPException, status
-from datetime import datetime, timedelta
-from typing import List, Union, Optional
+from typing import List, Optional
 
-from fastapi import APIRouter
-from pydantic import BaseModel
-import time
-import uuid
-import logging
-
-from omni_webui.apps.webui.models.users import (
-    UserModel,
-    UserUpdateForm,
-    UserRoleUpdateForm,
-    UserSettings,
-    Users,
-)
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from loguru import logger
 from omni_webui.apps.webui.models.auths import Auths
 from omni_webui.apps.webui.models.chats import Chats
-
-from omni_webui.utils import (
-    get_verified_user,
-    get_password_hash,
-    get_current_user,
-    get_admin_user,
+from omni_webui.apps.webui.models.users import (
+    UserModel,
+    UserRoleUpdateForm,
+    Users,
+    UserSettings,
+    UserUpdateForm,
 )
 from omni_webui.constants import ERROR_MESSAGES
-
-from omni_webui.config import SRC_LOG_LEVELS
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MODELS"])
+from omni_webui.utils import (
+    get_admin_user,
+    get_password_hash,
+    get_verified_user,
+)
+from pydantic import BaseModel
 
 router = APIRouter()
 
@@ -69,7 +56,6 @@ async def update_user_permissions(
 
 @router.post("/update/role", response_model=Optional[UserModel])
 async def update_user_role(form_data: UserRoleUpdateForm, user=Depends(get_admin_user)):
-
     if user.id != form_data.id and form_data.id != Users.get_first_user().id:
         return Users.update_user_role_by_id(form_data.id, form_data.role)
 
@@ -127,7 +113,6 @@ class UserResponse(BaseModel):
 
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user_by_id(user_id: str, user=Depends(get_verified_user)):
-
     # Check if user_id is a shared chat
     # If it is, get the user_id from the chat
     if user_id.startswith("shared-"):
@@ -174,7 +159,7 @@ async def update_user_by_id(
 
         if form_data.password:
             hashed = get_password_hash(form_data.password)
-            log.debug(f"hashed: {hashed}")
+            logger.debug(f"hashed: {hashed}")
             Auths.update_user_password_by_id(user_id, hashed)
 
         Auths.update_email_by_id(user_id, form_data.email.lower())

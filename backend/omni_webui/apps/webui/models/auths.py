@@ -1,19 +1,12 @@
-from pydantic import BaseModel
-from typing import List, Union, Optional
-import time
 import uuid
-import logging
-from peewee import *
+from typing import Optional
 
+from loguru import logger
 from omni_webui.apps.webui.models.users import UserModel, Users
+from omni_webui.config import settings
 from omni_webui.utils import verify_password
-
-from omni_webui.apps.webui.internal.db import DB
-
-from omni_webui.config import SRC_LOG_LEVELS
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MODELS"])
+from peewee import BooleanField, CharField, Model, TextField
+from pydantic import BaseModel
 
 ####################
 # DB MODEL
@@ -27,7 +20,7 @@ class Auth(Model):
     active = BooleanField()
 
     class Meta:
-        database = DB
+        database = settings.database
 
 
 class AuthModel(BaseModel):
@@ -106,7 +99,7 @@ class AuthsTable:
         profile_image_url: str = "/user.png",
         role: str = "pending",
     ) -> Optional[UserModel]:
-        log.info("insert_new_auth")
+        logger.info("insert_new_auth")
 
         id = str(uuid.uuid4())
 
@@ -123,9 +116,9 @@ class AuthsTable:
             return None
 
     def authenticate_user(self, email: str, password: str) -> Optional[UserModel]:
-        log.info(f"authenticate_user: {email}")
+        logger.info(f"authenticate_user: {email}")
         try:
-            auth = Auth.get(Auth.email == email, Auth.active == True)
+            auth = Auth.get(Auth.email == email, Auth.active)
             if auth:
                 if verify_password(password, auth.password):
                     user = Users.get_user_by_id(auth.id)
@@ -138,7 +131,7 @@ class AuthsTable:
             return None
 
     def authenticate_user_by_api_key(self, api_key: str) -> Optional[UserModel]:
-        log.info(f"authenticate_user_by_api_key: {api_key}")
+        logger.info(f"authenticate_user_by_api_key: {api_key}")
         # if no api_key, return None
         if not api_key:
             return None
@@ -147,15 +140,16 @@ class AuthsTable:
             user = Users.get_user_by_api_key(api_key)
             return user if user else None
         except:
-            return False
+            return None
 
     def authenticate_user_by_trusted_header(self, email: str) -> Optional[UserModel]:
-        log.info(f"authenticate_user_by_trusted_header: {email}")
+        logger.info(f"authenticate_user_by_trusted_header: {email}")
         try:
-            auth = Auth.get(Auth.email == email, Auth.active == True)
+            auth = Auth.get(Auth.email == email, Auth.active)
             if auth:
                 user = Users.get_user_by_id(auth.id)
                 return user
+            return None
         except:
             return None
 
@@ -194,4 +188,4 @@ class AuthsTable:
             return False
 
 
-Auths = AuthsTable(DB)
+Auths = AuthsTable(settings.database)

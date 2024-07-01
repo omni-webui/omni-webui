@@ -1,13 +1,12 @@
-from pydantic import BaseModel
-from typing import List, Union, Optional
-from peewee import *
-from playhouse.shortcuts import model_to_dict
-
 import json
-import uuid
 import time
+import uuid
+from typing import List, Optional
 
-from omni_webui.apps.webui.internal.db import DB
+from omni_webui.config import settings
+from peewee import BigIntegerField, BooleanField, CharField, Model, TextField
+from playhouse.shortcuts import model_to_dict
+from pydantic import BaseModel
 
 ####################
 # Chat DB Schema
@@ -27,7 +26,7 @@ class Chat(Model):
     archived = BooleanField(default=False)
 
     class Meta:
-        database = DB
+        database = settings.database
 
 
 class ChatModel(BaseModel):
@@ -180,6 +179,7 @@ class ChatTable:
     def toggle_chat_archive_by_id(self, id: str) -> Optional[ChatModel]:
         try:
             chat = self.get_chat_by_id(id)
+            assert chat is not None
             query = Chat.update(
                 archived=(not chat.archived),
             ).where(Chat.id == id)
@@ -188,7 +188,7 @@ class ChatTable:
 
             chat = Chat.get(Chat.id == id)
             return ChatModel(**model_to_dict(chat))
-        except:
+        except Exception:
             return None
 
     def archive_all_chats_by_user_id(self, user_id: str) -> bool:
@@ -211,7 +211,7 @@ class ChatTable:
         return [
             ChatModel(**model_to_dict(chat))
             for chat in Chat.select()
-            .where(Chat.archived == True)
+            .where(Chat.archived is True)
             .where(Chat.user_id == user_id)
             .order_by(Chat.updated_at.desc())
             # .limit(limit)
@@ -238,7 +238,7 @@ class ChatTable:
             return [
                 ChatModel(**model_to_dict(chat))
                 for chat in Chat.select()
-                .where(Chat.archived == False)
+                .where(Chat.archived is False)
                 .where(Chat.user_id == user_id)
                 .order_by(Chat.updated_at.desc())
                 # .limit(limit)
@@ -251,7 +251,7 @@ class ChatTable:
         return [
             ChatModel(**model_to_dict(chat))
             for chat in Chat.select()
-            .where(Chat.archived == False)
+            .where(Chat.archived is False)
             .where(Chat.id.in_(chat_ids))
             .order_by(Chat.updated_at.desc())
         ]
@@ -302,7 +302,7 @@ class ChatTable:
         return [
             ChatModel(**model_to_dict(chat))
             for chat in Chat.select()
-            .where(Chat.archived == True)
+            .where(Chat.archived is True)
             .where(Chat.user_id == user_id)
             .order_by(Chat.updated_at.desc())
         ]
@@ -327,7 +327,6 @@ class ChatTable:
 
     def delete_chats_by_user_id(self, user_id: str) -> bool:
         try:
-
             self.delete_shared_chats_by_user_id(user_id)
 
             query = Chat.delete().where(Chat.user_id == user_id)
@@ -352,4 +351,4 @@ class ChatTable:
             return False
 
 
-Chats = ChatTable(DB)
+Chats = ChatTable(settings.database)

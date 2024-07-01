@@ -1,55 +1,37 @@
-import os
-import logging
-from fastapi import (
-    FastAPI,
-    Request,
-    Depends,
-    HTTPException,
-    status,
-    UploadFile,
-    File,
-    Form,
-)
-
-from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
-
-from fastapi.middleware.cors import CORSMiddleware
-from faster_whisper import WhisperModel
-from pydantic import BaseModel
-
+import hashlib
+import json
+from pathlib import Path
 
 import requests
-import hashlib
-from pathlib import Path
-import json
-
-
-from omni_webui.constants import ERROR_MESSAGES
-from omni_webui.utils import (
-    decode_token,
-    get_current_user,
-    get_verified_user,
-    get_admin_user,
+from fastapi import (
+    Depends,
+    FastAPI,
+    File,
+    HTTPException,
+    Request,
+    UploadFile,
+    status,
 )
-from omni_webui.utils.misc import calculate_sha256
-
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from faster_whisper import WhisperModel
+from loguru import logger
 from omni_webui.config import (
-    SRC_LOG_LEVELS,
     CACHE_DIR,
+    DEVICE_TYPE,
     UPLOAD_DIR,
     WHISPER_MODEL,
-    WHISPER_MODEL_DIR,
     WHISPER_MODEL_AUTO_UPDATE,
-    DEVICE_TYPE,
-    AUDIO_OPENAI_API_BASE_URL,
-    AUDIO_OPENAI_API_KEY,
-    AUDIO_OPENAI_API_MODEL,
-    AUDIO_OPENAI_API_VOICE,
-    AppConfig,
+    WHISPER_MODEL_DIR,
+    settings,
 )
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["AUDIO"])
+from omni_webui.constants import ERROR_MESSAGES
+from omni_webui.utils import (
+    get_admin_user,
+    get_current_user,
+    get_verified_user,
+)
+from pydantic import BaseModel, HttpUrl
 
 app = FastAPI()
 app.add_middleware(
@@ -60,15 +42,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.state.config = AppConfig()
-app.state.config.OPENAI_API_BASE_URL = AUDIO_OPENAI_API_BASE_URL
-app.state.config.OPENAI_API_KEY = AUDIO_OPENAI_API_KEY
-app.state.config.OPENAI_API_MODEL = AUDIO_OPENAI_API_MODEL
-app.state.config.OPENAI_API_VOICE = AUDIO_OPENAI_API_VOICE
-
 # setting device type for whisper model
 whisper_device_type = DEVICE_TYPE if DEVICE_TYPE and DEVICE_TYPE == "cuda" else "cpu"
-log.info(f"whisper_device_type: {whisper_device_type}")
+logger.info(f"whisper_device_type: {whisper_device_type}")
 
 SPEECH_CACHE_DIR = Path(CACHE_DIR).joinpath("./audio/speech/")
 SPEECH_CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -84,8 +60,8 @@ class OpenAIConfigUpdateForm(BaseModel):
 @app.get("/config")
 async def get_openai_config(user=Depends(get_admin_user)):
     return {
-        "OPENAI_API_BASE_URL": app.state.config.OPENAI_API_BASE_URL,
-        "OPENAI_API_KEY": app.state.config.OPENAI_API_KEY,
+        "OPENAI_API_BASE_URL": settings.openai_api_base_url,
+        "OPENAI_API_KEY": settings.openai_api_key,
         "OPENAI_API_MODEL": app.state.config.OPENAI_API_MODEL,
         "OPENAI_API_VOICE": app.state.config.OPENAI_API_VOICE,
     }
@@ -98,15 +74,15 @@ async def update_openai_config(
     if form_data.key == "":
         raise HTTPException(status_code=400, detail=ERROR_MESSAGES.API_KEY_NOT_FOUND)
 
-    app.state.config.OPENAI_API_BASE_URL = form_data.url
-    app.state.config.OPENAI_API_KEY = form_data.key
+    settings.openai_api_base_url = HttpUrl(form_data.url)
+    settings.openai_api_key = form_data.key
     app.state.config.OPENAI_API_MODEL = form_data.model
     app.state.config.OPENAI_API_VOICE = form_data.speaker
 
     return {
         "status": True,
-        "OPENAI_API_BASE_URL": app.state.config.OPENAI_API_BASE_URL,
-        "OPENAI_API_KEY": app.state.config.OPENAI_API_KEY,
+        "OPENAI_API_BASE_URL": settings.openai_api_base_url,
+        "OPENAI_API_KEY": settings.openai_api_key,
         "OPENAI_API_MODEL": app.state.config.OPENAI_API_MODEL,
         "OPENAI_API_VOICE": app.state.config.OPENAI_API_VOICE,
     }
@@ -131,7 +107,7 @@ async def speech(request: Request, user=Depends(get_verified_user)):
     r = None
     try:
         r = requests.post(
-            url=f"{app.state.config.OPENAI_API_BASE_URL}/audio/speech",
+            url=f"{settings.openai_api_base_url}/audio/speech",
             data=body,
             headers=headers,
             stream=True,
@@ -151,18 +127,18 @@ async def speech(request: Request, user=Depends(get_verified_user)):
         return FileResponse(file_path)
 
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         error_detail = "Omni WebUI: Server Connection Error"
         if r is not None:
             try:
                 res = r.json()
                 if "error" in res:
                     error_detail = f"External: {res['error']['message']}"
-            except:
+            except requests.exceptions.JSONDecodeError:
                 error_detail = f"External: {e}"
 
         raise HTTPException(
-            status_code=r.status_code if r != None else 500,
+            status_code=r.status_code if r is not None else 500,
             detail=error_detail,
         )
 
@@ -172,7 +148,7 @@ def transcribe(
     file: UploadFile = File(...),
     user=Depends(get_current_user),
 ):
-    log.info(f"file.content_type: {file.content_type}")
+    logger.info(f"file.content_type: {file.content_type}")
 
     if file.content_type not in ["audio/mpeg", "audio/wav"]:
         raise HTTPException(
@@ -196,19 +172,19 @@ def transcribe(
             "local_files_only": not WHISPER_MODEL_AUTO_UPDATE,
         }
 
-        log.debug(f"whisper_kwargs: {whisper_kwargs}")
+        logger.debug(f"whisper_kwargs: {whisper_kwargs}")
 
         try:
             model = WhisperModel(**whisper_kwargs)
-        except:
-            log.warning(
+        except Exception:
+            logger.warning(
                 "WhisperModel initialization failed, attempting download with local_files_only=False"
             )
             whisper_kwargs["local_files_only"] = False
             model = WhisperModel(**whisper_kwargs)
 
         segments, info = model.transcribe(file_path, beam_size=5)
-        log.info(
+        logger.info(
             "Detected language '%s' with probability %f"
             % (info.language, info.language_probability)
         )
@@ -218,7 +194,7 @@ def transcribe(
         return {"text": transcript.strip()}
 
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -1,61 +1,23 @@
-from fastapi import FastAPI, Depends
-from fastapi.routing import APIRoute
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from omni_webui.apps.webui.routers import (
     auths,
-    users,
     chats,
+    configs,
     documents,
+    memories,
     models,
     prompts,
-    configs,
-    memories,
+    users,
     utils,
 )
-from omni_webui.config import (
-    WEBUI_BUILD_HASH,
-    SHOW_ADMIN_DETAILS,
-    ADMIN_EMAIL,
-    WEBUI_AUTH,
-    DEFAULT_MODELS,
-    DEFAULT_PROMPT_SUGGESTIONS,
-    DEFAULT_USER_ROLE,
-    ENABLE_SIGNUP,
-    USER_PERMISSIONS,
-    WEBHOOK_URL,
-    WEBUI_AUTH_TRUSTED_EMAIL_HEADER,
-    JWT_EXPIRES_IN,
-    WEBUI_BANNERS,
-    AppConfig,
-    ENABLE_COMMUNITY_SHARING,
-)
+from omni_webui.config import settings
 
 app = FastAPI()
 
 origins = ["*"]
 
-app.state.config = AppConfig()
-
-app.state.config.ENABLE_SIGNUP = ENABLE_SIGNUP
-app.state.config.JWT_EXPIRES_IN = JWT_EXPIRES_IN
-
-
-app.state.config.SHOW_ADMIN_DETAILS = SHOW_ADMIN_DETAILS
-app.state.config.ADMIN_EMAIL = ADMIN_EMAIL
-
-
-app.state.config.DEFAULT_MODELS = DEFAULT_MODELS
-app.state.config.DEFAULT_PROMPT_SUGGESTIONS = DEFAULT_PROMPT_SUGGESTIONS
-app.state.config.DEFAULT_USER_ROLE = DEFAULT_USER_ROLE
-app.state.config.USER_PERMISSIONS = USER_PERMISSIONS
-app.state.config.WEBHOOK_URL = WEBHOOK_URL
-app.state.config.BANNERS = WEBUI_BANNERS
-
-app.state.config.ENABLE_COMMUNITY_SHARING = ENABLE_COMMUNITY_SHARING
-
 app.state.MODELS = {}
-app.state.AUTH_TRUSTED_EMAIL_HEADER = WEBUI_AUTH_TRUSTED_EMAIL_HEADER
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -82,7 +44,7 @@ app.include_router(utils.router, prefix="/utils", tags=["utils"])
 async def get_status():
     return {
         "status": True,
-        "auth": WEBUI_AUTH,
+        "auth": settings.auth,
         "default_models": app.state.config.DEFAULT_MODELS,
         "default_prompt_suggestions": app.state.config.DEFAULT_PROMPT_SUGGESTIONS,
     }

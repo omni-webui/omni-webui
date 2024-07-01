@@ -11,7 +11,6 @@ export type Banner = {
 	timestamp: number;
 };
 
-
 export type Model = OpenAIModel | OllamaModel;
 
 type BaseModel = {
@@ -23,7 +22,7 @@ type BaseModel = {
 export interface OpenAIModel extends BaseModel {
 	external: boolean;
 	source?: string;
-	owned_by: "openai";
+	owned_by: 'openai';
 }
 
 export interface OllamaModel extends BaseModel {
@@ -33,7 +32,7 @@ export interface OllamaModel extends BaseModel {
 	model: string;
 	modified_at: string;
 	digest: string;
-	owned_by: "ollama";
+	owned_by: 'ollama';
 }
 
 type OllamaModelDetails = {
@@ -44,7 +43,6 @@ type OllamaModelDetails = {
 	parameter_size: string;
 	quantization_level: string;
 };
-
 
 export interface ModelConfig {
 	id: string;
@@ -92,6 +90,7 @@ export type Settings = {
 	keepAlive: string | number;
 	repeat_penalty: string;
 	options: Partial<ModelOptions>;
+	chatBubble: boolean;
 
 	params: Partial<Parameters & { stop: string[] }>;
 };
