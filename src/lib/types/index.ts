@@ -58,7 +58,9 @@ export interface ModelMeta {
 	position?: number;
 }
 
-export interface ModelParams {}
+export type ModelParams = {
+	stop: string;
+};
 
 export type GlobalModelConfig = ModelConfig[];
 

@@ -16,6 +16,7 @@
 			".svelte-kit/**",
 			".mypy_cache/**",
 			".vscode/**",
+			"htmlcov/**",
 			"static/"
 		]
 	},

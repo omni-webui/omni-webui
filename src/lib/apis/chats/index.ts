@@ -32,7 +32,7 @@ export const createNewChat = async (token: string, chat: object) => {
 	return res;
 };
 
-export const getChatList = async (token: string = '') => {
+export const getChatList = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${WEBUI_API_BASE_URL}/chats/`, {
@@ -66,7 +66,7 @@ export const getChatList = async (token: string = '') => {
 	}));
 };
 
-export const getChatListByUserId = async (token: string = '', userId: string) => {
+export const getChatListByUserId = async (token = '', userId: string) => {
 	let error = null;
 
 	const res = await fetch(`${WEBUI_API_BASE_URL}/chats/list/user/${userId}`, {
@@ -100,7 +100,7 @@ export const getChatListByUserId = async (token: string = '', userId: string) =>
 	}));
 };
 
-export const getArchivedChatList = async (token: string = '') => {
+export const getArchivedChatList = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${WEBUI_API_BASE_URL}/chats/archived`, {
@@ -255,7 +255,7 @@ export const getAllChatTags = async (token: string) => {
 	return res;
 };
 
-export const getChatListByTagName = async (token: string = '', tagName: string) => {
+export const getChatListByTagName = async (token = '', tagName: string) => {
 	let error = null;
 
 	const res = await fetch(`${WEBUI_API_BASE_URL}/chats/tags`, {

@@ -26,7 +26,7 @@ onMount(() => {
 	const containerElement = document.getElementById('suggestions-container');
 
 	if (containerElement) {
-		containerElement.addEventListener('wheel', function (event) {
+		containerElement.addEventListener('wheel', (event) => {
 			if (event.deltaY !== 0) {
 				// If scrolling vertically, prevent default behavior
 				event.preventDefault();

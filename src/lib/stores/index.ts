@@ -26,7 +26,19 @@ export const models: Writable<Model[]> = writable([]);
 
 export const modelfiles = writable([]);
 export const prompts: Writable<Prompt[]> = writable([]);
-export const documents = writable([
+export type Document = {
+	collection_name: string;
+	filename: string;
+	name: string;
+	title: string;
+	selected: 'checked' | 'unchecked';
+	content?: {
+		tags: {
+			name: string;
+		}[];
+	};
+};
+export const documents: Writable<Document[]> = writable([
 	{
 		collection_name: 'collection_name',
 		filename: 'filename',

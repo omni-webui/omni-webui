@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 import { toast } from 'svelte-sonner';
 import { goto } from '$app/navigation';
 
@@ -18,7 +18,7 @@ const i18n = getContext('i18n');
 let loading = false;
 
 let filesInputElement;
-let inputFiles;
+let inputFiles: FileList;
 
 let showAdvanced = false;
 let showPreview = false;

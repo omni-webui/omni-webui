@@ -14,7 +14,7 @@ const i18n = getContext('i18n');
 
 export let initNewChat: () => void;
 export const title: string = $WEBUI_NAME;
-export let shareEnabled: boolean = false;
+export let shareEnabled = false;
 
 export let chat;
 export let selectedModels;

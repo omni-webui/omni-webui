@@ -1,7 +1,7 @@
 import { OLLAMA_API_BASE_URL } from '$lib/constants';
 import { titleGenerationTemplate } from '$lib/utils';
 
-export const getOllamaConfig = async (token: string = '') => {
+export const getOllamaConfig = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${OLLAMA_API_BASE_URL}/config`, {
@@ -33,7 +33,7 @@ export const getOllamaConfig = async (token: string = '') => {
 	return res;
 };
 
-export const updateOllamaConfig = async (token: string = '', enable_ollama_api: boolean) => {
+export const updateOllamaConfig = async (token = '', enable_ollama_api: boolean) => {
 	let error = null;
 
 	const res = await fetch(`${OLLAMA_API_BASE_URL}/config/update`, {
@@ -68,7 +68,7 @@ export const updateOllamaConfig = async (token: string = '', enable_ollama_api: 
 	return res;
 };
 
-export const getOllamaUrls = async (token: string = '') => {
+export const getOllamaUrls = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${OLLAMA_API_BASE_URL}/urls`, {
@@ -100,7 +100,7 @@ export const getOllamaUrls = async (token: string = '') => {
 	return res.OLLAMA_BASE_URLS;
 };
 
-export const updateOllamaUrls = async (token: string = '', urls: string[]) => {
+export const updateOllamaUrls = async (token = '', urls: string[]) => {
 	let error = null;
 
 	const res = await fetch(`${OLLAMA_API_BASE_URL}/urls/update`, {
@@ -167,7 +167,7 @@ export const getOllamaVersion = async (token: string, urlIdx?: number) => {
 	return res?.version ?? false;
 };
 
-export const getOllamaModels = async (token: string = '') => {
+export const getOllamaModels = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${OLLAMA_API_BASE_URL}/api/tags`, {
@@ -209,7 +209,7 @@ export const getOllamaModels = async (token: string = '') => {
 
 // TODO: migrate to backend
 export const generateTitle = async (
-	token: string = '',
+	token = '',
 	template: string,
 	model: string,
 	prompt: string
@@ -256,7 +256,7 @@ export const generateTitle = async (
 	return res?.response.replace(/["']/g, '') ?? 'New Chat';
 };
 
-export const generatePrompt = async (token: string = '', model: string, conversation: string) => {
+export const generatePrompt = async (token = '', model: string, conversation: string) => {
 	let error = null;
 
 	if (conversation === '') {
@@ -276,7 +276,7 @@ export const generatePrompt = async (token: string = '', model: string, conversa
 			${conversation}
 
 			As USER in the conversation above, your task is to continue the conversation. Remember, Your responses should be crafted as if you're a human conversing in a natural, realistic manner, keeping in mind the context and flow of the dialogue. Please generate a fitting response to the last message in the conversation, or if there is no existing conversation, initiate one as a normal person would.
-			
+
 			Response:
 			`
 		})
@@ -295,7 +295,7 @@ export const generatePrompt = async (token: string = '', model: string, conversa
 	return res;
 };
 
-export const generateEmbeddings = async (token: string = '', model: string, text: string) => {
+export const generateEmbeddings = async (token = '', model: string, text: string) => {
 	let error = null;
 
 	const res = await fetch(`${OLLAMA_API_BASE_URL}/api/embeddings`, {
@@ -321,7 +321,7 @@ export const generateEmbeddings = async (token: string = '', model: string, text
 	return res;
 };
 
-export const generateTextCompletion = async (token: string = '', model: string, text: string) => {
+export const generateTextCompletion = async (token = '', model: string, text: string) => {
 	let error = null;
 
 	const res = await fetch(`${OLLAMA_API_BASE_URL}/api/generate`, {
@@ -348,7 +348,7 @@ export const generateTextCompletion = async (token: string = '', model: string, 
 	return res;
 };
 
-export const generateChatCompletion = async (token: string = '', body: object) => {
+export const generateChatCompletion = async (token = '', body: object) => {
 	const controller = new AbortController();
 	let error = null;
 

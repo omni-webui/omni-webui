@@ -1,7 +1,7 @@
 import { OPENAI_API_BASE_URL } from '$lib/constants';
 import { titleGenerationTemplate } from '$lib/utils';
 
-export const getOpenAIConfig = async (token: string = '') => {
+export const getOpenAIConfig = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${OPENAI_API_BASE_URL}/config`, {
@@ -33,7 +33,7 @@ export const getOpenAIConfig = async (token: string = '') => {
 	return res;
 };
 
-export const updateOpenAIConfig = async (token: string = '', enable_openai_api: boolean) => {
+export const updateOpenAIConfig = async (token = '', enable_openai_api: boolean) => {
 	let error = null;
 
 	const res = await fetch(`${OPENAI_API_BASE_URL}/config/update`, {
@@ -68,7 +68,7 @@ export const updateOpenAIConfig = async (token: string = '', enable_openai_api: 
 	return res;
 };
 
-export const getOpenAIUrls = async (token: string = '') => {
+export const getOpenAIUrls = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${OPENAI_API_BASE_URL}/urls`, {
@@ -100,7 +100,7 @@ export const getOpenAIUrls = async (token: string = '') => {
 	return res.OPENAI_API_BASE_URLS;
 };
 
-export const updateOpenAIUrls = async (token: string = '', urls: string[]) => {
+export const updateOpenAIUrls = async (token = '', urls: string[]) => {
 	let error = null;
 
 	const res = await fetch(`${OPENAI_API_BASE_URL}/urls/update`, {
@@ -135,7 +135,7 @@ export const updateOpenAIUrls = async (token: string = '', urls: string[]) => {
 	return res.OPENAI_API_BASE_URLS;
 };
 
-export const getOpenAIKeys = async (token: string = '') => {
+export const getOpenAIKeys = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${OPENAI_API_BASE_URL}/keys`, {
@@ -167,7 +167,7 @@ export const getOpenAIKeys = async (token: string = '') => {
 	return res.OPENAI_API_KEYS;
 };
 
-export const updateOpenAIKeys = async (token: string = '', keys: string[]) => {
+export const updateOpenAIKeys = async (token: string, keys: string[]) => {
 	let error = null;
 
 	const res = await fetch(`${OPENAI_API_BASE_URL}/keys/update`, {
@@ -233,8 +233,8 @@ export const getOpenAIModels = async (token: string, urlIdx?: number) => {
 };
 
 export const getOpenAIModelsDirect = async (
-	base_url: string = 'https://api.openai.com/v1',
-	api_key: string = ''
+	base_url = 'https://api.openai.com/v1',
+	api_key = ''
 ) => {
 	let error = null;
 
@@ -274,7 +274,7 @@ export const getOpenAIModelsDirect = async (
 };
 
 export const generateOpenAIChatCompletion = async (
-	token: string = '',
+	token = '',
 	body: object,
 	url: string = OPENAI_API_BASE_URL
 ): Promise<[Response | null, AbortController]> => {
@@ -303,10 +303,10 @@ export const generateOpenAIChatCompletion = async (
 };
 
 export const synthesizeOpenAISpeech = async (
-	token: string = '',
-	speaker: string = 'alloy',
-	text: string = '',
-	model: string = 'tts-1'
+	token = '',
+	speaker = 'alloy',
+	text = '',
+	model = 'tts-1'
 ) => {
 	let error = null;
 
@@ -335,7 +335,7 @@ export const synthesizeOpenAISpeech = async (
 };
 
 export const generateTitle = async (
-	token: string = '',
+	token: string,
 	template: string,
 	model: string,
 	prompt: string,
@@ -390,7 +390,7 @@ export const generateTitle = async (
 };
 
 export const generateSearchQuery = async (
-	token: string = '',
+	token: string,
 	model: string,
 	previousMessages: string[],
 	prompt: string,

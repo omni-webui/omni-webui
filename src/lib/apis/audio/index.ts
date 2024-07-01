@@ -95,10 +95,10 @@ export const transcribeAudio = async (token: string, file: File) => {
 };
 
 export const synthesizeOpenAISpeech = async (
-	token: string = '',
-	speaker: string = 'alloy',
-	text: string = '',
-	model: string = 'tts-1'
+	token = '',
+	speaker = 'alloy',
+	text = '',
+	model = 'tts-1'
 ) => {
 	let error = null;
 

@@ -42,7 +42,7 @@ export const createNewDoc = async (
 	return res;
 };
 
-export const getDocs = async (token: string = '') => {
+export const getDocs = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${WEBUI_API_BASE_URL}/documents/`, {

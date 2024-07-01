@@ -266,7 +266,7 @@ const chatCompletedHandler = async (modelId, messages) => {
 	}
 };
 
-const getChatEventEmitter = async (modelId: string, chatId: string = '') => {
+const getChatEventEmitter = async (modelId: string, chatId = '') => {
 	return setInterval(() => {
 		$socket?.emit('usage', {
 			action: 'chat',
@@ -605,12 +605,11 @@ const sendPromptOllama = async (model, userPrompt, responseMessageId, _chatId) =
 
 	const docs = messages
 		.filter((message) => message?.files ?? null)
-		.map((message) =>
+		.flatMap((message) =>
 			message.files.filter((item) =>
 				['doc', 'collection', 'web_search_results'].includes(item.type)
 			)
-		)
-		.flat(1);
+		);
 
 	const [res, controller] = await generateChatCompletion(localStorage.token, {
 		model: model,
@@ -784,12 +783,11 @@ const sendPromptOpenAI = async (model, userPrompt, responseMessageId, _chatId) =
 
 	const docs = messages
 		.filter((message) => message?.files ?? null)
-		.map((message) =>
+		.flatMap((message) =>
 			message.files.filter((item) =>
 				['doc', 'collection', 'web_search_results'].includes(item.type)
 			)
-		)
-		.flat(1);
+		);
 
 	console.log(docs);
 

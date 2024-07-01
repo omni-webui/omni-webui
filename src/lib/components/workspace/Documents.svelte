@@ -1,15 +1,15 @@
 <script lang="ts">
 import { toast } from 'svelte-sonner';
-import fileSaver from 'file-saver';
-const { saveAs } = fileSaver;
+import { saveAs } from 'file-saver';
 
 import { onMount, getContext } from 'svelte';
-import { WEBUI_NAME, documents } from '$lib/stores';
+import { WEBUI_NAME, documents, type Document } from '$lib/stores';
 import { createNewDoc, deleteDocByName, getDocs } from '$lib/apis/documents';
 
 import { SUPPORTED_FILE_TYPE, SUPPORTED_FILE_EXTENSIONS } from '$lib/constants';
 import { uploadDocToVectorDB } from '$lib/apis/rag';
 import { transformFileName } from '$lib/utils';
+import type { I18n } from '$lib/types';
 
 import Checkbox from '$lib/components/common/Checkbox.svelte';
 
@@ -18,28 +18,28 @@ import AddFilesPlaceholder from '$lib/components/AddFilesPlaceholder.svelte';
 import SettingsModal from '$lib/components/documents/SettingsModal.svelte';
 import AddDocModal from '$lib/components/documents/AddDocModal.svelte';
 
-const i18n = getContext('i18n');
+const i18n: I18n = getContext('i18n');
 
 let importFiles = '';
 
 let query = '';
 let documentsImportInputElement: HTMLInputElement;
-let tags = [];
+let tags: string[] = [];
 
 let showSettingsModal = false;
 let showAddDocModal = false;
 let showEditDocModal = false;
-let selectedDoc;
+let selectedDoc: Document;
 let selectedTag = '';
 
 let dragged = false;
 
-const deleteDoc = async (name) => {
+const deleteDoc = async (name: string) => {
 	await deleteDocByName(localStorage.token, name);
 	await documents.set(await getDocs(localStorage.token));
 };
 
-const deleteDocs = async (docs) => {
+const deleteDocs = async (docs: Document[]) => {
 	await Promise.all(
 		docs.map(async (doc) => {
 			return await deleteDocByName(localStorage.token, doc.name);
@@ -49,7 +49,7 @@ const deleteDocs = async (docs) => {
 	await documents.set(await getDocs(localStorage.token));
 };
 
-const uploadDoc = async (file) => {
+const uploadDoc = async (file: File) => {
 	const res = await uploadDocToVectorDB(localStorage.token, '', file).catch((error) => {
 		toast.error(error);
 		return null;
@@ -72,13 +72,13 @@ const uploadDoc = async (file) => {
 
 onMount(() => {
 	documents.subscribe((docs) => {
-		tags = docs.reduce((a, e) => {
-			return [...new Set([...a, ...(e?.content?.tags ?? []).map((tag) => tag.name)])];
+		tags = docs.reduce((a: string[], e) => {
+			return [...a, ...(e?.content?.tags ?? []).map((tag) => tag.name)];
 		}, []);
 	});
 	const dropZone = document.querySelector('body');
 
-	const onDragOver = (e) => {
+	const onDragOver = (e: Event) => {
 		e.preventDefault();
 		dragged = true;
 	};
@@ -127,7 +127,7 @@ onMount(() => {
 	};
 });
 
-let filteredDocs;
+let filteredDocs: Document[] = [];
 
 $: filteredDocs = $documents.filter(
 	(doc) =>
@@ -250,25 +250,6 @@ $: filteredDocs = $documents.filter(
 	</div>
 </div>
 
-<!-- <div>
-    <div
-        class="my-3 py-16 rounded-lg border-2 border-dashed dark:border-gray-600 {dragged &&
-            ' dark:bg-gray-700'} "
-        role="region"
-        on:drop={onDrop}
-        on:dragover={onDragOver}
-        on:dragleave={onDragLeave}
-    >
-        <div class="  pointer-events-none">
-            <div class="text-center dark:text-white text-2xl font-semibold z-50">{$i18n.t('Add Files')}</div>
-
-            <div class=" mt-2 text-center text-sm dark:text-gray-200 w-full">
-                Drop any files here to add to my documents
-            </div>
-        </div>
-    </div>
-</div> -->
-
 <hr class=" dark:border-gray-850 my-2.5" />
 
 {#if tags.length > 0}
@@ -325,16 +306,6 @@ $: filteredDocs = $documents.filter(
 				</div>
 
 				<div class="flex gap-1">
-					<!-- <button
-                        class="px-2 py-0.5 space-x-1 flex h-fit items-center rounded-full transition bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:text-white"
-                        on:click={async () => {
-                            selectedTag = '';
-                            // await chats.set(await getChatListByTagName(localStorage.token, tag.name));
-                        }}
-                    >
-                        <div class=" text-xs font-medium self-center line-clamp-1">add tags</div>
-                    </button> -->
-
 					<button
 						class="px-2 py-0.5 space-x-1 flex h-fit items-center rounded-full transition bg-gray-50 hover:bg-gray-100 dark:bg-gray-800 dark:text-white"
 						on:click={async () => {

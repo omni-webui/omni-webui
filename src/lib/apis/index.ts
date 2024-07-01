@@ -1,7 +1,7 @@
 import { WEBUI_BASE_URL } from '$lib/constants';
 import type { Model, GlobalModelConfig } from '$lib/types';
 
-export const getModels = async (token: string = '') => {
+export const getModels = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${WEBUI_BASE_URL}/api/models`, {
@@ -101,7 +101,7 @@ export const chatCompleted = async (token: string, body: ChatCompletedForm) => {
 	return res;
 };
 
-export const getPipelinesList = async (token: string = '') => {
+export const getPipelinesList = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${WEBUI_BASE_URL}/api/pipelines/list`, {
@@ -309,7 +309,7 @@ export const getPipelineValvesSpec = async (token: string, pipeline_id: string, 
 };
 
 export const updatePipelineValves = async (
-	token: string = '',
+	token = '',
 	pipeline_id: string,
 	valves: object,
 	urlIdx: string

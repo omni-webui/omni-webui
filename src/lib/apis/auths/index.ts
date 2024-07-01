@@ -182,7 +182,7 @@ export const addUser = async (
 	name: string,
 	email: string,
 	password: string,
-	role: string = 'pending'
+	role = 'pending'
 ) => {
 	let error = null;
 

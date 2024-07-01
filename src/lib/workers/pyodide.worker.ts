@@ -5,7 +5,7 @@ declare global {
 		stdout: string | null;
 		stderr: string | null;
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
-		result: any;
+		result: any; // biome-ignore lint: lint/suspicious/noExplicitAny
 		pyodide: PyodideInterface;
 		packages: string[];
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any

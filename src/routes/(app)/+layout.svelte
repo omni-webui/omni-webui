@@ -93,7 +93,7 @@ onMount(async () => {
 			})()
 		]);
 
-		document.addEventListener('keydown', function (event) {
+		document.addEventListener('keydown', (event) => {
 			const isCtrlPressed = event.ctrlKey || event.metaKey; // metaKey is for Cmd key on Mac
 			// Check if the Shift key is pressed
 			const isShiftPressed = event.shiftKey;

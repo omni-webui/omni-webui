@@ -202,7 +202,7 @@ const speechRecognitionHandler = () => {
 				};
 
 				// Event triggered when recognition is ended
-				speechRecognition.onend = function () {
+				speechRecognition.onend = () => {
 					// Restart recognition after it ends
 					console.log('recognition ended');
 					isRecording = false;
@@ -212,7 +212,7 @@ const speechRecognitionHandler = () => {
 				};
 
 				// Event triggered when an error occurs
-				speechRecognition.onerror = function (event) {
+				speechRecognition.onerror = (event) => {
 					console.log(event);
 					toast.error(
 						$i18n.t(`Speech recognition error: {{error}}`, {

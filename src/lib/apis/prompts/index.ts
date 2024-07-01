@@ -38,7 +38,7 @@ export const createNewPrompt = async (
 	return res;
 };
 
-export const getPrompts = async (token: string = '') => {
+export const getPrompts = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${WEBUI_API_BASE_URL}/prompts/`, {

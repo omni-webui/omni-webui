@@ -1,6 +1,6 @@
 import { IMAGES_API_BASE_URL } from '$lib/constants';
 
-export const getImageGenerationConfig = async (token: string = '') => {
+export const getImageGenerationConfig = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/config`, {
@@ -32,11 +32,7 @@ export const getImageGenerationConfig = async (token: string = '') => {
 	return res;
 };
 
-export const updateImageGenerationConfig = async (
-	token: string = '',
-	engine: string,
-	enabled: boolean
-) => {
+export const updateImageGenerationConfig = async (token = '', engine: string, enabled: boolean) => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/config/update`, {
@@ -72,7 +68,7 @@ export const updateImageGenerationConfig = async (
 	return res;
 };
 
-export const getOpenAIConfig = async (token: string = '') => {
+export const getOpenAIConfig = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/openai/config`, {
@@ -104,7 +100,7 @@ export const getOpenAIConfig = async (token: string = '') => {
 	return res;
 };
 
-export const updateOpenAIConfig = async (token: string = '', url: string, key: string) => {
+export const updateOpenAIConfig = async (token = '', url: string, key: string) => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/openai/config/update`, {
@@ -140,7 +136,7 @@ export const updateOpenAIConfig = async (token: string = '', url: string, key: s
 	return res;
 };
 
-export const getImageGenerationEngineUrls = async (token: string = '') => {
+export const getImageGenerationEngineUrls = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/url`, {
@@ -172,7 +168,7 @@ export const getImageGenerationEngineUrls = async (token: string = '') => {
 	return res;
 };
 
-export const updateImageGenerationEngineUrls = async (token: string = '', urls: object = {}) => {
+export const updateImageGenerationEngineUrls = async (token = '', urls: object = {}) => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/url/update`, {
@@ -207,7 +203,7 @@ export const updateImageGenerationEngineUrls = async (token: string = '', urls: 
 	return res;
 };
 
-export const getImageSize = async (token: string = '') => {
+export const getImageSize = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/size`, {
@@ -239,7 +235,7 @@ export const getImageSize = async (token: string = '') => {
 	return res.IMAGE_SIZE;
 };
 
-export const updateImageSize = async (token: string = '', size: string) => {
+export const updateImageSize = async (token = '', size: string) => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/size/update`, {
@@ -274,7 +270,7 @@ export const updateImageSize = async (token: string = '', size: string) => {
 	return res.IMAGE_SIZE;
 };
 
-export const getImageSteps = async (token: string = '') => {
+export const getImageSteps = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/steps`, {
@@ -306,7 +302,7 @@ export const getImageSteps = async (token: string = '') => {
 	return res.IMAGE_STEPS;
 };
 
-export const updateImageSteps = async (token: string = '', steps: number) => {
+export const updateImageSteps = async (token = '', steps: number) => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/steps/update`, {
@@ -339,7 +335,7 @@ export const updateImageSteps = async (token: string = '', steps: number) => {
 	return res.IMAGE_STEPS;
 };
 
-export const getImageGenerationModels = async (token: string = '') => {
+export const getImageGenerationModels = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/models`, {
@@ -371,7 +367,7 @@ export const getImageGenerationModels = async (token: string = '') => {
 	return res;
 };
 
-export const getDefaultImageGenerationModel = async (token: string = '') => {
+export const getDefaultImageGenerationModel = async (token = '') => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/models/default`, {
@@ -403,7 +399,7 @@ export const getDefaultImageGenerationModel = async (token: string = '') => {
 	return res.model;
 };
 
-export const updateDefaultImageGenerationModel = async (token: string = '', model: string) => {
+export const updateDefaultImageGenerationModel = async (token = '', model: string) => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/models/default/update`, {
@@ -438,7 +434,7 @@ export const updateDefaultImageGenerationModel = async (token: string = '', mode
 	return res.model;
 };
 
-export const imageGenerations = async (token: string = '', prompt: string) => {
+export const imageGenerations = async (token = '', prompt: string) => {
 	let error = null;
 
 	const res = await fetch(`${IMAGES_API_BASE_URL}/generations`, {

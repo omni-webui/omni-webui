@@ -9,12 +9,13 @@ import Tags from '../common/Tags.svelte';
 import { uploadDocToVectorDB } from '$lib/apis/rag';
 import { transformFileName } from '$lib/utils';
 import { SUPPORTED_FILE_EXTENSIONS, SUPPORTED_FILE_TYPE } from '$lib/constants';
+import type { I18n } from '$lib/types';
 
-const i18n = getContext('i18n');
+const i18n: I18n = getContext('i18n');
 
 export let show = false;
 let uploadDocInputElement: HTMLInputElement;
-let inputFiles;
+let inputFiles: FileList;
 let tags = [];
 
 const uploadDoc = async (file) => {
@@ -44,12 +45,12 @@ const uploadDoc = async (file) => {
 };
 
 const submitHandler = async () => {
-	if (inputFiles && inputFiles.length > 0) {
+	if (inputFiles.length > 0) {
 		for (const file of inputFiles) {
 			console.log(file, file.name.split('.').at(-1));
 			if (
 				SUPPORTED_FILE_TYPE.includes(file['type']) ||
-				SUPPORTED_FILE_EXTENSIONS.includes(file.name.split('.').at(-1))
+				SUPPORTED_FILE_EXTENSIONS.includes(file.name.split('.').at(-1) ?? '')
 			) {
 				uploadDoc(file);
 			} else {
@@ -59,11 +60,9 @@ const submitHandler = async () => {
 				uploadDoc(file);
 			}
 		}
-
-		inputFiles = null;
 		uploadDocInputElement.value = '';
 	} else {
-		toast.error($i18n.t(`File not found.`));
+		toast.error($i18n.t('File not found.'));
 	}
 
 	show = false;
@@ -132,8 +131,8 @@ onMount(() => {});
 								uploadDocInputElement.click();
 							}}
 						>
-							{#if inputFiles}
-								{inputFiles.length > 0 ? `${inputFiles.length}` : ''} document(s) selected.
+							{#if inputFiles.length > 0}
+								{inputFiles.length} document(s) selected.
 							{:else}
 								{$i18n.t('Click here to select documents.')}
 							{/if}

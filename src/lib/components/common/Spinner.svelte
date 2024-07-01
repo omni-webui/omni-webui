@@ -1,5 +1,5 @@
 <script lang="ts">
-export let className: string = 'size-5';
+export let className = 'size-5';
 </script>
 
 <div class="flex justify-center text-center">
