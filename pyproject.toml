@@ -26,6 +26,7 @@ packages = ["omni_webui"]
 
 [dependency-groups]
 dev = [
+    "gitlint>=0.20.0.dev48",
     "pre-commit>=4.0.1",
     "pytest>=8.3.4",
     "pytest-cov>=6.0.0",

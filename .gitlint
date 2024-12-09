@@ -1,0 +1,2 @@
+[title-match-regex]
+regex=^(Added|Changed|Deprecated|Removed|Fixed|Security): .*

@@ -40,7 +40,7 @@ uv run omni-webui serve --reload
 Install git hooks:
 
 ```bash
-uv run pre-commit install
+uv run pre-commit install && uv run pre-commit install --hook-type commit-msg
 ```
 
 ## How to contribute

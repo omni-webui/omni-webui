@@ -9,3 +9,7 @@ repos:
     rev: v1.1.390
     hooks:
     -   id: pyright
+-   repo: https://github.com/jorisroovers/gitlint
+    rev: v0.19.1
+    hooks:
+    -   id: gitlint
