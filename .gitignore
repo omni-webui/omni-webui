@@ -1,0 +1,9 @@
+__pycache__/
+
+# local secrets
+webui_secret_key
+.webui_secret_key
+.env*
+
+# Coverage
+.coverage
