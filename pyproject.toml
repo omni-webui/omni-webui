@@ -8,9 +8,9 @@ dependencies = [
     "aiosqlite>=0.20.0",
     "anyio[trio]>=4.7.0",
     "asyncpg>=0.30.0",
-    "sqlalchemy[asyncio]>=2.0.32",
+    "sqlalchemy[asyncio]",
     "sqlmodel>=0.0.22",
-    "open-webui>=0.4.7",
+    "open-webui",
     "pydantic-settings>=2.6.1",
 ]
 
@@ -26,11 +26,13 @@ packages = ["omni_webui"]
 
 [dependency-groups]
 dev = [
-    "gitlint>=0.20.0.dev48",
     "pre-commit>=4.0.1",
     "pytest>=8.3.4",
     "pytest-cov>=6.0.0",
 ]
+
+[tool.uv.sources]
+open-webui = { git = "https://github.com/open-webui/open-webui", tag = "v0.4.8" }
 
 [tool.ruff.lint]
 extend-select = ["I"]
