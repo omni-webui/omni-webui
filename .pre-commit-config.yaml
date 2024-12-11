@@ -9,6 +9,11 @@ repos:
     rev: v1.1.390
     hooks:
     -   id: pyright
+-   repo: https://github.com/biomejs/pre-commit
+    rev: v0.6.0
+    hooks:
+    -   id: biome-check
+        additional_dependencies: ["@biomejs/biome@1.9.4"]
 -   repo: https://github.com/jorisroovers/gitlint
     rev: v0.19.1
     hooks:

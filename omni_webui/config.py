@@ -13,22 +13,24 @@ from pydantic_settings import (
 )
 
 from ._compat import find_case_path
-from .logging import logger
+from ._logger import logger
 
 
-def get_data_dir() -> Path:
-    spec = importlib.util.find_spec("open_webui")
+@lru_cache
+def get_package_dir(name: str) -> Path:
+    spec = importlib.util.find_spec(name)
     if spec is None:
-        raise ImportError("open_webui module not found")
+        raise ImportError(f"{name} module not found")
     if spec.submodule_search_locations is None:
-        raise ValueError("open_webui module not installed correctly")
-    return Path(spec.submodule_search_locations[0]) / "data"
+        raise ValueError(f"{name} module not installed correctly")
+    return Path(spec.submodule_search_locations[0])
 
 
 class EnvironmentOnlySettings(BaseSettings):
     """Settings from environment variables (and dotenv files)"""
 
-    data_dir: Path = get_data_dir()
+    data_dir: Path = get_package_dir("open_webui") / "data"
+    frontend_build_dir: Path = get_package_dir("omni_webui") / "frontend"
     database_url: str = ""
 
     LD_LIBRARY_PATH: list[Path] = Field(default_factory=list)
@@ -38,7 +40,7 @@ class EnvironmentOnlySettings(BaseSettings):
         if not self.data_dir.exists():
             self.data_dir.mkdir(parents=True)
         if not self.database_url:
-            self.database_url = f"sqlite:///{self.data_dir / 'webui.db'}"
+            self.database_url = f"sqlite+aiosqlite:///{self.data_dir / 'webui.db'}"
         return self
 
     @field_validator("LD_LIBRARY_PATH")

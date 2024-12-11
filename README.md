@@ -1,9 +1,7 @@
-Omni WebUI
-==========
+# Omni WebUI
 
 Omni-WebUI (OI) is a web-based user interface for the Chatbot. It is currently built
 upon Open WebUI.
-
 
 ## Installation
 

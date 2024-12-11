@@ -7,3 +7,19 @@ webui_secret_key
 
 # Coverage
 .coverage
+
+# Node/deno
+.vite/
+node_modules/
+dist/
+.svelte-kit/
+
+# Open WebUI
+build/
+src/
+static/
+i18next-parser.config.ts
+postcss.config.js
+svelte.config.js
+tailwind.config.js
+tsconfig.json
