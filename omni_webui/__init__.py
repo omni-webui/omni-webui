@@ -12,6 +12,7 @@ from .config import get_env, get_settings
 from .deps import get_engine
 from .models import *  # noqa
 from .routes import router
+from .version import __version__ as __version__
 
 
 @asynccontextmanager

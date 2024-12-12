@@ -2,7 +2,7 @@ import importlib.util
 from functools import lru_cache
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import Self, cast
+from typing import Annotated, Self, cast
 
 from pydantic import Field, field_serializer, field_validator, model_validator
 from pydantic_settings import (
@@ -14,6 +14,31 @@ from pydantic_settings import (
 
 from ._compat import find_case_path
 from ._logger import logger
+from ._types import MutableBaseModel
+
+
+class APIKey(MutableBaseModel, BaseSettings, extra="allow"):
+    enable: Annotated[bool, Field(alias="ENABLE_API_KEY")] = True
+
+
+class Auth(MutableBaseModel, BaseSettings, extra="allow"):
+    api_key: APIKey = Field(default_factory=APIKey)
+
+
+class PromptSuggestion(MutableBaseModel, extra="allow"):
+    title: tuple[str, str]
+    content: str
+
+
+class UI(MutableBaseModel, BaseSettings, extra="allow"):
+    default_locale: str = ""
+    prompt_suggestions: list[PromptSuggestion] = Field(default_factory=list)
+
+
+class Config(MutableBaseModel, extra="allow"):
+    version: int = 0
+    auth: Auth = Field(default_factory=Auth)
+    ui: UI = Field(default_factory=UI)
 
 
 @lru_cache
@@ -69,6 +94,7 @@ class EnvironmentOnlySettings(BaseSettings):
 
 
 class Settings(BaseSettings):
+    name: str = "Omni WebUI"
     secret_key: str = Field(default_factory=lambda: token_urlsafe(12))
 
     model_config = SettingsConfigDict(env_prefix="webui_", secrets_dir=Path.cwd())

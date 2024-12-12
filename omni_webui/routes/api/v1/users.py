@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends
 from sqlmodel import select
 
-from ....deps import AsyncSessionDepends, get_admin_user
-from ....models import User
+from ....deps import AsyncSessionDepends
+from ....models.user import User, get_admin_user
 
 router = APIRouter(dependencies=[Depends(get_admin_user)])
 
