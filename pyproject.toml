@@ -38,6 +38,9 @@ dev = [
     "pytest-cov>=6.0.0",
 ]
 
+[tool.pytest.ini_options]
+filterwarnings = "ignore:.*:DeprecationWarning\nignore:.*:PendingDeprecationWarning"
+
 [tool.uv.sources]
 open-webui = { git = "https://github.com/open-webui/open-webui", tag = "v0.4.8" }
 

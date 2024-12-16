@@ -6,7 +6,7 @@ webui_secret_key
 .env*
 
 # Coverage
-.coverage
+.coverage*
 
 # Node/deno
 .vite/
