@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from omni_webui import app
+from omni_webui.app import app
 from omni_webui.config import get_env
 from omni_webui.deps import get_async_session
 from omni_webui.models import File, User  # noqa: F401

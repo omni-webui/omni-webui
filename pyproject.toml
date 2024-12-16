@@ -11,7 +11,7 @@ dependencies = [
     "sqlalchemy[asyncio]",
     "sqlmodel>=0.0.22",
     "open-webui",
-    "pydantic-settings>=2.6.1",
+    "pydantic-settings>=2.7.0",
 ]
 
 [project.scripts]
