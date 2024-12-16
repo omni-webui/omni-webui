@@ -91,12 +91,12 @@ async def get_user(
     bearer: Annotated[HTTPAuthorizationCredentials | None, Depends(security)] = None,
     token: Annotated[str | None, Cookie()] = None,
     session: AsyncSessionDepends,
-) -> User:
+) -> User | None:
     config = await get_config()
 
     token = (bearer.credentials if bearer else None) or token
     if token is None:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail="Not authenticated")
+        return None
     if token.startswith("sk-"):
         if not config.auth.api_key.enable:
             raise HTTPException(
@@ -126,10 +126,12 @@ async def get_user(
     return user
 
 
-UserDepends = Annotated[User, Depends(get_user)]
+UserDepends = Annotated[User | None, Depends(get_user)]
 
 
 def get_admin_user(user: UserDepends):
+    if user is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     if user.role != "admin":
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,

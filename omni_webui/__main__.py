@@ -1,19 +1,19 @@
 import typer
 import uvicorn
 
-from omni_webui import app
+from omni_webui import __version__
 
-cli = typer.Typer()
+app = typer.Typer()
 
 
-@cli.command()
+@app.command()
 def serve(
     host: str = "0.0.0.0",
     port: int = 8080,
     reload: bool = False,
 ):
     uvicorn.run(
-        "omni_webui:app" if reload else app,
+        "omni_webui.app:app",
         host=host,
         port=port,
         reload=reload,
@@ -21,16 +21,9 @@ def serve(
     )
 
 
-@cli.command()
+@app.command()
 def version():
-    from importlib.metadata import PackageNotFoundError, version
-
-    try:
-        v = "v" + version("omni_webui")
-    except PackageNotFoundError:
-        v = "(unknown version)"
-    typer.echo(f"Omni WebUI {v}")
+    typer.echo(f"Omni WebUI v{__version__}")
 
 
-if __name__ == "__main__":
-    cli()
+app()
