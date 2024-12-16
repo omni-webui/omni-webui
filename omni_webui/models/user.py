@@ -1,11 +1,11 @@
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Annotated
 
+import bcrypt
 import jwt
 from fastapi import Cookie, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt.exceptions import InvalidTokenError
-from passlib.context import CryptContext
 from pydantic import EmailStr
 from sqlalchemy.ext.mutable import MutableDict
 from sqlmodel import JSON, Field, Relationship, SQLModel, select
@@ -49,17 +49,14 @@ class User(SQLModel, table=True):
 
 
 security = HTTPBearer(auto_error=False)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def verify_password(plain_password, hashed_password):
-    return (
-        pwd_context.verify(plain_password, hashed_password) if hashed_password else None
-    )
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 
-def get_password_hash(password):
-    return pwd_context.hash(password)
+def get_password_hash(password: str) -> str:
+    return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
 def create_token(data: dict, expires_delta: timedelta | None = None) -> str:
