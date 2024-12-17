@@ -237,7 +237,7 @@ class EnvironmentOnlySettings(BaseSettings):
         return self
 
     @field_validator("LD_LIBRARY_PATH")
-    def append_cuda_libs(cls, v):
+    def serialize_path_array(cls, v):
         if isinstance(v, str):
             return [Path(p) for p in v.split(":")]
         return v

@@ -44,12 +44,12 @@ class NpmBuildHook(BuildHookInterface):
         ]
         for f in files:
             shutil.copy2(webui_dir / f, build_dir / f)
-        npm = shutil.which("npm")
-        if npm is None:
+        deno = shutil.which("deno")
+        if deno is None:
             raise RuntimeError(
-                "`npm` is required for building Omni Webui but it was not found"
+                "`deno` is required for building Omni Webui but it was not found"
             )
-        subprocess.run([npm, "install"], check=True)
-        print("npm run build", file=stderr)
+        subprocess.run([deno, "install"], check=True)
+        print("deno task build", file=stderr)
         os.environ["APP_BUILD_HASH"] = version
-        subprocess.run([npm, "run", "build"], check=True)
+        subprocess.run([deno, "task", "build"], check=True)
