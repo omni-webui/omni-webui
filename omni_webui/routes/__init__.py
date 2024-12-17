@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from ..deps import AsyncSessionDepends
+from ..deps import SessionDepends
 from .api import router as api_router
 
 router = APIRouter()
@@ -13,5 +13,5 @@ async def healthcheck():
 
 
 @router.get("/health/db")
-async def healthcheck_with_db(session: AsyncSessionDepends):
+async def healthcheck_with_db(session: SessionDepends):
     return {"status": True}

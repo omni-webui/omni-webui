@@ -6,9 +6,9 @@ from omni_webui.models import File
 
 
 @pytest.mark.anyio
-async def test_file(async_session: AsyncSession, user_id: str):
+async def test_file(session: AsyncSession, user_id: str):
     stmt = select(File)
-    result = await async_session.exec(stmt)
+    result = await session.exec(stmt)
     assert result.all() == []
     f = File(
         id="123",
@@ -19,10 +19,10 @@ async def test_file(async_session: AsyncSession, user_id: str):
         data={"data": "data"},
         meta={"meta": "meta"},
     )
-    async_session.add(f)
-    await async_session.commit()
+    session.add(f)
+    await session.commit()
     stmt = select(File)
-    result = await async_session.exec(stmt)
+    result = await session.exec(stmt)
     assert result.all() == [f]
-    await async_session.delete(f)
-    await async_session.commit()
+    await session.delete(f)
+    await session.commit()

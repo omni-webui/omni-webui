@@ -3,7 +3,7 @@ from sqlmodel import col, func, select
 
 from ... import __version__
 from ...config import get_env, get_settings
-from ...deps import AsyncSessionDepends
+from ...deps import SessionDepends
 from ...models.config import get_config
 from ...models.user import User, UserDepends
 from .v1 import router as v1_router
@@ -16,7 +16,7 @@ router.include_router(v1_router, prefix="/v1")
 async def retrieve_config(
     *,
     user: UserDepends,
-    session: AsyncSessionDepends,
+    session: SessionDepends,
 ):
     env = get_env()
     webui = get_settings()
