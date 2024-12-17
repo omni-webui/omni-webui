@@ -74,3 +74,20 @@ async def client_fixture(async_session: AsyncSession, user_id: str):
     with TestClient(app, headers={"Authorization": f"Bearer {user.api_key}"}) as client:
         yield client
         app.dependency_overrides.clear()
+
+
+@pytest.fixture(name="no_users_async_session")
+async def no_users_async_session_fixture(tmp_path):
+    engine = create_async_engine(f"sqlite+aiosqlite:///{tmp_path / 'test.db'}")
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+    async with AsyncSession(engine) as session:
+        yield session
+
+
+@pytest.fixture(name="no_users_client")
+async def no_users_client_fixture(no_users_async_session: AsyncSession):
+    app.dependency_overrides[get_async_session] = lambda: no_users_async_session
+    with TestClient(app) as client:
+        yield client
+        app.dependency_overrides.clear()

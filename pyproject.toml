@@ -43,7 +43,21 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
+addopts = [
+    "--cov=omni_webui",
+    "--cov-fail-under=80",
+]
 filterwarnings = "ignore:.*:DeprecationWarning\nignore:.*:PendingDeprecationWarning"
+
+[tool.coverage.run]
+omit = ["omni_webui/__main__.py"]
+
+[tool.coverage.report]
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "except importlib.metadata.PackageNotFoundError:\\n\\s+__version__ = \"0.0.0\"",
+]
 
 [tool.uv.sources]
 open-webui = { git = "https://github.com/open-webui/open-webui", tag = "v0.4.8" }
