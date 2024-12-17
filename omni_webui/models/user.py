@@ -12,7 +12,7 @@ from sqlmodel import JSON, Field, Relationship, SQLModel, select
 
 from .._types import MutableBaseModel
 from ..config import get_settings
-from ..deps import AsyncSessionDepends
+from ..deps import SessionDepends
 from ._utils import now_timestamp
 from .config import get_config
 
@@ -87,7 +87,7 @@ async def get_user(
     *,
     bearer: Annotated[HTTPAuthorizationCredentials | None, Depends(security)] = None,
     token: Annotated[str | None, Cookie()] = None,
-    session: AsyncSessionDepends,
+    session: SessionDepends,
 ) -> User | None:
     config = await get_config()
 

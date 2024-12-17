@@ -3,8 +3,6 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
-from sqlalchemy.engine import Engine
-from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlmodel import SQLModel
 
 from . import __version__
@@ -21,12 +19,8 @@ settings = get_settings()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     engine = get_engine(env)
-    match engine:
-        case AsyncEngine():
-            async with engine.begin() as conn:
-                await conn.run_sync(SQLModel.metadata.create_all)
-        case Engine():
-            SQLModel.metadata.create_all(engine)
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
     yield
 
 
