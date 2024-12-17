@@ -100,7 +100,9 @@ async def get_user(
                 status.HTTP_403_FORBIDDEN,
                 detail="Use of API key is not enabled in the environment.",
             )
-        return (await session.exec(select(User).where(User.api_key == token))).one()
+        return (
+            await session.exec(select(User).where(User.api_key == token))
+        ).one_or_none()
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
