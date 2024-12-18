@@ -15,10 +15,13 @@ dist/
 .svelte-kit/
 
 # Open WebUI
-build/
+!/build
+/build/*
+!/build/.gitkeep
 frontend/
-src/
-static/
+!/src
+/src/*
+/static/*
 i18next-parser.config.ts
 postcss.config.js
 svelte.config.js

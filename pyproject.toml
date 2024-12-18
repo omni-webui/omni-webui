@@ -30,6 +30,7 @@ build-backend = "hatchling.build"
 [tool.hatch.build.hooks.custom]  # keep this for reading hooks from `hatch_build.py`
 
 [tool.hatch.build.targets.wheel]
+ignore-vcs = true  # for keeping `node_modules` while building
 packages = ["omni_webui"]
 force-include = { build = "omni_webui/frontend" }
 
