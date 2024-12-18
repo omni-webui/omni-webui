@@ -38,6 +38,8 @@ OMNI_WEBUI_FRONTEND_DIR="./build"
 
 1. [`uv`](https://docs.astral.sh/uv/)
 2. [`deno`](https://deno.land/)
+3. [`node`](https://nodejs.org/) and [`npm`](https://www.npmjs.com/) ([`volta`](https://volta.sh/) is recommended)
+4. git (of course)
 
 ### Steps
 
