@@ -1,12 +1,12 @@
 from datetime import datetime
 from typing import Annotated
 
+from fastapi import Depends
 from sqlalchemy.sql.functions import func
 from sqlmodel import Field, SQLModel, col, select
-from sqlmodel.ext.asyncio.session import AsyncSession
 
 from ..config import Config as ConfigData
-from ..deps import get_engine, get_env
+from ..deps import SessionDepends
 
 
 class Config(SQLModel, table=True):
@@ -23,9 +23,10 @@ class Config(SQLModel, table=True):
     ] = None
 
 
-async def get_config() -> ConfigData:
-    engine = get_engine(get_env())
+async def get_config(session: SessionDepends) -> ConfigData:
     statement = select(Config).order_by(col(Config.id).desc())
-    async with AsyncSession(engine) as session:
-        config = (await session.exec(statement)).first()
+    config = (await session.exec(statement)).first()
     return ConfigData() if config is None else config.data
+
+
+ConfigDepends = Annotated[ConfigData, Depends(get_config)]

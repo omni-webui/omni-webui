@@ -1,4 +1,4 @@
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from typing import TYPE_CHECKING, Annotated
 
 import bcrypt
@@ -11,10 +11,9 @@ from sqlalchemy.ext.mutable import MutableDict
 from sqlmodel import JSON, Field, Relationship, SQLModel, select
 
 from .._types import MutableBaseModel
-from ..config import get_settings
-from ..deps import SessionDepends
-from ._utils import now_timestamp
-from .config import get_config
+from ..deps import EnvDepends, SessionDepends
+from ._utils import now, now_timestamp
+from .config import ConfigDepends
 
 if TYPE_CHECKING:
     from .file import File
@@ -59,26 +58,26 @@ def get_password_hash(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
-def create_token(data: dict, expires_delta: timedelta | None = None) -> str:
+def create_token(
+    data: dict, secret_key: str, expires_delta: timedelta | None = None
+) -> str:
     payload = data.copy()
 
     if expires_delta:
-        expire = datetime.now(UTC) + expires_delta
+        expire = now() + expires_delta
         payload.update({"exp": expire})
 
-    encoded_jwt = jwt.encode(payload, get_settings().secret_key, algorithm="HS256")
-    return encoded_jwt
+    return jwt.encode(payload, secret_key, algorithm="HS256")
 
 
-def decode_token(token: str) -> dict | None:
+def decode_token(token: str, secret_key: str) -> dict:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        decoded = jwt.decode(token, get_settings().secret_key, algorithms=["HS256"])
-        return decoded
+        return jwt.decode(token, secret_key, algorithms=["HS256"])
     except InvalidTokenError:
         raise credentials_exception
 
@@ -87,10 +86,10 @@ async def get_user(
     *,
     bearer: Annotated[HTTPAuthorizationCredentials | None, Depends(security)] = None,
     token: Annotated[str | None, Cookie()] = None,
+    env: EnvDepends,
     session: SessionDepends,
+    config: ConfigDepends,
 ) -> User | None:
-    config = await get_config()
-
     token = (bearer.credentials if bearer else None) or token
     if token is None:
         return None
@@ -103,22 +102,12 @@ async def get_user(
         return (
             await session.exec(select(User).where(User.api_key == token))
         ).one_or_none()
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload: dict = jwt.decode(
-            token, get_settings().secret_key, algorithms=["HS256"]
-        )
-    except InvalidTokenError:
-        raise credentials_exception
+    payload = decode_token(token, env.webui_secret_key)
     if "id" not in payload:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     user = await session.get(User, payload["id"])
     if user is None:
-        raise credentials_exception
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     user.last_active_at = now_timestamp()
     await session.commit()
     await session.refresh(user)

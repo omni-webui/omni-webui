@@ -4,7 +4,7 @@ from pathlib import Path
 from secrets import token_urlsafe
 from typing import Annotated, NotRequired, Self, TypedDict, cast
 
-from pydantic import Field, field_serializer, field_validator, model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import (
     BaseSettings,
     PydanticBaseSettingsSource,
@@ -217,16 +217,19 @@ def get_package_dir(name: str) -> Path:
     return Path(spec.submodule_search_locations[0])
 
 
-class EnvironmentOnlySettings(BaseSettings):
-    """Settings from environment variables (and dotenv files)"""
+class Environments(BaseSettings):
+    """Settings from environment variables (and dotenv files), backward compatible with Open WebUI"""
+
+    model_config = SettingsConfigDict(secrets_dir=Path.cwd())
 
     data_dir: Path = get_package_dir("open_webui") / "data"
     frontend_build_dir: Path = get_package_dir("omni_webui") / "frontend"
     database_url: str = ""
     enable_admin_export: bool = True
     enable_admin_chat_access: bool = True
-
-    LD_LIBRARY_PATH: list[Path] = Field(default_factory=list)
+    webui_name: str = "Omni WebUI"
+    webui_secret_key: str = Field(default_factory=lambda: token_urlsafe(12))
+    webui_auth: bool = True
 
     @model_validator(mode="after")
     def setup_default_values(self) -> Self:
@@ -236,55 +239,12 @@ class EnvironmentOnlySettings(BaseSettings):
             self.database_url = f"sqlite+aiosqlite:///{self.data_dir / 'webui.db'}"
         return self
 
-    @field_validator("LD_LIBRARY_PATH")
-    def serialize_path_array(cls, v):
-        if isinstance(v, str):
-            return [Path(p) for p in v.split(":")]
-        return v
-
-    @field_serializer("LD_LIBRARY_PATH")
-    def serialize_cuda_libs(self, v):
-        return ":".join(str(p) for p in v)
-
-    @classmethod
-    def settings_customise_sources(
-        cls,
-        settings_cls: type[BaseSettings],
-        init_settings: PydanticBaseSettingsSource,
-        env_settings: PydanticBaseSettingsSource,
-        dotenv_settings: PydanticBaseSettingsSource,
-        file_secret_settings: PydanticBaseSettingsSource,
-    ) -> tuple[PydanticBaseSettingsSource, ...]:
-        return env_settings, dotenv_settings
-
-    def __hash__(self):
-        return hash(self.model_dump_json())
-
-
-class Settings(BaseSettings):
-    name: str = "Omni WebUI"
-    secret_key: str = Field(default_factory=lambda: token_urlsafe(12))
-    auth: bool = True
-    auth_trusted_email_header: str | None = None
-
-    model_config = SettingsConfigDict(env_prefix="webui_", secrets_dir=Path.cwd())
-
     @model_validator(mode="after")
     def save_secret_key(self):
-        secrets_dir = self.model_config.get("secrets_dir")
-        if (
-            secrets_dir
-            and not (
-                key_file := Path(
-                    secrets_dir
-                    if isinstance(secrets_dir, (str, Path))
-                    else secrets_dir[0]
-                )
-                / ".webui_secret_key"
-            ).exists()
-        ):
+        secrets_dir = cast(Path, self.model_config.get("secrets_dir"))
+        if (key_file := secrets_dir / ".webui_secret_key").exists():
             logger.info(f"Generating a new secret key and saving it to {key_file}")
-            key_file.write_text(self.secret_key)
+            key_file.write_text(self.webui_secret_key)
         return self
 
     @classmethod
@@ -301,12 +261,5 @@ class Settings(BaseSettings):
         )
         return init_settings, env_settings, dotenv_settings, file_secret_settings
 
-
-@lru_cache
-def get_env() -> EnvironmentOnlySettings:
-    return EnvironmentOnlySettings()
-
-
-@lru_cache
-def get_settings() -> Settings:
-    return Settings()
+    def __hash__(self):
+        return hash(self.model_dump_json())
