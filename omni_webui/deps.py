@@ -5,15 +5,16 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from .config import Environments
+from .config import Environments, Settings
 
 # https://github.com/pydantic/pydantic-settings/issues/183
 EnvDepends = Annotated[Environments, Depends(lambda: Environments())]
+SettingsDepends = Annotated[Settings, Depends(lambda: Settings())]
 
 
 @lru_cache
-def get_engine(env: EnvDepends) -> AsyncEngine:
-    return create_async_engine(env.database_url)
+def get_engine(settings: SettingsDepends) -> AsyncEngine:
+    return create_async_engine(settings.database_url)
 
 
 async def get_session(engine: Annotated[AsyncEngine, Depends(get_engine)]):

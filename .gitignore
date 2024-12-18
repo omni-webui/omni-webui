@@ -16,6 +16,7 @@ dist/
 
 # Open WebUI
 build/
+frontend/
 src/
 static/
 i18next-parser.config.ts
