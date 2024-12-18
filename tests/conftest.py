@@ -1,24 +1,16 @@
 import pytest
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from omni_webui.app import app
-from omni_webui.config import get_env
 from omni_webui.deps import get_session
 from omni_webui.models import File, User  # noqa: F401
+from omni_webui.routes import router
 
-
-@pytest.fixture(name="compatible_session", scope="module")
-async def compatible_session_fixture():
-    env = get_env()
-    engine = create_async_engine(f"sqlite+aiosqlite:///{env.data_dir / 'webui.db'}")
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
-    session = AsyncSession(engine)
-    yield session
-    await session.close()
+app = FastAPI()
+app.include_router(router)
 
 
 @pytest.fixture(name="session", scope="module")
@@ -31,7 +23,7 @@ async def session_fixture():
 
 
 @pytest.fixture(name="user_id", scope="module")
-async def user_fixture(session):
+async def user_fixture(session: AsyncSession):
     user_ = User(
         id="123",
         name="John Doe",

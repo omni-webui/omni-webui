@@ -45,12 +45,12 @@ dev = [
 [tool.pytest.ini_options]
 addopts = [
     "--cov=omni_webui",
-    "--cov-fail-under=80",
+    "--cov-fail-under=90",
 ]
 filterwarnings = "ignore:.*:DeprecationWarning\nignore:.*:PendingDeprecationWarning"
 
 [tool.coverage.run]
-omit = ["omni_webui/__main__.py"]
+omit = ["omni_webui/__main__.py", "omni_webui/app.py"]
 
 [tool.coverage.report]
 exclude_also = [

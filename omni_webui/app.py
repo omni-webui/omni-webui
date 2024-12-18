@@ -1,19 +1,16 @@
 import os
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
 from sqlmodel import SQLModel
 
 from . import __version__
-from ._logger import logger
-from .config import get_env, get_settings
+from .config import Environments
 from .deps import get_engine
 from .models import *  # noqa
 from .routes import router
 
-env = get_env()
-settings = get_settings()
+env = Environments()
 
 
 @asynccontextmanager
@@ -24,28 +21,13 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title=settings.name, version=__version__)
+app = FastAPI(title=env.webui_name, version=__version__)
 
 app.include_router(router)
 
-os.environ["FROM_INIT_PY"] = "true"
-
-if os.getenv("WEBUI_SECRET_KEY") is None:
-    os.environ["WEBUI_SECRET_KEY"] = settings.secret_key
-
-if os.getenv("USE_CUDA_DOCKER", "false") == "true":
-    logger.info(
-        "CUDA is enabled, appending LD_LIBRARY_PATH to include torch/cudnn & cublas libraries."
-    )
-    env.LD_LIBRARY_PATH.extend(
-        [
-            Path("/usr/local/lib/python3.11/site-packages/torch/lib"),
-            Path("/usr/local/lib/python3.11/site-packages/nvidia/cudnn/lib"),
-        ]
-    )
-    os.environ["LD_LIBRARY_PATH"] = env.model_dump()["LD_LIBRARY_PATH"]
-if env.frontend_build_dir.exists():
-    os.environ["FRONTEND_BUILD_DIR"] = str(env.frontend_build_dir)
+os.environ["WEBUI_SECRET_KEY"] = env.webui_secret_key
+os.environ["DATA_DIR"] = str(env.data_dir)
+os.environ["FRONTEND_BUILD_DIR"] = str(env.frontend_build_dir)
 
 from open_webui.main import app as open_webui_app  # noqa: E402
 

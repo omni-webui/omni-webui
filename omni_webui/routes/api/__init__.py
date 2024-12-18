@@ -2,9 +2,8 @@ from fastapi import APIRouter
 from sqlmodel import col, func, select
 
 from ... import __version__
-from ...config import get_env, get_settings
-from ...deps import SessionDepends
-from ...models.config import get_config
+from ...deps import EnvDepends, SessionDepends
+from ...models.config import ConfigDepends
 from ...models.user import User, UserDepends
 from .v1 import router as v1_router
 
@@ -15,16 +14,14 @@ router.include_router(v1_router, prefix="/v1")
 @router.get("/config")
 async def retrieve_config(
     *,
-    user: UserDepends,
+    env: EnvDepends,
     session: SessionDepends,
+    user: UserDepends,
+    config: ConfigDepends,
 ):
-    env = get_env()
-    webui = get_settings()
-    config = await get_config()
-
     response = {
         "status": True,
-        "name": webui.name,
+        "name": env.webui_name,
         "version": __version__,
         "default_locale": config.ui.default_locale,
         "oauth": {
@@ -34,8 +31,8 @@ async def retrieve_config(
             }
         },
         "features": {
-            "auth": webui.auth,
-            "auth_trusted_header": bool(webui.auth_trusted_email_header),
+            "auth": env.webui_auth,
+            "auth_trusted_header": False,
             "enable_ldap": config.ldap.enable,
             "enable_api_key": config.auth.api_key.enable,
             "enable_signup": config.ui.enable_signup,
