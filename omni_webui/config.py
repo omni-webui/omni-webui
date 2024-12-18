@@ -242,7 +242,7 @@ class Environments(BaseSettings):
     @model_validator(mode="after")
     def save_secret_key(self):
         secrets_dir = cast(Path, self.model_config.get("secrets_dir"))
-        if (key_file := secrets_dir / ".webui_secret_key").exists():
+        if not (key_file := secrets_dir / ".webui_secret_key").exists():
             logger.info(f"Generating a new secret key and saving it to {key_file}")
             key_file.write_text(self.webui_secret_key)
         return self
