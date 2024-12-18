@@ -1,9 +1,11 @@
 import importlib.util
+import warnings
 from functools import lru_cache
 from pathlib import Path
 from secrets import token_urlsafe
 from typing import Annotated, NotRequired, Self, TypedDict, cast
 
+from platformdirs import user_data_path
 from pydantic import Field, model_validator
 from pydantic_settings import (
     BaseSettings,
@@ -12,7 +14,7 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
-from ._compat import find_case_path
+from ._compat import find_case_path, save_secret_key
 from ._logger import logger
 from ._types import MutableBaseModel
 
@@ -217,12 +219,16 @@ def get_package_dir(name: str) -> Path:
     return Path(spec.submodule_search_locations[0])
 
 
+APP_NAME = "omni-webui"
+DATA_DIR = user_data_path(APP_NAME)
+
+
 class Environments(BaseSettings):
     """Settings from environment variables (and dotenv files), backward compatible with Open WebUI"""
 
     model_config = SettingsConfigDict(secrets_dir=Path.cwd())
 
-    data_dir: Path = get_package_dir("open_webui") / "data"
+    data_dir: Path = DATA_DIR
     frontend_build_dir: Path = get_package_dir("omni_webui") / "frontend"
     database_url: str = ""
     enable_admin_export: bool = True
@@ -236,7 +242,7 @@ class Environments(BaseSettings):
         if not self.data_dir.exists():
             self.data_dir.mkdir(parents=True)
         if not self.database_url:
-            self.database_url = f"sqlite+aiosqlite:///{self.data_dir / 'webui.db'}"
+            self.database_url = f"sqlite:///{self.data_dir / 'webui.db'}"
         return self
 
     @model_validator(mode="after")
@@ -260,6 +266,41 @@ class Environments(BaseSettings):
             find_case_path
         )
         return init_settings, env_settings, dotenv_settings, file_secret_settings
+
+    def __hash__(self):
+        return hash(self.model_dump_json())
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="OMNI_WEBUI_")
+
+    title: str = "Omni WebUI"
+    """Omni WebUI title."""
+
+    secret_key: str = Field(default_factory=lambda: token_urlsafe(12))
+    """Secret key for signing cookies and tokens."""
+
+    frontend_dir: Path = get_package_dir("omni_webui") / "frontend"
+    """Path to the frontend build directory."""
+
+    data_dir: str = str(DATA_DIR)
+    """Path to the data directory."""
+
+    database_url: str = ""
+    """Database URL."""
+
+    @model_validator(mode="after")
+    def setup_data_dir(self) -> Self:
+        if not self.database_url:
+            path = DATA_DIR if "s3:" in self.data_dir else Path(self.data_dir)
+            path.mkdir(parents=True, exist_ok=True)
+            self.database_url = f"sqlite+aiosqlite:///{path / 'webui.db'}"
+        if "s3:" in self.data_dir and self.database_url.startswith("sqlite"):
+            warnings.warn(
+                "Using SQLite database with S3 data directory is not recommended",
+            )
+        save_secret_key(self.secret_key)
+        return self
 
     def __hash__(self):
         return hash(self.model_dump_json())

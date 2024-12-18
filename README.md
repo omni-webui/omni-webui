@@ -15,6 +15,23 @@ OR
 pip install git+https://github.com/omni-webui/omni-webui.git
 ```
 
+## How to migrate from Open WebUI
+
+If you are using Open WebUI and want to migrate to Omni WebUI, there are two options:
+
+1. 
+```bash
+omni-webui migrate $DATA_DIR
+```
+
+2. Setting following environment variables properly (you can also set them in the `.env` file):
+
+```bash
+OMNI_WEBUI_DATA_DIR="./.venv/lib/python3.11/site-packages/open_webui/data"
+OMNI_WEBUI_SECRET_KEY=1_RgYAYvXVZ6XIHp
+OMNI_WEBUI_FRONTEND_DIR="./build"
+```
+
 ## Setup development environment
 
 ### Pre-requisites
