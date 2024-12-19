@@ -299,7 +299,7 @@ class Settings(BaseSettings):
             warnings.warn(
                 "Using SQLite database with S3 data directory is not recommended",
             )
-        save_secret_key(self.secret_key)
+        save_secret_key(self.secret_key, Path.cwd() / ".env")
         return self
 
     def __hash__(self):

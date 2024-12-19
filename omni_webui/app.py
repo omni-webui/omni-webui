@@ -26,8 +26,6 @@ app = FastAPI(title=settings.title, version=__version__)
 
 app.include_router(router)
 
-print(f"{env.webui_secret_key=}")
-print(f"{settings.secret_key=}")
 os.environ["WEBUI_SECRET_KEY"] = settings.secret_key
 os.environ["DATA_DIR"] = str(env.data_dir)
 os.environ["FRONTEND_BUILD_DIR"] = str(settings.frontend_dir)
