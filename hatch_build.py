@@ -40,7 +40,7 @@ def copy(src: str, dst: str):
 class DenoBuildHook(BuildHookInterface):
     def initialize(self, version, build_data):
         super().initialize(version, build_data)
-        print(">>> Building Omni Webui frontend\n", file=stderr)
+        print(">>> Building Omni Webui frontend\n", file=stderr)  # noqa: T201
 
         cache_dir = Path(
             subprocess.check_output([uv, "--color", "never", "cache", "dir"])
@@ -86,6 +86,6 @@ class DenoBuildHook(BuildHookInterface):
                 "`deno` is required for building Omni Webui but it was not found"
             )
         subprocess.run([deno, "install"], check=True)
-        print("deno task build", file=stderr)
+        print("deno task build", file=stderr)  # noqa: T201
         os.environ["APP_BUILD_HASH"] = version
         subprocess.run([deno, "task", "build"], check=True)
