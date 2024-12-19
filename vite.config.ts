@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { loadPyodide } from "pyodide";
-import { defineConfig } from "vite";
+import { defineConfig, normalizePath } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
 
 const PYODIDE_EXCLUDE = ["!**/*.{md,html}", "!**/*.d.ts", "!**/node_modules"];
@@ -38,7 +38,7 @@ export async function viteStaticCopyPyodide() {
 	return viteStaticCopy({
 		targets: [
 			{
-				src: [join(pyodideDir, "*")].concat(PYODIDE_EXCLUDE),
+				src: [normalizePath(join(pyodideDir, "*"))].concat(PYODIDE_EXCLUDE),
 				dest: "pyodide",
 			},
 		],
