@@ -1,14 +1,27 @@
 import importlib.util
 import warnings
-from functools import lru_cache
+from functools import cached_property, lru_cache
+from itertools import zip_longest
 from pathlib import Path
 from secrets import token_urlsafe
-from typing import Annotated, NotRequired, Self, TypedDict, cast
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    NotRequired,
+    Self,
+    TypedDict,
+    cast,
+)
 
+from ollama import AsyncClient
+from openai import AsyncOpenAI
 from platformdirs import user_data_path
-from pydantic import Field, model_validator
+from pydantic import Field, ValidationError, field_validator, model_validator
+from pydantic.fields import FieldInfo
 from pydantic_settings import (
     BaseSettings,
+    NoDecode,
     PydanticBaseSettingsSource,
     SecretsSettingsSource,
     SettingsConfigDict,
@@ -17,6 +30,16 @@ from pydantic_settings import (
 from ._compat import find_case_path, save_secret_key
 from ._logger import logger
 from ._types import MutableBaseModel
+
+PrepareFieldValue = Callable[
+    [
+        str,
+        FieldInfo,
+        Any,
+        bool,
+    ],
+    Any,
+]
 
 
 class Audio(MutableBaseModel):
@@ -45,17 +68,37 @@ class Audio(MutableBaseModel):
 
 class Auth(MutableBaseModel, BaseSettings):
     class APIKey(MutableBaseModel, BaseSettings):
-        enable: Annotated[bool, Field(alias="ENABLE_API_KEY")] = True
+        enable: Annotated[bool, Field(serialization_alias="ENABLE_API_KEY")] = True
 
     api_key: APIKey = Field(default_factory=APIKey)
 
 
+class ArenaModel(MutableBaseModel):
+    class Meta(MutableBaseModel):
+        profile_image_url: str = "/favicon.png"
+        description: str = "Submit your questions to anonymous AI chatbots and vote on the best response."
+
+    id: str = "arena-model"
+    name: str = "Arena Model"
+    meta: Meta = Field(default_factory=Meta)
+
+
+class Evaluation(MutableBaseModel):
+    class Arena(MutableBaseModel, BaseSettings):
+        enable: Annotated[
+            bool, Field(serialization_alias="ENABLE_EVALUATION_ARENA_MODELS")
+        ] = True
+        models: list[ArenaModel] = Field(default_factory=lambda: [ArenaModel()])
+
+    arena: Arena = Field(default_factory=Arena)
+
+
 class ImageGeneration(MutableBaseModel, BaseSettings):
-    enable: Annotated[bool, Field(alias="ENABLE_IMAGE_GENERATION")] = True
+    enable: Annotated[bool, Field(serialization_alias="ENABLE_IMAGE_GENERATION")] = True
 
 
 class LDAP(MutableBaseModel):
-    enable: Annotated[bool, Field(alias="ENABLE_LDAP")] = False
+    enable: Annotated[bool, Field(serialization_alias="ENABLE_LDAP")] = False
 
 
 class OAuthProvider(TypedDict):
@@ -87,18 +130,22 @@ class OAuth(MutableBaseModel):
         ] = ""
         provider_name: str = "SSO"
         username_claim: str = "name"
-        avatar_claim: Annotated[str, Field(alias="OAUTH_PICTURE_CLAIM")] = "picture"
+        avatar_claim: Annotated[
+            str, Field(serialization_alias="OAUTH_PICTURE_CLAIM")
+        ] = "picture"
         email_claim: str = "email"
         enable_role_mapping: Annotated[
-            bool, Field(alias="ENABLE_OAUTH_ROLE_MANAGEMENT")
+            bool, Field(serialization_alias="ENABLE_OAUTH_ROLE_MANAGEMENT")
         ] = False
         roles_claim: str = "roles"
         allowed_roles: list[str] = ["user", "admin"]
         admin_roles: list[str] = ["admin"]
 
-    enable_signup: Annotated[bool, Field(alias="ENABLE_OAUTH_SIGNUP")] = False
+    enable_signup: Annotated[bool, Field(serialization_alias="ENABLE_OAUTH_SIGNUP")] = (
+        False
+    )
     merge_accounts_by_email: Annotated[
-        bool, Field(alias="OAUTH_MERGE_ACCOUNTS_BY_EMAIL")
+        bool, Field(serialization_alias="OAUTH_MERGE_ACCOUNTS_BY_EMAIL")
     ] = False
     google: Google = Field(default_factory=Google)
     microsoft: Microsoft = Field(default_factory=Microsoft)
@@ -136,18 +183,93 @@ class OAuth(MutableBaseModel):
         return providers
 
 
+class ClientConfig(MutableBaseModel):
+    enable: bool = True
+    prefix_id: str | None = None
+
+
+class Ollama(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="OLLAMA_")
+
+    enable: Annotated[bool, Field(serialization_alias="ENABLE_OLLAMA_API")] = True
+    base_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    api_configs: dict[str, ClientConfig] = Field(default_factory=dict)
+
+    @field_validator("base_urls", mode="before")
+    @classmethod
+    def decode_numbers(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            return v.split(";")
+        if isinstance(v, list) and all(isinstance(i, str) for i in v):
+            return v
+        raise ValidationError("Invalid value")
+
+    def model_post_init(self, __context):
+        self.base_urls = [base_url for base_url in self.base_urls if base_url]
+        if not self.base_urls:
+            self.base_urls = ["http://127.0.0.1:11434"]
+
+    @cached_property
+    def clients(self) -> list[AsyncClient]:
+        return [AsyncClient(host=base_url) for base_url in self.base_urls]
+
+
+OPENAI_BASE_URL = "https://api.openai.com/v1"
+
+
+class OpenAI(MutableBaseModel, BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="OPENAI_")
+    enable: Annotated[bool, Field(serialization_alias="ENABLE_OPENAI_API")] = True
+    api_keys: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    api_base_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    api_configs: dict[str, ClientConfig] = Field(default_factory=dict)
+
+    @field_validator("api_keys", "api_base_urls", mode="before")
+    @classmethod
+    def decode_numbers(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            return v.split(";")
+        if isinstance(v, list) and all(isinstance(i, str) for i in v):
+            return v
+        raise ValidationError("Invalid value")
+
+    @cached_property
+    def clients(self) -> list[AsyncOpenAI]:
+        return [
+            AsyncOpenAI(
+                api_key=api_key,
+                base_url=base_url,
+            )
+            for api_key, base_url in zip_longest(
+                self.api_keys,
+                self.api_base_urls,
+                fillvalue=""
+                if len(self.api_keys) < len(self.api_base_urls)
+                else OPENAI_BASE_URL,
+            )
+            if (api_config := self.api_configs.get(base_url)) is None
+            or api_config.enable
+        ]
+
+
 class RAG(MutableBaseModel):
     class Web(MutableBaseModel):
         class Search(MutableBaseModel, BaseSettings):
-            enable: Annotated[bool, Field(alias="ENABLE_RAG_WEB_SEARCH")] = True
+            enable: Annotated[
+                bool, Field(serialization_alias="ENABLE_RAG_WEB_SEARCH")
+            ] = True
 
         search: Search = Field(default_factory=Search)
 
     web: Web = Field(default_factory=Web)
 
     class File(MutableBaseModel, BaseSettings):
-        max_count: Annotated[int | None, Field(alias="RAG_FILE_MAX_COUNT")] = None
-        max_size: Annotated[float | None, Field(alias="RAG_FILE_MAX_SIZE")] = None
+        max_count: Annotated[
+            int | None, Field(serialization_alias="RAG_FILE_MAX_COUNT")
+        ] = None
+        max_size: Annotated[
+            float | None, Field(serialization_alias="RAG_FILE_MAX_SIZE")
+        ] = None
         """Max file size in MB"""
 
     file: File = Field(default_factory=File)
@@ -171,16 +293,22 @@ class User(MutableBaseModel):
     class Permissions(MutableBaseModel):
         class Workspace(MutableBaseModel, BaseSettings):
             models: Annotated[
-                bool, Field(alias="USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS")
+                bool,
+                Field(serialization_alias="USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS"),
             ] = True
             knowledge: Annotated[
-                bool, Field(alias="USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS")
+                bool,
+                Field(
+                    serialization_alias="USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS"
+                ),
             ] = True
             prompts: Annotated[
-                bool, Field(alias="USER_PERMISSIONS_WORKSPACE_PROMPTS_ACCESS")
+                bool,
+                Field(serialization_alias="USER_PERMISSIONS_WORKSPACE_PROMPTS_ACCESS"),
             ] = True
             tools: Annotated[
-                bool, Field(alias="USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS")
+                bool,
+                Field(serialization_alias="USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS"),
             ] = True
 
         workspace: Workspace = Field(default_factory=Workspace)
@@ -197,13 +325,18 @@ class User(MutableBaseModel):
     permissions: Permissions = Field(default_factory=Permissions)
 
 
-class Config(MutableBaseModel, extra="allow"):
+class Config(MutableBaseModel):
+    model_config = SettingsConfigDict(nested_model_default_partial_update=True)
+
     version: int = 0
     audio: Audio = Field(default_factory=Audio)
     auth: Auth = Field(default_factory=Auth)
+    evaluation: Evaluation = Field(default_factory=Evaluation)
     image_generation: ImageGeneration = Field(default_factory=ImageGeneration)
     ldap: LDAP = Field(default_factory=LDAP)
     oauth: OAuth = Field(default_factory=OAuth)
+    ollama: Ollama = Field(default_factory=Ollama)
+    openai: OpenAI = Field(default_factory=OpenAI)
     rag: RAG = Field(default_factory=RAG)
     ui: UI = Field(default_factory=UI)
     user: User = Field(default_factory=User)

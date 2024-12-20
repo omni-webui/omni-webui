@@ -5,10 +5,13 @@ from ... import __version__
 from ...deps import EnvDepends, SessionDepends
 from ...models.config import ConfigDepends
 from ...models.user import User, UserDepends
+from .models import list_models
 from .v1 import router as v1_router
 
 router = APIRouter()
 router.include_router(v1_router, prefix="/v1")
+
+router.get("/models")(list_models)
 
 
 @router.get("/config")
