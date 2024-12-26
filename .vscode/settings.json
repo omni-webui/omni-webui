@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./omni_webui/models"
+    ]
+}

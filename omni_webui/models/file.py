@@ -18,3 +18,5 @@ class File(SQLModel, table=True):
     updated_at: int = Field(default_factory=now_timestamp)
 
     user: User = Relationship(back_populates="files")
+
+
