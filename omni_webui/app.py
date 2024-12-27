@@ -1,7 +1,10 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from openai import OpenAIError
 from sqlmodel import SQLModel
 
 from . import __version__
@@ -24,7 +27,30 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=settings.title, version=__version__)
 
+origins = [
+    "http://localhost",
+    "http://localhost:8080",
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 app.include_router(router)
+
+
+@app.exception_handler(OpenAIError)
+async def unicorn_exception_handler(request: Request, exc: OpenAIError):
+    return JSONResponse(
+        status_code=200,
+        content={"detail": str(exc)},
+    )
+
 
 os.environ["WEBUI_SECRET_KEY"] = settings.secret_key
 os.environ["DATA_DIR"] = str(env.data_dir)

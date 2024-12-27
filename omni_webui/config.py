@@ -7,74 +7,78 @@ from secrets import token_urlsafe
 from typing import (
     Annotated,
     Any,
-    Callable,
     NotRequired,
     Self,
+    Sequence,
     TypedDict,
     cast,
+    get_args,
+    get_type_hints,
 )
 
+from mcp import StdioServerParameters
 from ollama import AsyncClient
 from openai import AsyncOpenAI
-from platformdirs import user_data_path
-from pydantic import Field, ValidationError, field_validator, model_validator
-from pydantic.fields import FieldInfo
+from openai.types.audio import SpeechCreateParams, SpeechModel
+from platformdirs import PlatformDirs
+from pydantic import (
+    AliasChoices,
+    Field,
+    ValidationError,
+    field_serializer,
+    field_validator,
+    model_validator,
+)
 from pydantic_settings import (
-    BaseSettings,
+    BaseSettings as _BaseSettings,
+)
+from pydantic_settings import (
+    JsonConfigSettingsSource,
     NoDecode,
     PydanticBaseSettingsSource,
     SecretsSettingsSource,
-    SettingsConfigDict,
 )
+from typing_extensions import deprecated
 
 from ._compat import find_case_path, save_secret_key
 from ._logger import logger
-from ._types import MutableBaseModel
-
-PrepareFieldValue = Callable[
-    [
-        str,
-        FieldInfo,
-        Any,
-        bool,
-    ],
-    Any,
-]
+from ._types import MutableBaseModel as BaseModel
 
 
-class Audio(MutableBaseModel):
-    class TTS(MutableBaseModel, BaseSettings):
-        model_config = SettingsConfigDict(env_prefix="AUDIO_TTS_")
+class BaseSettings(BaseModel, _BaseSettings): ...
 
-        class Azure(MutableBaseModel, BaseSettings):
-            model_config = SettingsConfigDict(env_prefix="AUDIO_TTS_AZURE_")
+
+class Audio(BaseModel):
+    class TTS(BaseSettings, env_prefix="AUDIO_TTS_"):
+        class Azure(BaseSettings, env_prefix="AUDIO_TTS_AZURE_"):
             speech_region: str = "eastus"  # East US
             speech_output_format: str = "audio-24khz-160kbitrate-mono-mp3"
 
         azure: Azure = Field(default_factory=Azure)
         engine: str = ""
-        model: str = "tts-1"  # OpenAI default model
-        voice: str = "alloy"  # OpenAI default voice
+        model: str = get_args(SpeechModel)[0]
+        voice: str = get_args(get_type_hints(SpeechCreateParams)["voice"])[0]
         split_on: str = "punctuation"
 
     tts: TTS = Field(default_factory=TTS)
 
-    class STT(MutableBaseModel, BaseSettings):
-        model_config = SettingsConfigDict(env_prefix="AUDIO_STT")
+    class STT(BaseSettings, env_prefix="AUDIO_STT_"):
         engine: str = ""
 
     stt: STT = Field(default_factory=STT)
 
 
-class Auth(MutableBaseModel, BaseSettings):
-    class APIKey(MutableBaseModel, BaseSettings):
-        enable: Annotated[bool, Field(serialization_alias="ENABLE_API_KEY")] = True
+class Auth(BaseSettings):
+    class APIKey(BaseSettings):
+        enable: Annotated[
+            bool, Field(validation_alias=AliasChoices("ENABLE_API_KEY", "enable"))
+        ] = True
 
     api_key: APIKey = Field(default_factory=APIKey)
 
 
-class ArenaModel(MutableBaseModel):
-    class Meta(MutableBaseModel):
+class ArenaModel(BaseModel):
+    class Meta(BaseModel):
         profile_image_url: str = "/favicon.png"
         description: str = "Submit your questions to anonymous AI chatbots and vote on the best response."
 
@@ -83,22 +87,31 @@ class ArenaModel(MutableBaseModel):
     meta: Meta = Field(default_factory=Meta)
 
 
-class Evaluation(MutableBaseModel):
-    class Arena(MutableBaseModel, BaseSettings):
+class Evaluation(BaseModel):
+    class Arena(BaseSettings):
         enable: Annotated[
-            bool, Field(serialization_alias="ENABLE_EVALUATION_ARENA_MODELS")
+            bool,
+            Field(
+                validation_alias=AliasChoices(
+                    "ENABLE_EVALUATION_ARENA_MODELS", "enable"
+                )
+            ),
         ] = True
         models: list[ArenaModel] = Field(default_factory=lambda: [ArenaModel()])
 
     arena: Arena = Field(default_factory=Arena)
 
 
-class ImageGeneration(MutableBaseModel, BaseSettings):
-    enable: Annotated[bool, Field(serialization_alias="ENABLE_IMAGE_GENERATION")] = True
+class ImageGeneration(BaseSettings):
+    enable: Annotated[
+        bool, Field(validation_alias=AliasChoices("ENABLE_IMAGE_GENERATION", "enable"))
+    ] = True
 
 
-class LDAP(MutableBaseModel):
-    enable: Annotated[bool, Field(serialization_alias="ENABLE_LDAP")] = False
+class LDAP(BaseModel):
+    enable: Annotated[
+        bool, Field(validation_alias=AliasChoices("ENABLE_LDAP", "enable"))
+    ] = False
 
 
 class OAuthProvider(TypedDict):
@@ -109,43 +122,52 @@ class OAuthProvider(TypedDict):
     name: NotRequired[str]
 
 
-class OAuth(MutableBaseModel):
-    class Provider(MutableBaseModel, BaseSettings):
+class OAuth(BaseModel):
+    class Provider(BaseSettings):
         client_id: str = ""
         client_secret: str = ""
         scope: str = "openid email profile"
         redirect_uri: str = ""
 
-    class Google(Provider):
-        model_config = SettingsConfigDict(env_prefix="GOOGLE_")
+    class Google(Provider, env_prefix="GOOGLE_"): ...
 
-    class Microsoft(Provider):
-        model_config = SettingsConfigDict(env_prefix="MICROSOFT_")
+    class Microsoft(Provider, env_prefix="MICROSOFT_"):
         tenant_id: str = ""
 
-    class OIDC(Provider):
-        model_config = SettingsConfigDict(env_prefix="OAUTH_")
+    class OIDC(Provider, env_prefix="OAUTH_"):
         provider_url: Annotated[
             str, Field(serialization_alias="server_metadata_url")
         ] = ""
         provider_name: str = "SSO"
         username_claim: str = "name"
         avatar_claim: Annotated[
-            str, Field(serialization_alias="OAUTH_PICTURE_CLAIM")
+            str,
+            Field(validation_alias=AliasChoices("OAUTH_PICTURE_CLAIM", "avatar_claim")),
         ] = "picture"
         email_claim: str = "email"
         enable_role_mapping: Annotated[
-            bool, Field(serialization_alias="ENABLE_OAUTH_ROLE_MANAGEMENT")
+            bool,
+            Field(
+                validation_alias=AliasChoices(
+                    "ENABLE_OAUTH_ROLE_MANAGEMENT", "enable_role_mapping"
+                )
+            ),
         ] = False
         roles_claim: str = "roles"
         allowed_roles: list[str] = ["user", "admin"]
         admin_roles: list[str] = ["admin"]
 
-    enable_signup: Annotated[bool, Field(serialization_alias="ENABLE_OAUTH_SIGNUP")] = (
-        False
-    )
+    enable_signup: Annotated[
+        bool,
+        Field(validation_alias=AliasChoices("ENABLE_OAUTH_SIGNUP", "enable_signup")),
+    ] = False
     merge_accounts_by_email: Annotated[
-        bool, Field(serialization_alias="OAUTH_MERGE_ACCOUNTS_BY_EMAIL")
+        bool,
+        Field(
+            validation_alias=AliasChoices(
+                "OAUTH_MERGE_ACCOUNTS_BY_EMAIL", "merge_accounts_by_email"
+            )
+        ),
     ] = False
     google: Google = Field(default_factory=Google)
     microsoft: Microsoft = Field(default_factory=Microsoft)
@@ -183,15 +205,15 @@ class OAuth(MutableBaseModel):
         return providers
 
 
-class ClientConfig(MutableBaseModel):
+class ClientConfig(BaseModel):
     enable: bool = True
     prefix_id: str | None = None
 
 
-class Ollama(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="OLLAMA_")
-
-    enable: Annotated[bool, Field(serialization_alias="ENABLE_OLLAMA_API")] = True
+class Ollama(BaseSettings, env_prefix="OLLAMA_"):
+    enable: Annotated[
+        bool, Field(validation_alias=AliasChoices("ENABLE_OLLAMA_API", "enable"))
+    ] = True
     base_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
     api_configs: dict[str, ClientConfig] = Field(default_factory=dict)
 
@@ -217,9 +239,10 @@ class Ollama(BaseSettings):
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 
 
-class OpenAI(MutableBaseModel, BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="OPENAI_")
-    enable: Annotated[bool, Field(serialization_alias="ENABLE_OPENAI_API")] = True
+class OpenAI(BaseSettings, env_prefix="OPENAI_"):
+    enable: Annotated[
+        bool, Field(validation_alias=AliasChoices("ENABLE_OPENAI_API", "enable"))
+    ] = True
     api_keys: Annotated[list[str], NoDecode] = Field(default_factory=list)
     api_base_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
     api_configs: dict[str, ClientConfig] = Field(default_factory=dict)
@@ -252,31 +275,28 @@ class OpenAI(MutableBaseModel, BaseSettings):
         ]
 
 
-class RAG(MutableBaseModel):
-    class Web(MutableBaseModel):
-        class Search(MutableBaseModel, BaseSettings):
+class RAG(BaseModel):
+    class Web(BaseModel):
+        class Search(BaseSettings):
             enable: Annotated[
-                bool, Field(serialization_alias="ENABLE_RAG_WEB_SEARCH")
+                bool,
+                Field(validation_alias=AliasChoices("ENABLE_RAG_WEB_SEARCH", "enable")),
             ] = True
 
         search: Search = Field(default_factory=Search)
 
     web: Web = Field(default_factory=Web)
 
-    class File(MutableBaseModel, BaseSettings):
-        max_count: Annotated[
-            int | None, Field(serialization_alias="RAG_FILE_MAX_COUNT")
-        ] = None
-        max_size: Annotated[
-            float | None, Field(serialization_alias="RAG_FILE_MAX_SIZE")
-        ] = None
+    class File(BaseSettings, env_prefix="RAG_FILE_"):
+        max_count: int | None = None
+        max_size: float | None = None
         """Max file size in MB"""
 
     file: File = Field(default_factory=File)
 
 
-class UI(MutableBaseModel, BaseSettings):
-    class PromptSuggestion(MutableBaseModel):
+class UI(BaseSettings):
+    class PromptSuggestion(BaseModel):
         title: tuple[str, str]
         content: str
 
@@ -289,32 +309,45 @@ class UI(MutableBaseModel, BaseSettings):
     enable_message_rating: bool = True
 
 
-class User(MutableBaseModel):
-    class Permissions(MutableBaseModel):
-        class Workspace(MutableBaseModel, BaseSettings):
+class User(BaseModel):
+    class Permissions(BaseModel):
+        class Workspace(BaseSettings):
             models: Annotated[
                 bool,
-                Field(serialization_alias="USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS"),
+                Field(
+                    validation_alias=AliasChoices(
+                        "USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS", "models"
+                    )
+                ),
             ] = True
             knowledge: Annotated[
                 bool,
                 Field(
-                    serialization_alias="USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS"
+                    validation_alias=AliasChoices(
+                        "USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS", "knowledge"
+                    )
                 ),
             ] = True
             prompts: Annotated[
                 bool,
-                Field(serialization_alias="USER_PERMISSIONS_WORKSPACE_PROMPTS_ACCESS"),
+                Field(
+                    validation_alias=AliasChoices(
+                        "USER_PERMISSIONS_WORKSPACE_PROMPTS_ACCESS", "prompts"
+                    )
+                ),
             ] = True
             tools: Annotated[
                 bool,
-                Field(serialization_alias="USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS"),
+                Field(
+                    validation_alias=AliasChoices(
+                        "USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS", "tools"
+                    )
+                ),
             ] = True
 
         workspace: Workspace = Field(default_factory=Workspace)
 
-        class Chat(MutableBaseModel, BaseSettings):
-            model_config = SettingsConfigDict(env_prefix="USER_PERMISSIONS_CHAT_")
+        class Chat(BaseSettings, env_prefix="USER_PERMISSIONS_CHAT_"):
             file_upload: bool = True
             delete: bool = True
             edit: bool = True
@@ -325,9 +358,8 @@ class User(MutableBaseModel):
     permissions: Permissions = Field(default_factory=Permissions)
 
 
-class Config(MutableBaseModel):
-    model_config = SettingsConfigDict(nested_model_default_partial_update=True)
-
+@deprecated("Backward compatibility with Open WebUI, will be removed >= 1.0")
+class Config(BaseModel, nested_model_default_partial_update=True):
     version: int = 0
     audio: Audio = Field(default_factory=Audio)
     auth: Auth = Field(default_factory=Auth)
@@ -353,15 +385,14 @@ def get_package_dir(name: str) -> Path:
 
 
 APP_NAME = "omni-webui"
-DATA_DIR = user_data_path(APP_NAME)
+D = PlatformDirs(appname=APP_NAME)
 
 
-class Environments(BaseSettings):
+@deprecated("Backward compatibility with Open WebUI, will be removed >= 1.0")
+class Environments(BaseSettings, secrets_dir=Path.cwd()):
     """Settings from environment variables (and dotenv files), backward compatible with Open WebUI"""
 
-    model_config = SettingsConfigDict(secrets_dir=Path.cwd())
-
-    data_dir: Path = DATA_DIR
+    data_dir: Path = D.user_data_path
     frontend_build_dir: Path = get_package_dir("omni_webui") / "frontend"
     database_url: str = ""
     enable_admin_export: bool = True
@@ -389,7 +420,7 @@ class Environments(BaseSettings):
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: type[BaseSettings],
+        settings_cls: type[_BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
@@ -404,9 +435,11 @@ class Environments(BaseSettings):
         return hash(self.model_dump_json())
 
 
-class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="OMNI_WEBUI_")
-
+class Settings(
+    BaseSettings,
+    env_prefix="OMNI_WEBUI_",
+    json_file=D.user_config_path / "omni-webui.json",
+):
     title: str = "Omni WebUI"
     """Omni WebUI title."""
 
@@ -416,16 +449,17 @@ class Settings(BaseSettings):
     frontend_dir: Path = get_package_dir("omni_webui") / "frontend"
     """Path to the frontend build directory."""
 
-    data_dir: str = str(DATA_DIR)
+    data_dir: str = D.user_data_dir
     """Path to the data directory."""
 
     database_url: str = ""
     """Database URL."""
 
-    @model_validator(mode="after")
-    def setup_data_dir(self) -> Self:
+    mcpServers: dict[str, StdioServerParameters] = Field(default_factory=dict)
+
+    def model_post_init(self, __context):
         if not self.database_url:
-            path = DATA_DIR if "s3:" in self.data_dir else Path(self.data_dir)
+            path = D.user_data_path if "s3:" in self.data_dir else Path(self.data_dir)
             path.mkdir(parents=True, exist_ok=True)
             self.database_url = f"sqlite+aiosqlite:///{path / 'webui.db'}"
         if "s3:" in self.data_dir and self.database_url.startswith("sqlite"):
@@ -433,7 +467,40 @@ class Settings(BaseSettings):
                 "Using SQLite database with S3 data directory is not recommended",
             )
         save_secret_key(self.secret_key, Path.cwd() / ".env")
-        return self
+
+    @field_serializer("frontend_dir")
+    @classmethod
+    def serialize_path(cls, path: Path) -> str:
+        return str(path.resolve())
 
     def __hash__(self):
         return hash(self.model_dump_json())
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: type[_BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
+        return (
+            init_settings,
+            env_settings,
+            dotenv_settings,
+            file_secret_settings,
+            JsonConfigSettingsSource(settings_cls),
+        )
+
+    def save(self):
+        if (json_file := self.model_config.get("json_file")) is not None:
+            if isinstance(json_file, Sequence):
+                json_file = json_file[0]
+            Path(json_file).write_text(
+                self.model_dump_json(
+                    indent=4,
+                    exclude_defaults=True,
+                    exclude_unset=True,
+                )
+            )

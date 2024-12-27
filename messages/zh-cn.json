@@ -1,0 +1,16 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"back": "返回",
+	"save": "保存",
+	"users": "用户",
+	"adminPanel": "管理员面板",
+	"arenaEvaluations": "竞技场评估",
+	"settings": "设置",
+	"warning": "警告",
+	"mcpServers": "MCP 服务器",
+	"mcpServerDeleted": "MCP 服务器 {name} 已删除",
+	"mcpNotes": "请仔细阅读以下警告",
+	"mcpWarning": "MCP 服务器允许任意代码执行，请勿添加任何不信任来源的服务器。",
+	"mcpWarningConfirm": "我确认我已阅读并理解我的操作的影响。我知道执行任意代码的风险，并已验证来源的可信度。",
+	"poweredByMCP": "MCP 提供技术支持"
+}

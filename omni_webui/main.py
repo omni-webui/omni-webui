@@ -8,7 +8,7 @@ import uvicorn
 
 from omni_webui import __version__
 from omni_webui._compat import save_secret_key
-from omni_webui.config import DATA_DIR
+from omni_webui.config import D
 
 if TYPE_CHECKING:
     from s3fs import S3FileSystem
@@ -39,7 +39,7 @@ def version():
 @cli.command()
 def migrate(
     data_dir: Annotated[Path, typer.Argument(exists=True)],
-    dest_dir: Path = DATA_DIR,
+    dest_dir: Path = D.user_data_path,
     secret_key: str = "",
     dotenv: Path | None = None,
     s3_bucket: str = "",

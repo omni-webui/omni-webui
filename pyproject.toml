@@ -20,6 +20,7 @@ dependencies = [
     "pydantic-settings>=2.7.0",
     "sqlalchemy[asyncio]>=2",
     "sqlmodel>=0.0.22",
+    "swarmx>=0.2.0",
     "typer>=0.15.1",
     "uvicorn>=0.30.6",
 ]

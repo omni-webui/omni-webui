@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { paraglide } from "@inlang/paraglide-js-adapter-sveltekit/vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { loadPyodide } from "pyodide";
 import { defineConfig, normalizePath } from "vite";
@@ -48,7 +49,14 @@ export async function viteStaticCopyPyodide() {
 // https://vite.dev/config/
 export default defineConfig({
 	optimizeDeps: { exclude: ["pyodide"] },
-	plugins: [sveltekit(), viteStaticCopyPyodide()],
+	plugins: [
+		paraglide({
+			project: "./project.inlang", //Path to your inlang project
+			outdir: "./src/lib/paraglide", //Where you want the generated files to be placed
+		}),
+		sveltekit(),
+		viteStaticCopyPyodide(),
+	],
 	define: {
 		APP_VERSION: JSON.stringify(process.env.npm_package_version),
 		APP_BUILD_HASH: JSON.stringify(process.env.APP_BUILD_HASH || "dev-build"),

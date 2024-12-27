@@ -1,0 +1,16 @@
+{
+	"$schema": "https://inlang.com/schema/inlang-message-format",
+	"back": "Back",
+	"save": "Save",
+	"users": "Users",
+	"arenaEvaluations": "Evaluations",
+	"adminPanel": "Admin Panel",
+	"settings": "Settings",
+	"warning": "Warning",
+	"mcpServers": "MCP Servers",
+	"mcpServerDeleted": "MCP Server {name} deleted",
+	"mcpNotes": "Please carefully review the following warnings",
+	"mcpWarning": "MCP server allow arbitrary code execution, don't add any server from sources you don't trust.",
+	"mcpWarningConfirm": "I acknowledge that I have read and I understand the implications of my action. I am aware of the risks associated with executing arbitrary code and I have verified the trustworthiness of the source.",
+	"poweredByMCP": "Powered by MCP"
+}

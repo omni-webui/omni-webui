@@ -27,7 +27,7 @@ OLLAMA_EMBEDDING_MODELS = (
 
 def prefix(api_config: ClientConfig | None) -> str:
     prefix = None if api_config is None else api_config.prefix_id
-    return "" if prefix is None else f"{prefix}."
+    return f"{prefix}." if prefix else ""
 
 
 @cached(ttl=3)
