@@ -2,7 +2,8 @@ from typing import cast
 
 from aiocache import cached
 from httpx import AsyncClient
-from ollama._types import ListResponse
+from ollama._types import ListResponse, RequestError
+from openai import OpenAIError
 from openai.pagination import AsyncPage
 from openai.types.model import Model
 
@@ -36,6 +37,10 @@ async def list_models(config: ConfigDepends, user: UserDepends) -> AsyncPage[Mod
     if config.openai.enable:
         for client in config.openai.clients:
             api_config = config.openai.api_configs.get(str(client.base_url))
+            try:
+                models = await client.models.list()
+            except OpenAIError:
+                pass
             async for model in await client.models.list():
                 model.name = model.id  # type: ignore
                 model.id = f"{prefix(api_config)}{model.id}"
@@ -45,7 +50,10 @@ async def list_models(config: ConfigDepends, user: UserDepends) -> AsyncPage[Mod
     ollama_models: list[Model] = []
     if config.ollama.enable:
         for client in config.ollama.clients:
-            models = (await client.list())["models"]
+            try:
+                models = (await client.list()).models
+            except RequestError:
+                continue
             api_config = config.ollama.api_configs.get(
                 str(cast(AsyncClient, client._client)._base_url)
             )

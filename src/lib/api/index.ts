@@ -1,8 +1,8 @@
-import { dev } from "$app/environment";
+import { browser, dev } from "$app/environment";
 import createClient, { type Middleware } from "openapi-fetch";
 import type { paths } from "./v1";
 
-const apiKey = localStorage.getItem("api-key");
+const apiKey = browser ? localStorage.getItem("api-key") : "";
 const UNPROTECTED_ROUTES = ["/api/v1/auth/signin", "/api/v1/auth/signup"];
 const authMiddleware: Middleware = {
 	onRequest({ schemaPath, request }) {

@@ -117,9 +117,16 @@ async def get_user(
 UserDepends = Annotated[User | None, Depends(get_user)]
 
 
-def get_admin_user(user: UserDepends):
+async def get_current_user(user: UserDepends):
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
+    return user
+
+
+CurrentUserDepends = Annotated[User, Depends(get_current_user)]
+
+
+def get_admin_user(user: CurrentUserDepends):
     if user.role != "admin":
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,

@@ -1,8 +1,6 @@
-from datetime import UTC, datetime
-from dataclasses import field, dataclass
-
+import hashlib
 import secrets
-
+from datetime import UTC, datetime
 
 
 def now():
@@ -12,14 +10,15 @@ def now():
 def now_timestamp() -> int:
     return int(now().timestamp())
 
+
 RANDOM_STRING_CHARS = "abcdefghijkimnopgrstuvwxyZABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-def get_random_string(length, allowed_chars=RANDOM_STRING_CHARS):
 
+def get_random_string(length, allowed_chars=RANDOM_STRING_CHARS):
     return "".join(secrets.choice(allowed_chars) for i in range(length))
 
 
-@dataclass
-class RandomString:
-
-    unique_id: str = field(default_factory=lambda: f"user_{get_random_string(24)}")
+def sha256sum(bytes_: bytes) -> str:
+    sha256 = hashlib.sha256()
+    sha256.update(bytes_)
+    return sha256.hexdigest()

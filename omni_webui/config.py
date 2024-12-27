@@ -504,3 +504,9 @@ class Settings(
                     exclude_unset=True,
                 )
             )
+
+    @property
+    def upload_dir(self) -> str:
+        if "s3:" in self.data_dir:
+            return self.data_dir + "/uploads"
+        return str(Path(self.data_dir) / "uploads")
