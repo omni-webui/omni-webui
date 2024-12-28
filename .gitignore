@@ -35,6 +35,12 @@ frontend/
 !/src/lib/api
 /src/lib/api/v1.d.ts
 
+!/src/lib/components
+/src/lib/components/*
+!/src/lib/components/chat
+/src/lib/components/chat/*
+!/src/lib/components/chat/Chat.svelte
+
 /static/*
 i18next-parser.config.ts
 postcss.config.js
