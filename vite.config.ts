@@ -6,6 +6,7 @@ import { sveltekit } from "@sveltejs/kit/vite";
 import { loadPyodide } from "pyodide";
 import { defineConfig, normalizePath } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
+import ClosePlugin from "./vite-plugin-close";
 
 const PYODIDE_EXCLUDE = ["!**/*.{md,html}", "!**/*.d.ts", "!**/node_modules"];
 const packages = [
@@ -56,6 +57,7 @@ export default defineConfig({
 		}),
 		sveltekit(),
 		viteStaticCopyPyodide(),
+		ClosePlugin(), // ridiculous bug, solution from https://stackoverflow.com/a/76920975/5434822
 	],
 	define: {
 		APP_VERSION: JSON.stringify(process.env.npm_package_version),
