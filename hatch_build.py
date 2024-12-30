@@ -28,7 +28,7 @@ def is_ignored(path: str) -> bool:
         for rule in (Path(__file__).parent / ".gitignore").read_text().splitlines()
         if rule.strip() and rule.startswith("!/src")
     ]
-    rpath = Path(path).relative_to(Path.cwd())
+    rpath = str(Path(path).relative_to(Path.cwd()))
     return rpath not in rules
 
 
@@ -47,7 +47,7 @@ class DenoBuildHook(BuildHookInterface):
             .decode()
             .strip()
         )
-        webui_dir = cache_dir.joinpath("git-v0/checkouts/d6dc8c520e52253d/29a271959")
+        webui_dir = cache_dir.joinpath("git-v0/checkouts/d6dc8c520e52253d/e42cbf07f")
         if not webui_dir.exists():
             # TODO: currently solution is so dirty, need to find a better way to clone the repo
             subprocess.run(
@@ -57,7 +57,7 @@ class DenoBuildHook(BuildHookInterface):
                     "--depth",
                     "1",
                     "--branch",
-                    "v0.4.8",
+                    "v0.5.2",
                     "https://github.com/open-webui/open-webui",
                     webui_dir,
                 ],

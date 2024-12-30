@@ -3,26 +3,35 @@ name = "omni-webui"
 dynamic = ["version"]
 description = "An open-source web interface for LLM Chatbot."
 readme = "README.md"
-requires-python = ">=3.11, <3.12.0a1"
+requires-python = ">=3.11, <3.13.0a1"
 dependencies = [
     "aiocache>=0.12.3",
     "aiosqlite>=0.20.0",
     "anyio[trio]>=4.7.0",
     "asyncpg>=0.30.0",
     "fastapi>=0.111.0",
-    "fsspec[s3]>=2024.10.0",
-    "jinja2>=3.1.4",
+    "fsspec[s3]>=2024.12.0",
+    "jinja2>=3.1.5",
     "mcp>=1.1.2",
-    "ollama>=0.4.4",
+    "ollama>=0.4.5",
     "open-webui",
     "platformdirs>=4.3.6",
-    "pydantic>=2.9",
+    "pydantic>=2.9.2",
     "pydantic-settings>=2.7.0",
-    "sqlalchemy[asyncio]>=2",
+    "sqlalchemy[asyncio]>=2.0.32",
     "sqlmodel>=0.0.22",
-    "swarmx>=0.2.0",
+    "swarmx>=0.4.1",
     "typer>=0.15.1",
-    "uvicorn>=0.30.6",
+    "uvicorn[standard]>=0.30.6",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Communications :: Chat",
+    "Topic :: Multimedia",
 ]
 
 [project.scripts]
@@ -68,7 +77,7 @@ exclude_also = [
 ]
 
 [tool.uv.sources]
-open-webui = { git = "https://github.com/open-webui/open-webui", tag = "v0.4.8" }
+open-webui = { git = "https://github.com/open-webui/open-webui", tag = "v0.5.2" }
 
 [tool.ruff.lint]
 extend-select = ["I", "T20"]
