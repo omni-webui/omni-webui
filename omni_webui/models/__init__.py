@@ -1,4 +1,5 @@
+from .auth import Auth
 from .file import File
 from .user import User
 
-__all__ = ("File", "User")
+__all__ = ("Auth", "File", "User")

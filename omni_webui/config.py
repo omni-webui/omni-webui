@@ -1,5 +1,7 @@
 import importlib.util
+import re
 import warnings
+from datetime import timedelta
 from functools import cached_property, lru_cache
 from itertools import zip_longest
 from pathlib import Path
@@ -7,6 +9,7 @@ from secrets import token_urlsafe
 from typing import (
     Annotated,
     Any,
+    Literal,
     NotRequired,
     Self,
     Sequence,
@@ -25,6 +28,8 @@ from pydantic import (
     AliasChoices,
     Field,
     ValidationError,
+    ValidatorFunctionWrapHandler,
+    WrapValidator,
     field_serializer,
     field_validator,
     model_validator,
@@ -68,6 +73,56 @@ class Audio(BaseModel):
     stt: STT = Field(default_factory=STT)
 
 
+@deprecated("Open WebUI self-defined rules, would be remove @1.0")
+def parse_duration(duration: str) -> timedelta | None:
+    if duration == "-1" or duration == "0":
+        return None
+
+    # Regular expression to find number and unit pairs
+    pattern = r"(-?\d+(\.\d+)?)(ms|s|m|h|d|w)"
+    matches = re.findall(pattern, duration)
+
+    if not matches:
+        raise ValueError("Invalid duration string")
+
+    total_duration = timedelta()
+
+    for number, _, unit in matches:
+        number = float(number)
+        if unit == "ms":
+            total_duration += timedelta(milliseconds=number)
+        elif unit == "s":
+            total_duration += timedelta(seconds=number)
+        elif unit == "m":
+            total_duration += timedelta(minutes=number)
+        elif unit == "h":
+            total_duration += timedelta(hours=number)
+        elif unit == "d":
+            total_duration += timedelta(days=number)
+        elif unit == "w":
+            total_duration += timedelta(weeks=number)
+
+    return total_duration
+
+
+@deprecated("Backward-compatible with Open WebUI, would be removed @1.0")
+def unparse_duration(duration: timedelta | None) -> str:
+    if duration is None:
+        return "-1"
+    return f"{duration.total_seconds()}s"
+
+
+@deprecated("Backward-compatible with Open WebUI, would be removed @1.0")
+def validate_duration(value: Any, handler: ValidatorFunctionWrapHandler):
+    try:
+        return handler(value)
+    except ValidationError:
+        try:
+            return parse_duration(value)
+        except ValueError:
+            raise ValidationError
+
+
 class Auth(BaseSettings):
     class APIKey(BaseSettings):
         enable: Annotated[
@@ -75,6 +130,11 @@ class Auth(BaseSettings):
         ] = True
 
     api_key: APIKey = Field(default_factory=APIKey)
+    jwt_expiry: Annotated[
+        timedelta | None,
+        Field(validation_alias=AliasChoices("JWT_EXPIRES_IN", "jwt_expiry")),
+        WrapValidator(validate_duration),
+    ] = None
 
 
 class ArenaModel(BaseModel):
@@ -400,6 +460,10 @@ class Environments(BaseSettings, secrets_dir=Path.cwd()):
     webui_name: str = "Omni WebUI"
     webui_secret_key: str = Field(default_factory=lambda: token_urlsafe(12))
     webui_auth: bool = True
+    webui_auth_trusted_email_header: str | None = None
+    webui_auth_trusted_name_header: str | None = None
+    webui_session_cookie_same_site: Literal["lax", "strict", "none"] = "lax"
+    webui_session_cookie_secure: bool = False
 
     @model_validator(mode="after")
     def setup_default_values(self) -> Self:

@@ -12,7 +12,7 @@ from sqlmodel import JSON, Field, Relationship, SQLModel, select
 
 from .._types import MutableBaseModel
 from ..deps import EnvDepends, SessionDepends
-from ._utils import now, now_timestamp
+from ._utils import get_random_string, now, now_timestamp
 from .config import ConfigDepends
 
 if TYPE_CHECKING:
@@ -24,11 +24,13 @@ class UserSettings(MutableBaseModel):
 
 
 class User(SQLModel, table=True):
-    id: Annotated[str, Field(primary_key=True)]
+    id: str = Field(
+        primary_key=True, default_factory=lambda: f"user_{get_random_string(24)}"
+    )
     name: str
     email: EmailStr
-    role: str
-    profile_image_url: str
+    role: str = "pending"
+    profile_image_url: str = "/user.png"
 
     last_active_at: int = Field(default_factory=now_timestamp)
     updated_at: int = Field(default_factory=now_timestamp)
@@ -133,3 +135,6 @@ def get_admin_user(user: CurrentUserDepends):
             detail="You do not have permission to access this resource. Please contact your administrator for assistance.",
         )
     return user
+
+
+AdminDepends = Annotated[User, Depends(get_admin_user)]
