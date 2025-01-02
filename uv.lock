@@ -2569,7 +2569,7 @@ requires-dist = [
     { name = "jinja2", specifier = ">=3.1.5" },
     { name = "mcp", specifier = ">=1.1.2" },
     { name = "ollama", specifier = ">=0.4.5" },
-    { name = "open-webui", git = "https://github.com/open-webui/open-webui?tag=v0.5.2" },
+    { name = "open-webui", git = "https://github.com/open-webui/open-webui?tag=v0.5.3" },
     { name = "platformdirs", specifier = ">=4.3.6" },
     { name = "pydantic", specifier = ">=2.9.2" },
     { name = "pydantic-settings", specifier = ">=2.7.0" },
@@ -2614,8 +2614,8 @@ wheels = [
 
 [[package]]
 name = "open-webui"
-version = "0.5.2"
-source = { git = "https://github.com/open-webui/open-webui?tag=v0.5.2#e42cbf07f5a0c1fea2441e37f36f06510a2a781d" }
+version = "0.5.3"
+source = { git = "https://github.com/open-webui/open-webui?tag=v0.5.3#4bc9904b3cd0726d3f9c3cbaeade972cf167b6c4" }
 dependencies = [
     { name = "aiocache" },
     { name = "aiofiles" },

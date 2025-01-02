@@ -77,7 +77,7 @@ exclude_also = [
 ]
 
 [tool.uv.sources]
-open-webui = { git = "https://github.com/open-webui/open-webui", tag = "v0.5.2" }
+open-webui = { git = "https://github.com/open-webui/open-webui", tag = "v0.5.3" }
 
 [tool.ruff.lint]
 extend-select = ["I", "T20"]

@@ -22,6 +22,7 @@
     "npm:@pyscript/core@~0.4.32": "0.4.56",
     "npm:@sveltejs/adapter-static@^3.0.2": "3.0.6_@sveltejs+kit@2.12.1__@sveltejs+vite-plugin-svelte@3.1.2___svelte@4.2.19___vite@5.4.11____sass-embedded@1.83.0___sass-embedded@1.83.0__svelte@4.2.19__vite@5.4.11___sass-embedded@1.83.0__sass-embedded@1.83.0_@sveltejs+vite-plugin-svelte@3.1.2__svelte@4.2.19__vite@5.4.11___sass-embedded@1.83.0__sass-embedded@1.83.0_svelte@4.2.19_vite@5.4.11__sass-embedded@1.83.0_sass-embedded@1.83.0",
     "npm:@sveltejs/kit@^2.5.20": "2.12.1_@sveltejs+vite-plugin-svelte@3.1.2__svelte@4.2.19__vite@5.4.11___sass-embedded@1.83.0__sass-embedded@1.83.0_svelte@4.2.19_vite@5.4.11__sass-embedded@1.83.0_sass-embedded@1.83.0",
+    "npm:@sveltejs/svelte-virtual-list@^3.0.1": "3.0.1",
     "npm:@sveltejs/vite-plugin-svelte@^3.1.1": "3.1.2_svelte@4.2.19_vite@5.4.11__sass-embedded@1.83.0_sass-embedded@1.83.0",
     "npm:@tailwindcss/typography@~0.5.13": "0.5.15_tailwindcss@3.4.16__postcss@8.4.49",
     "npm:@tiptap/core@^2.10.0": "2.10.3_@tiptap+pm@2.10.3__prosemirror-model@1.24.1__prosemirror-state@1.4.3__prosemirror-view@1.37.1",
@@ -1717,6 +1718,9 @@
         "tiny-glob",
         "vite"
       ]
+    },
+    "@sveltejs/svelte-virtual-list@3.0.1": {
+      "integrity": "sha512-aF9TptS7NKKS7/TqpsxQBSDJ9Q0XBYzBehCeIC5DzdMEgrJZpIYao9LRLnyyo6SVodpapm2B7FE/Lj+FSA5/SQ=="
     },
     "@sveltejs/vite-plugin-svelte-inspector@2.1.0_@sveltejs+vite-plugin-svelte@3.1.2__svelte@4.2.19__vite@5.4.11___sass-embedded@1.83.0__sass-embedded@1.83.0_svelte@4.2.19_vite@5.4.11__sass-embedded@1.83.0_sass-embedded@1.83.0": {
       "integrity": "sha512-9QX28IymvBlSCqsCll5t0kQVxipsfhFFL+L2t3nTWfXnddYwxBuAEtTtlaVQpRz9c37BhJjltSeY4AJSC03SSg==",
@@ -6042,6 +6046,7 @@
         "npm:@pyscript/core@~0.4.32",
         "npm:@sveltejs/adapter-static@^3.0.2",
         "npm:@sveltejs/kit@^2.5.20",
+        "npm:@sveltejs/svelte-virtual-list@^3.0.1",
         "npm:@sveltejs/vite-plugin-svelte@^3.1.1",
         "npm:@tailwindcss/typography@~0.5.13",
         "npm:@tiptap/core@^2.10.0",
