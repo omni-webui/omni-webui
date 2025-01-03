@@ -10,10 +10,12 @@ from pydantic import EmailStr
 from sqlalchemy.ext.mutable import MutableDict
 from sqlmodel import JSON, Field, Relationship, SQLModel, select
 
+from omni_webui.config import ConfigDepends
+from omni_webui.env import EnvDepends
+from omni_webui.session import SessionDepends
+
 from .._types import MutableBaseModel
-from ..deps import EnvDepends, SessionDepends
 from ._utils import get_random_string, now, now_timestamp
-from .config import ConfigDepends
 
 if TYPE_CHECKING:
     from .file import File

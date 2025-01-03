@@ -1,16 +1,12 @@
 import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from omni_webui.deps import get_session
+from omni_webui.app import app
 from omni_webui.models import File, User  # noqa: F401
-from omni_webui.routes import router
-
-app = FastAPI()
-app.include_router(router)
+from omni_webui.session import get_session
 
 
 @pytest.fixture(name="session", scope="module")

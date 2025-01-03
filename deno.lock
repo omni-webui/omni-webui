@@ -13,7 +13,17 @@
     "npm:@codemirror/state@^6.5.0": "6.5.0",
     "npm:@codemirror/theme-one-dark@^6.1.2": "6.1.2",
     "npm:@codemirror/view@^6.35.3": "6.35.3",
+    "npm:@discordapp/twemoji@^15.1.0": "15.1.0",
     "npm:@floating-ui/utils@~0.2.8": "0.2.8",
+    "npm:@fontsource/archivo@^5.1.1": "5.1.1",
+    "npm:@fontsource/instrument-serif@^5.1.1": "5.1.1",
+    "npm:@fontsource/inter@^5.1.1": "5.1.1",
+    "npm:@fontsource/noto-color-emoji@^5.1.1": "5.1.1",
+    "npm:@fontsource/noto-sans-jp@^5.1.1": "5.1.1",
+    "npm:@fontsource/noto-sans-kr@^5.1.1": "5.1.1",
+    "npm:@fontsource/noto-sans-sc@^5.1.1": "5.1.1",
+    "npm:@fontsource/noto-sans-tc@^5.1.1": "5.1.1",
+    "npm:@fontsource/noto-sans@^5.1.1": "5.1.1",
     "npm:@huggingface/transformers@3": "3.2.0",
     "npm:@inlang/paraglide-js-adapter-sveltekit@~0.6.7": "0.6.7_@sveltejs+kit@2.12.1__@sveltejs+vite-plugin-svelte@3.1.2___svelte@4.2.19___vite@5.4.11____sass-embedded@1.83.0___sass-embedded@1.83.0__svelte@4.2.19__vite@5.4.11___sass-embedded@1.83.0__sass-embedded@1.83.0_svelte@4.2.19_@sveltejs+vite-plugin-svelte@3.1.2__svelte@4.2.19__vite@5.4.11___sass-embedded@1.83.0__sass-embedded@1.83.0_vite@5.4.11__sass-embedded@1.83.0_sass-embedded@1.83.0",
     "npm:@inlang/paraglide-js@1.11.3": "1.11.3",
@@ -32,6 +42,8 @@
     "npm:@tiptap/extension-typography@^2.10.0": "2.10.3_@tiptap+core@2.10.3__@tiptap+pm@2.10.3___prosemirror-model@1.24.1___prosemirror-state@1.4.3___prosemirror-view@1.37.1_@tiptap+pm@2.10.3__prosemirror-model@1.24.1__prosemirror-state@1.4.3__prosemirror-view@1.37.1",
     "npm:@tiptap/pm@^2.10.0": "2.10.3_prosemirror-model@1.24.1_prosemirror-state@1.4.3_prosemirror-view@1.37.1",
     "npm:@tiptap/starter-kit@^2.10.0": "2.10.3_@tiptap+pm@2.10.3__prosemirror-model@1.24.1__prosemirror-state@1.4.3__prosemirror-view@1.37.1_@tiptap+core@2.10.3__@tiptap+pm@2.10.3___prosemirror-model@1.24.1___prosemirror-state@1.4.3___prosemirror-view@1.37.1",
+    "npm:@types/file-saver@^2.0.7": "2.0.7",
+    "npm:@types/uuid@10": "10.0.0",
     "npm:@xyflow/svelte@~0.1.19": "0.1.25_svelte@4.2.19",
     "npm:autoprefixer@^10.4.16": "10.4.20_postcss@8.4.49",
     "npm:bits-ui@~0.19.7": "0.19.7_svelte@4.2.19",
@@ -489,6 +501,15 @@
         "w3c-keyname"
       ]
     },
+    "@discordapp/twemoji@15.1.0": {
+      "integrity": "sha512-QdpV4ifTONAXvDjRrMohausZeGrQ1ac/Ox6togUh6Xl3XKJ/KAaMMuAEi0qsb0wDwoVTSZBll5Y6+N3hB2ktBw==",
+      "dependencies": [
+        "@twemoji/parser",
+        "fs-extra@8.1.0",
+        "jsonfile@5.0.0",
+        "universalify@0.1.2"
+      ]
+    },
     "@emnapi/runtime@1.3.1": {
       "integrity": "sha512-kEBmG8KyqtxJZv+ygbEim+KCGtIq1fC22Ms3S4ziXmYKm8uyoLX0MHONVKwp+9opg390VaKRNt4a7A9NwmpNhw==",
       "dependencies": [
@@ -651,6 +672,33 @@
     },
     "@floating-ui/utils@0.2.8": {
       "integrity": "sha512-kym7SodPp8/wloecOpcmSnWJsK7M0E5Wg8UcFA+uO4B9s5d0ywXOEro/8HM9x0rW+TljRzul/14UYz3TleT3ig=="
+    },
+    "@fontsource/archivo@5.1.1": {
+      "integrity": "sha512-/NaItp2Xq6Sbc1zzyAGxeDBTv6G3YO/7lxWyVIxleb0yuuswG+gIuVXcDEzJz3VywX238oHyj1LHtneLBWYOhg=="
+    },
+    "@fontsource/instrument-serif@5.1.1": {
+      "integrity": "sha512-DZ+ho/lr8PIqilsGjh5jc0o9oT1BR8UHaBMzCdC4r4MmMqopMzS8uEFGuKwNCd7cDSoAiVXEigaRgnzdi1uv1g=="
+    },
+    "@fontsource/inter@5.1.1": {
+      "integrity": "sha512-weN3E+rq0Xb3Z93VHJ+Rc7WOQX9ETJPTAJ+gDcaMHtjft67L58sfS65rAjC5tZUXQ2FdZ/V1/sSzCwZ6v05kJw=="
+    },
+    "@fontsource/noto-color-emoji@5.1.1": {
+      "integrity": "sha512-2hoMaeKiIX5CffUvKJSPem0qgxBqow++zi1FMB28pNBQpljoMECEYLueO2YIB1d1FLgc7C1yrwmb8CkKcVyphA=="
+    },
+    "@fontsource/noto-sans-jp@5.1.1": {
+      "integrity": "sha512-PXk7mDjiaW99xU85IIxRGekzxLz91h2usk0rfDXSVwds9Nuo4sdlDUEE8PQ1P3VLnV00FsCHfSH54uR217VXpg=="
+    },
+    "@fontsource/noto-sans-kr@5.1.1": {
+      "integrity": "sha512-YOa3i3+ze8wtlvsN9TMNQVD2NUOTQEShBz9HZQ6j9SqWuQeOREq2ux//32IzDfNnGNZC0ddeH7oNb1F9OsS3UA=="
+    },
+    "@fontsource/noto-sans-sc@5.1.1": {
+      "integrity": "sha512-v20RiW0Hp9qnHjLV5IAIwloL3IIKy2elMyMSeLuMzqyhYTCD2kHuRoe4w0aA+sd19IaWtdo2diHskIFL0Asfgw=="
+    },
+    "@fontsource/noto-sans-tc@5.1.1": {
+      "integrity": "sha512-uJyenCRVZdiz+iRUyKwn99FDKQ0xMmLTOVHNzscqnp4ZwqYOl5S7fuL3IfH5FRRGYW+FTKtuY43D6gtVNtmrug=="
+    },
+    "@fontsource/noto-sans@5.1.1": {
+      "integrity": "sha512-WesuII3BzvzVr0JqYIgnEeJPwXvpFAo9tNCMH1AqoLSCdStKJugMaIcVJ/sT+Pw9ytIlUO3ccbqbe+BhhsXm9g=="
     },
     "@gulpjs/to-absolute-glob@4.0.0": {
       "integrity": "sha512-kjotm7XJrJ6v+7knhPaRgaT6q8F8K2jiafwYdNHLzmV0uGLuZY43FK6smNSHUPrhq5kX2slCUy+RGG/xGqmIKA==",
@@ -1987,6 +2035,9 @@
         "@tiptap/pm"
       ]
     },
+    "@twemoji/parser@15.1.0": {
+      "integrity": "sha512-3HTiSxPvkWUJ4kZeCvwyKlIwkpTUfBOk6igpBBRQni58ceQMv5YK4smkc8vX/eqOlMMNER/9qobv+Q6Q8LVrqA=="
+    },
     "@types/aws-lambda@8.10.146": {
       "integrity": "sha512-3BaDXYTh0e6UCJYL/jwV/3+GRslSc08toAiZSmleYtkAUyV5rtvdPYxrG/88uqvTuT6sb27WE9OS90ZNTIuQ0g=="
     },
@@ -2047,6 +2098,9 @@
     },
     "@types/estree@1.0.6": {
       "integrity": "sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw=="
+    },
+    "@types/file-saver@2.0.7": {
+      "integrity": "sha512-dNKVfHd/jk0SkR/exKGj2ggkB45MAkzvWCaqLUUgkyjITkGNzH8H+yUwr+BLJUBjZOe9w8X3wgmXhZDRg1ED6A=="
     },
     "@types/hast@3.0.4": {
       "integrity": "sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==",
@@ -2130,6 +2184,9 @@
     },
     "@types/unist@3.0.3": {
       "integrity": "sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q=="
+    },
+    "@types/uuid@10.0.0": {
+      "integrity": "sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ=="
     },
     "@typescript-eslint/types@8.18.1": {
       "integrity": "sha512-7uoAUsCj66qdNQNpH2G8MyTFlgerum8ubf21s3TSM3XmKXuIn+H2Sifh/ES2nPOPiYSRJWAk0fDkW0APBWcpfw=="
@@ -3752,6 +3809,13 @@
       "integrity": "sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg==",
       "dependencies": [
         "graceful-fs"
+      ]
+    },
+    "jsonfile@5.0.0": {
+      "integrity": "sha512-NQRZ5CRo74MhMMC3/3r5g2k4fjodJ/wh8MxjFbCViWKFjxrnudWSY5vomh+23ZaXzAS7J3fBZIR2dV6WbmfM0w==",
+      "dependencies": [
+        "graceful-fs",
+        "universalify@0.1.2"
       ]
     },
     "jsonfile@6.1.0": {
@@ -6037,7 +6101,17 @@
         "npm:@codemirror/state@^6.5.0",
         "npm:@codemirror/theme-one-dark@^6.1.2",
         "npm:@codemirror/view@^6.35.3",
+        "npm:@discordapp/twemoji@^15.1.0",
         "npm:@floating-ui/utils@~0.2.8",
+        "npm:@fontsource/archivo@^5.1.1",
+        "npm:@fontsource/instrument-serif@^5.1.1",
+        "npm:@fontsource/inter@^5.1.1",
+        "npm:@fontsource/noto-color-emoji@^5.1.1",
+        "npm:@fontsource/noto-sans-jp@^5.1.1",
+        "npm:@fontsource/noto-sans-kr@^5.1.1",
+        "npm:@fontsource/noto-sans-sc@^5.1.1",
+        "npm:@fontsource/noto-sans-tc@^5.1.1",
+        "npm:@fontsource/noto-sans@^5.1.1",
         "npm:@huggingface/transformers@3",
         "npm:@inlang/paraglide-js-adapter-sveltekit@~0.6.7",
         "npm:@inlang/paraglide-js@1.11.3",
@@ -6056,6 +6130,8 @@
         "npm:@tiptap/extension-typography@^2.10.0",
         "npm:@tiptap/pm@^2.10.0",
         "npm:@tiptap/starter-kit@^2.10.0",
+        "npm:@types/file-saver@^2.0.7",
+        "npm:@types/uuid@10",
         "npm:@xyflow/svelte@~0.1.19",
         "npm:autoprefixer@^10.4.16",
         "npm:bits-ui@~0.19.7",

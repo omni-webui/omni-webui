@@ -6,9 +6,8 @@ import fsspec
 import typer
 import uvicorn
 
-from omni_webui import __version__
+from omni_webui import D, __version__
 from omni_webui._compat import save_secret_key
-from omni_webui.config import D
 
 if TYPE_CHECKING:
     from s3fs import S3FileSystem

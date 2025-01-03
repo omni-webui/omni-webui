@@ -1,13 +1,10 @@
 <script lang="ts">
 import { goto } from "$app/navigation";
-import { getContext, onMount } from "svelte";
-
-import { page } from "$app/stores";
+import { page } from "$app/state";
 import MenuLines from "$lib/components/icons/MenuLines.svelte";
 import * as m from "$lib/paraglide/messages";
 import { WEBUI_NAME, showSidebar, user } from "$lib/stores";
-
-const i18n = getContext("i18n");
+import { onMount } from "svelte";
 
 let loaded = false;
 
@@ -20,9 +17,7 @@ onMount(async () => {
 </script>
 
 <svelte:head>
-	<title>
-		{m.adminPanel()} | {$WEBUI_NAME}
-	</title>
+	<title>{m.adminPanel()} | {$WEBUI_NAME}</title>
 </svelte:head>
 
 {#if loaded}
@@ -53,28 +48,28 @@ onMount(async () => {
 						class="flex gap-1 scrollbar-none overflow-x-auto w-fit text-center text-sm font-medium rounded-full bg-transparent pt-1"
 					>
 						<a
-							class="min-w-fit rounded-full p-1.5 {['/admin/users'].includes($page.url.pathname)
+							class="min-w-fit rounded-full p-1.5 {['/admin/users'].includes(page.url.pathname)
 								? ''
 								: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
 							href="/admin">{m.users()}</a
 						>
 
 						<a
-							class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes('/admin/evaluations')
+							class="min-w-fit rounded-full p-1.5 {page.url.pathname.includes('/admin/evaluations')
 								? ''
 								: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
 							href="/admin/evaluations">{m.arenaEvaluations()}</a
 						>
 
 						<a
-							class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes('/admin/mcp')
+							class="min-w-fit rounded-full p-1.5 {page.url.pathname.includes('/admin/mcp')
 								? ''
 								: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
 							href="/admin/mcp">{m.mcpServers()}</a
 						>
 
 						<a
-							class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes('/admin/settings')
+							class="min-w-fit rounded-full p-1.5 {page.url.pathname.includes('/admin/settings')
 								? ''
 								: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
 							href="/admin/settings">{m.settings()}</a

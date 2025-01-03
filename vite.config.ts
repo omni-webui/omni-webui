@@ -4,8 +4,9 @@ import { fileURLToPath } from "node:url";
 import { paraglide } from "@inlang/paraglide-js-adapter-sveltekit/vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { loadPyodide } from "pyodide";
-import { defineConfig, normalizePath } from "vite";
+import { normalizePath } from "vite";
 import { viteStaticCopy } from "vite-plugin-static-copy";
+import { defineConfig } from "vitest/config";
 import ClosePlugin from "./vite-plugin-close";
 
 const PYODIDE_EXCLUDE = ["!**/*.{md,html}", "!**/*.d.ts", "!**/node_modules"];
@@ -57,6 +58,24 @@ export default defineConfig({
 		}),
 		sveltekit(),
 		viteStaticCopyPyodide(),
+		viteStaticCopy({
+			targets: [
+				{
+					src: [
+						normalizePath(
+							join(
+								dirname(
+									fileURLToPath(import.meta.resolve("@discordapp/twemoji")),
+								),
+								"svg",
+								"*",
+							),
+						),
+					],
+					dest: "assets/emojis",
+				},
+			],
+		}),
 		ClosePlugin(), // ridiculous bug, solution from https://stackoverflow.com/a/76920975/5434822
 	],
 	define: {
@@ -69,4 +88,9 @@ export default defineConfig({
 	worker: {
 		format: "es",
 	},
+	resolve: process.env.VITEST
+		? {
+				conditions: ["browser"],
+			}
+		: undefined,
 });
