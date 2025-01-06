@@ -1,14 +1,13 @@
 <script lang="ts">
 import { goto } from "$app/navigation";
 import { prompts } from "$lib/stores";
-import { getContext, onMount, tick } from "svelte";
+import { getContext, onMount } from "svelte";
 import { toast } from "svelte-sonner";
-
-const i18n = getContext("i18n");
 
 import { createNewPrompt, getPrompts } from "$lib/apis/prompts";
 import PromptEditor from "$lib/components/workspace/Prompts/PromptEditor.svelte";
 
+const i18n = getContext("i18n");
 let prompt = null;
 const onSubmit = async (_prompt) => {
 	const prompt = await createNewPrompt(localStorage.token, _prompt).catch(

@@ -1,34 +1,35 @@
 <script lang="ts">
 import { goto } from "$app/navigation";
-import { page } from "$app/stores";
-import { WEBUI_NAME, showSidebar, user } from "$lib/stores";
-import { getContext, onMount } from "svelte";
-
+import { page } from "$app/state";
 import MenuLines from "$lib/components/icons/MenuLines.svelte";
+import { WEBUI_NAME, showSidebar, user } from "$lib/stores";
+import { type i18n } from "i18next";
+import { getContext, onMount } from "svelte";
+import { type Writable } from "svelte/store";
 
-const i18n = getContext("i18n");
+const i: Writable<i18n> = getContext("i18n");
 
 let loaded = false;
 
 onMount(async () => {
 	if ($user?.role !== "admin") {
 		if (
-			$page.url.pathname.includes("/models") &&
+			page.url.pathname.includes("/models") &&
 			!$user?.permissions?.workspace?.models
 		) {
 			goto("/");
 		} else if (
-			$page.url.pathname.includes("/knowledge") &&
+			page.url.pathname.includes("/knowledge") &&
 			!$user?.permissions?.workspace?.knowledge
 		) {
 			goto("/");
 		} else if (
-			$page.url.pathname.includes("/prompts") &&
+			page.url.pathname.includes("/prompts") &&
 			!$user?.permissions?.workspace?.prompts
 		) {
 			goto("/");
 		} else if (
-			$page.url.pathname.includes("/tools") &&
+			page.url.pathname.includes("/tools") &&
 			!$user?.permissions?.workspace?.tools
 		) {
 			goto("/");
@@ -41,7 +42,7 @@ onMount(async () => {
 
 <svelte:head>
 	<title>
-		{$i18n.t('Workspace')} | {$WEBUI_NAME}
+		{$i.t('Workspace')} | {$WEBUI_NAME}
 	</title>
 </svelte:head>
 
@@ -74,47 +75,47 @@ onMount(async () => {
 					>
 						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.models}
 							<a
-								class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes(
+								class="min-w-fit rounded-full p-1.5 {page.url.pathname.includes(
 									'/workspace/models'
 								)
 									? ''
 									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
-								href="/workspace/models">{$i18n.t('Models')}</a
+								href="/workspace/models">{$i.t('Models')}</a
 							>
 						{/if}
 
 						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.knowledge}
 							<a
-								class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes(
+								class="min-w-fit rounded-full p-1.5 {page.url.pathname.includes(
 									'/workspace/knowledge'
 								)
 									? ''
 									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
 								href="/workspace/knowledge"
 							>
-								{$i18n.t('Knowledge')}
+								{$i.t('Knowledge')}
 							</a>
 						{/if}
 
 						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.prompts}
 							<a
-								class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes(
+								class="min-w-fit rounded-full p-1.5 {page.url.pathname.includes(
 									'/workspace/prompts'
 								)
 									? ''
 									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
-								href="/workspace/prompts">{$i18n.t('Prompts')}</a
+								href="/workspace/prompts">{$i.t('Prompts')}</a
 							>
 						{/if}
 
 						{#if $user?.role === 'admin' || $user?.permissions?.workspace?.tools}
 							<a
-								class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes('/workspace/tools')
+								class="min-w-fit rounded-full p-1.5 {page.url.pathname.includes('/workspace/tools')
 									? ''
 									: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
 								href="/workspace/tools"
 							>
-								{$i18n.t('Tools')}
+								{$i.t('Tools')}
 							</a>
 						{/if}
 					</div>

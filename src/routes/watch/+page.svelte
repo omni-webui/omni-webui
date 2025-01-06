@@ -3,19 +3,12 @@ import { goto } from "$app/navigation";
 import { onMount } from "svelte";
 
 onMount(() => {
-	// Get the current URL search parameters
 	const params = new URLSearchParams(window.location.search);
 
-	// Check if 'v' parameter exists
-	if (params.has("v")) {
-		// Get the value of 'v' parameter
-		const videoId = params.get("v");
-
-		// Redirect to root with 'youtube' parameter
-
-		goto(`/?youtube=${encodeURIComponent(videoId)}`);
+	const v = params.get("v");
+	if (v) {
+		goto(`/?youtube=${encodeURIComponent(v)}`);
 	} else {
-		// Redirect to root if 'v' parameter doesn't exist
 		goto("/");
 	}
 });

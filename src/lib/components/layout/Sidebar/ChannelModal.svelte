@@ -1,25 +1,46 @@
 <script lang="ts">
-import { createNewChannel, deleteChannelById } from "$lib/apis/channels";
-import { createEventDispatcher, getContext, onMount } from "svelte";
-
+import { goto } from "$app/navigation";
+import { page } from "$app/state";
+import { deleteChannelById } from "$lib/apis/channels";
 import DeleteConfirmDialog from "$lib/components/common/ConfirmDialog.svelte";
 import Modal from "$lib/components/common/Modal.svelte";
 import AccessControl from "$lib/components/workspace/common/AccessControl.svelte";
-
-import { goto } from "$app/navigation";
-import { page } from "$app/stores";
+import { type i18n } from "i18next";
+import { getContext } from "svelte";
 import { toast } from "svelte-sonner";
-const i18n = getContext("i18n");
+import { type Writable } from "svelte/store";
+
+const i: Writable<i18n> = getContext("i18n");
 
 export let show = false;
-export let onSubmit: Function = () => {};
-export let onUpdate: Function = () => {};
-
+export let onSubmit: (channel: {
+	name: string;
+	access_control: {
+		read?: {
+			group_ids?: string[];
+			user_ids?: string[];
+		};
+		write?: {
+			group_ids?: string[];
+			user_ids?: string[];
+		};
+	};
+}) => Promise<void>;
+export let onUpdate: () => void = () => {};
 export let channel = null;
 export let edit = false;
 
 let name = "";
-let accessControl = null;
+let accessControl: {
+	read?: {
+		group_ids?: string[];
+		user_ids?: string[];
+	};
+	write?: {
+		group_ids?: string[];
+		user_ids?: string[];
+	};
+} | null = null;
 
 let loading = false;
 
@@ -31,7 +52,7 @@ const submitHandler = async () => {
 	loading = true;
 	await onSubmit({
 		name: name.replace(/\s/g, "-"),
-		access_control: accessControl,
+		access_control: accessControl ?? {},
 	});
 	show = false;
 	loading = false;
@@ -61,7 +82,7 @@ const deleteHandler = async () => {
 		toast.success("Channel deleted successfully");
 		onUpdate();
 
-		if ($page.url.pathname === `/channels/${channel.id}`) {
+		if (page.url.pathname === `/channels/${channel.id}`) {
 			goto("/");
 		}
 	}
@@ -75,9 +96,9 @@ const deleteHandler = async () => {
 		<div class=" flex justify-between dark:text-gray-300 px-5 pt-4 pb-1">
 			<div class=" text-lg font-medium self-center">
 				{#if edit}
-					{$i18n.t('Edit Channel')}
+					{$i.t('Edit Channel')}
 				{:else}
-					{$i18n.t('Create Channel')}
+					{$i.t('Create Channel')}
 				{/if}
 			</div>
 			<button
@@ -110,14 +131,14 @@ const deleteHandler = async () => {
 					}}
 				>
 					<div class="flex flex-col w-full mt-2">
-						<div class=" mb-1 text-xs text-gray-500">{$i18n.t('Channel Name')}</div>
+						<div class=" mb-1 text-xs text-gray-500">{$i.t('Channel Name')}</div>
 
 						<div class="flex-1">
 							<input
 								class="w-full text-sm bg-transparent placeholder:text-gray-300 dark:placeholder:text-gray-700 outline-none"
 								type="text"
 								bind:value={name}
-								placeholder={$i18n.t('new-channel')}
+								placeholder={$i.t('new-channel')}
 								autocomplete="off"
 							/>
 						</div>
@@ -140,7 +161,7 @@ const deleteHandler = async () => {
 									showDeleteConfirmDialog = true;
 								}}
 							>
-								{$i18n.t('Delete')}
+								{$i.t('Delete')}
 							</button>
 						{/if}
 
@@ -152,9 +173,9 @@ const deleteHandler = async () => {
 							disabled={loading}
 						>
 							{#if edit}
-								{$i18n.t('Update')}
+								{$i.t('Update')}
 							{:else}
-								{$i18n.t('Create')}
+								{$i.t('Create')}
 							{/if}
 
 							{#if loading}
@@ -194,8 +215,8 @@ const deleteHandler = async () => {
 
 <DeleteConfirmDialog
 	bind:show={showDeleteConfirmDialog}
-	message={$i18n.t('Are you sure you want to delete this channel?')}
-	confirmLabel={$i18n.t('Delete')}
+	message={$i.t('Are you sure you want to delete this channel?')}
+	confirmLabel={$i.t('Delete')}
 	on:confirm={() => {
 		deleteHandler();
 	}}

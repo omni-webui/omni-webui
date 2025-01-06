@@ -1,39 +1,28 @@
 <script lang="ts">
-import { flyAndScale } from "$lib/utils/transitions";
-import { DropdownMenu } from "bits-ui";
-import { getContext } from "svelte";
-
-import Tags from "$lib/components/chat/Tags.svelte";
 import Dropdown from "$lib/components/common/Dropdown.svelte";
 import Tooltip from "$lib/components/common/Tooltip.svelte";
-import ArchiveBox from "$lib/components/icons/ArchiveBox.svelte";
 import ArrowDownTray from "$lib/components/icons/ArrowDownTray.svelte";
 import DocumentDuplicate from "$lib/components/icons/DocumentDuplicate.svelte";
 import GarbageBin from "$lib/components/icons/GarbageBin.svelte";
-import Pencil from "$lib/components/icons/Pencil.svelte";
 import Share from "$lib/components/icons/Share.svelte";
+import { flyAndScale } from "$lib/utils/transitions";
+import { DropdownMenu } from "bits-ui";
+import { type i18n } from "i18next";
+import { getContext } from "svelte";
+import { type Writable } from "svelte/store";
 
-const i18n = getContext("i18n");
+const i: Writable<i18n> = getContext("i18n");
 
-export let editHandler: Function;
-export let shareHandler: Function;
-export let cloneHandler: Function;
-export let exportHandler: Function;
-export let deleteHandler: Function;
-export let onClose: Function;
-
-let show = false;
+export let editHandler: () => void;
+export let shareHandler: () => void;
+export let cloneHandler: () => void;
+export let exportHandler: () => void;
+export let deleteHandler: () => Promise<void>;
+export let show = false;
 </script>
 
-<Dropdown
-	bind:show
-	on:change={(e) => {
-		if (e.detail === false) {
-			onClose();
-		}
-	}}
->
-	<Tooltip content={$i18n.t('More')}>
+<Dropdown bind:show>
+	<Tooltip content={$i.t('More')}>
 		<slot />
 	</Tooltip>
 
@@ -47,9 +36,7 @@ let show = false;
 		>
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800  rounded-md"
-				on:click={() => {
-					editHandler();
-				}}
+				on:click={editHandler}
 			>
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -66,39 +53,33 @@ let show = false;
 					/>
 				</svg>
 
-				<div class="flex items-center">{$i18n.t('Edit')}</div>
+				<div class="flex items-center">{$i.t('Edit')}</div>
 			</DropdownMenu.Item>
 
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800  rounded-md"
-				on:click={() => {
-					shareHandler();
-				}}
+				on:click={shareHandler}
 			>
 				<Share />
-				<div class="flex items-center">{$i18n.t('Share')}</div>
+				<div class="flex items-center">{$i.t('Share')}</div>
 			</DropdownMenu.Item>
 
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-				on:click={() => {
-					cloneHandler();
-				}}
+				on:click={cloneHandler}
 			>
 				<DocumentDuplicate />
 
-				<div class="flex items-center">{$i18n.t('Clone')}</div>
+				<div class="flex items-center">{$i.t('Clone')}</div>
 			</DropdownMenu.Item>
 
 			<DropdownMenu.Item
 				class="flex gap-2 items-center px-3 py-2 text-sm  font-medium cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
-				on:click={() => {
-					exportHandler();
-				}}
+				on:click={exportHandler}
 			>
 				<ArrowDownTray />
 
-				<div class="flex items-center">{$i18n.t('Export')}</div>
+				<div class="flex items-center">{$i.t('Export')}</div>
 			</DropdownMenu.Item>
 
 			<hr class="border-gray-100 dark:border-gray-800 my-1" />
@@ -110,7 +91,7 @@ let show = false;
 				}}
 			>
 				<GarbageBin strokeWidth="2" />
-				<div class="flex items-center">{$i18n.t('Delete')}</div>
+				<div class="flex items-center">{$i.t('Delete')}</div>
 			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</div>

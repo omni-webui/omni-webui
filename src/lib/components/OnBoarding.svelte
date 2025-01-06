@@ -72,8 +72,6 @@ const i: Writable<i18n> = getContext("i18n");
 					</div>
 				</div>
 			</div>
-
-			<!-- <div class="absolute bottom-12 left-0 right-0 w-full"></div> -->
 		</div>
 	</div>
 {/if}

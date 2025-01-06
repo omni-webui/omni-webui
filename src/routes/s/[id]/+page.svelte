@@ -8,9 +8,11 @@ import Messages from "$lib/components/chat/Messages.svelte";
 import { WEBUI_NAME, chatId, models } from "$lib/stores";
 import { convertMessagesToHistory, createMessagesList } from "$lib/utils";
 import dayjs from "dayjs";
+import { type i18n } from "i18next";
 import { getContext, tick } from "svelte";
+import { type Writable } from "svelte/store";
 
-const i18n = getContext("i18n");
+const i: Writable<i18n> = getContext("i18n");
 
 let loaded = false;
 
@@ -116,7 +118,7 @@ const loadSharedChat = async () => {
 					</div>
 
 					<div class=" mt-1 text-gray-400">
-						{dayjs(chat.chat.timestamp).format($i18n.t('MMMM DD, YYYY'))}
+						{dayjs(chat.chat.timestamp).format($i.t('MMMM DD, YYYY'))}
 					</div>
 				</div>
 

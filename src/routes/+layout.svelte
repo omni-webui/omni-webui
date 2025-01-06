@@ -43,7 +43,7 @@ let loadingProgress = spring(0, {
 let loaded = false;
 const BREAKPOINT = 768;
 
-const setupSocket = async (enableWebsocket) => {
+const setupSocket = async (enableWebsocket: boolean) => {
 	const _socket = io(`${WEBUI_BASE_URL}` || undefined, {
 		reconnection: true,
 		reconnectionDelay: 1000,
@@ -211,8 +211,8 @@ onMount(async () => {
 					// Save Session User to Store
 					$socket.emit("user-join", { auth: { token: sessionUser.token } });
 
-					$socket?.on("chat-events", chatEventHandler);
-					$socket?.on("channel-events", channelEventHandler);
+					$socket.on("chat-events", chatEventHandler);
+					$socket.on("channel-events", channelEventHandler);
 
 					await user.set(sessionUser);
 					await config.set(await getBackendConfig());
@@ -275,11 +275,6 @@ onMount(async () => {
 <svelte:head>
 	<title>{$WEBUI_NAME}</title>
 	<link crossorigin="anonymous" rel="icon" href="{WEBUI_BASE_URL}/static/favicon.png" />
-
-	<!-- rosepine themes have been disabled as it's not up to date with our latest version. -->
-	<!-- feel free to make a PR to fix if anyone wants to see it return -->
-	<!-- <link rel="stylesheet" type="text/css" href="/themes/rosepine.css" />
-	<link rel="stylesheet" type="text/css" href="/themes/rosepine-dawn.css" /> -->
 </svelte:head>
 
 {#if loaded}

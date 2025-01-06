@@ -1,20 +1,19 @@
 <script lang="ts">
 import { goto } from "$app/navigation";
-import { prompts } from "$lib/stores";
-import { getContext, onMount, tick } from "svelte";
-import { toast } from "svelte-sonner";
-
-const i18n = getContext("i18n");
-
-import { page } from "$app/stores";
+import { page } from "$app/state";
 import {
 	getPromptByCommand,
 	getPrompts,
 	updatePromptByCommand,
 } from "$lib/apis/prompts";
-
 import PromptEditor from "$lib/components/workspace/Prompts/PromptEditor.svelte";
+import { prompts } from "$lib/stores";
+import { type i18n } from "i18next";
+import { getContext, onMount } from "svelte";
+import { toast } from "svelte-sonner";
+import { type Writable } from "svelte/store";
 
+const i: Writable<i18n> = getContext("i18n");
 let prompt = null;
 const onSubmit = async (_prompt) => {
 	console.log(_prompt);
@@ -26,14 +25,14 @@ const onSubmit = async (_prompt) => {
 	);
 
 	if (prompt) {
-		toast.success($i18n.t("Prompt updated successfully"));
+		toast.success($i.t("Prompt updated successfully"));
 		await prompts.set(await getPrompts(localStorage.token));
 		await goto("/workspace/prompts");
 	}
 };
 
 onMount(async () => {
-	const command = $page.url.searchParams.get("command");
+	const command = page.url.searchParams.get("command");
 	if (command) {
 		const _prompt = await getPromptByCommand(
 			localStorage.token,
