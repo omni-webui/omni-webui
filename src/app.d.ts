@@ -67,9 +67,28 @@ declare global {
 			currentId?: string;
 			messages: Record<string, Message>;
 		}
-		type File =
-			| { type: "image"; url: string }
-			| { type: "file"; url: string; size: number };
+		type File = (
+			| { type: "image"; url: string; itemId: string }
+			| {
+					type: "file";
+					url: string;
+					size: number;
+					file?: string;
+					id: string | null;
+					name: string;
+					error?: string;
+					itemId: string;
+			  }
+			| {
+					type: "doc";
+					url: string;
+					error?: string;
+			  }
+		) & {
+			name: string;
+			status: "uploading" | "uploaded";
+			collection_name?: string;
+		};
 	}
 }
 

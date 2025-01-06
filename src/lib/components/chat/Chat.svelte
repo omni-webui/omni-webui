@@ -92,7 +92,7 @@ let history: OmniWebUI.History = {
 let taskId: string | null = null;
 let prompt = "";
 let chatFiles = [];
-let files = [];
+let files: OmniWebUI.File[] = [];
 let params = {};
 
 $: if (chatIdProp) {
@@ -230,8 +230,6 @@ const chatEventHandler = async (event, cb) => {
 					} else {
 						message.code_executions.push(data);
 					}
-
-					message.code_executions = message.code_executions;
 				} else {
 					// Regular source.
 					if (message?.sources) {
@@ -436,7 +434,7 @@ const uploadGoogleDriveFile = async (fileData) => {
 	}
 
 	const tempItemId = uuidv4();
-	const fileItem = {
+	const fileItem: OmniWebUI.File = {
 		type: "file",
 		file: "",
 		id: null,
@@ -538,7 +536,7 @@ const uploadGoogleDriveFile = async (fileData) => {
 const uploadWeb = async (url) => {
 	console.log(url);
 
-	const fileItem = {
+	const fileItem: OmniWebUI.File = {
 		type: "doc",
 		name: url,
 		collection_name: "",
@@ -1601,27 +1599,21 @@ const sendPromptSocket = async (model, responseMessageId, _chatId) => {
 
 const handleOpenAIError = async (error, responseMessage: OmniWebUI.Message) => {
 	let errorMessage = "";
-	let innerError;
-
-	if (error) {
-		innerError = error;
-	}
-
-	console.error(innerError);
-	if ("detail" in innerError) {
-		toast.error(innerError.detail);
-		errorMessage = innerError.detail;
-	} else if ("error" in innerError) {
-		if ("message" in innerError.error) {
-			toast.error(innerError.error.message);
-			errorMessage = innerError.error.message;
+	console.error(error);
+	if ("detail" in error) {
+		toast.error(error.detail);
+		errorMessage = error.detail;
+	} else if ("error" in error) {
+		if ("message" in error.error) {
+			toast.error(error.error.message);
+			errorMessage = error.error.message;
 		} else {
-			toast.error(innerError.error);
-			errorMessage = innerError.error;
+			toast.error(error.error);
+			errorMessage = error.error;
 		}
-	} else if ("message" in innerError) {
-		toast.error(innerError.message);
-		errorMessage = innerError.message;
+	} else if ("message" in error) {
+		toast.error(error.message);
+		errorMessage = error.message;
 	}
 
 	responseMessage.error = {

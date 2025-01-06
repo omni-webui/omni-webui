@@ -773,38 +773,6 @@ export interface paths {
 		patch?: never;
 		trace?: never;
 	};
-	"/openai/{path}": {
-		parameters: {
-			query?: never;
-			header?: never;
-			path?: never;
-			cookie?: never;
-		};
-		/**
-		 * Proxy
-		 * @description Deprecated: proxy all requests to OpenAI API
-		 */
-		get: operations["proxy_openai__path__get"];
-		/**
-		 * Proxy
-		 * @description Deprecated: proxy all requests to OpenAI API
-		 */
-		put: operations["proxy_openai__path__get"];
-		/**
-		 * Proxy
-		 * @description Deprecated: proxy all requests to OpenAI API
-		 */
-		post: operations["proxy_openai__path__get"];
-		/**
-		 * Proxy
-		 * @description Deprecated: proxy all requests to OpenAI API
-		 */
-		delete: operations["proxy_openai__path__get"];
-		options?: never;
-		head?: never;
-		patch?: never;
-		trace?: never;
-	};
 	"/api/v1/tasks/config": {
 		parameters: {
 			query?: never;
@@ -4361,6 +4329,11 @@ export interface components {
 			/** Api Key */
 			api_key?: string | null;
 		};
+		/** Audio */
+		Audio: {
+			/** Id */
+			id: string;
+		};
 		/** AudioConfigUpdateForm */
 		AudioConfigUpdateForm: {
 			tts: components["schemas"]["TTSConfigForm"];
@@ -4508,6 +4481,212 @@ export interface components {
 			/** Updated At */
 			updated_at: number;
 		};
+		/** ChatCompletionAssistantMessageParam */
+		ChatCompletionAssistantMessageParam: {
+			/**
+			 * Role
+			 * @constant
+			 */
+			role: "assistant";
+			audio?: components["schemas"]["Audio"] | null;
+			/** Content */
+			content?:
+				| string
+				| (
+						| components["schemas"]["ChatCompletionContentPartTextParam"]
+						| components["schemas"]["ChatCompletionContentPartRefusalParam"]
+				  )[]
+				| null;
+			function_call?: components["schemas"]["FunctionCall"] | null;
+			/** Name */
+			name?: string;
+			/** Refusal */
+			refusal?: string | null;
+			/** Tool Calls */
+			tool_calls?: components["schemas"]["ChatCompletionMessageToolCallParam"][];
+		};
+		/** ChatCompletionAudioParam */
+		ChatCompletionAudioParam: {
+			/**
+			 * Format
+			 * @enum {string}
+			 */
+			format: "wav" | "mp3" | "flac" | "opus" | "pcm16";
+			/**
+			 * Voice
+			 * @enum {string}
+			 */
+			voice:
+				| "alloy"
+				| "ash"
+				| "ballad"
+				| "coral"
+				| "echo"
+				| "sage"
+				| "shimmer"
+				| "verse";
+		};
+		/** ChatCompletionContentPartImageParam */
+		ChatCompletionContentPartImageParam: {
+			image_url: components["schemas"]["ImageURL"];
+			/**
+			 * Type
+			 * @constant
+			 */
+			type: "image_url";
+		};
+		/** ChatCompletionContentPartInputAudioParam */
+		ChatCompletionContentPartInputAudioParam: {
+			input_audio: components["schemas"]["InputAudio"];
+			/**
+			 * Type
+			 * @constant
+			 */
+			type: "input_audio";
+		};
+		/** ChatCompletionContentPartRefusalParam */
+		ChatCompletionContentPartRefusalParam: {
+			/** Refusal */
+			refusal: string;
+			/**
+			 * Type
+			 * @constant
+			 */
+			type: "refusal";
+		};
+		/** ChatCompletionContentPartTextParam */
+		ChatCompletionContentPartTextParam: {
+			/** Text */
+			text: string;
+			/**
+			 * Type
+			 * @constant
+			 */
+			type: "text";
+		};
+		/** ChatCompletionDeveloperMessageParam */
+		ChatCompletionDeveloperMessageParam: {
+			/** Content */
+			content:
+				| string
+				| components["schemas"]["ChatCompletionContentPartTextParam"][];
+			/**
+			 * Role
+			 * @constant
+			 */
+			role: "developer";
+			/** Name */
+			name?: string;
+		};
+		/** ChatCompletionFunctionCallOptionParam */
+		ChatCompletionFunctionCallOptionParam: {
+			/** Name */
+			name: string;
+		};
+		/** ChatCompletionFunctionMessageParam */
+		ChatCompletionFunctionMessageParam: {
+			/** Content */
+			content: string | null;
+			/** Name */
+			name: string;
+			/**
+			 * Role
+			 * @constant
+			 */
+			role: "function";
+		};
+		/** ChatCompletionMessageToolCallParam */
+		ChatCompletionMessageToolCallParam: {
+			/** Id */
+			id: string;
+			function: components["schemas"]["openai__types__chat__chat_completion_message_tool_call_param__Function"];
+			/**
+			 * Type
+			 * @constant
+			 */
+			type: "function";
+		};
+		/** ChatCompletionNamedToolChoiceParam */
+		ChatCompletionNamedToolChoiceParam: {
+			function: components["schemas"]["openai__types__chat__chat_completion_named_tool_choice_param__Function"];
+			/**
+			 * Type
+			 * @constant
+			 */
+			type: "function";
+		};
+		/** ChatCompletionPredictionContentParam */
+		ChatCompletionPredictionContentParam: {
+			/** Content */
+			content:
+				| string
+				| components["schemas"]["ChatCompletionContentPartTextParam"][];
+			/**
+			 * Type
+			 * @constant
+			 */
+			type: "content";
+		};
+		/** ChatCompletionStreamOptionsParam */
+		ChatCompletionStreamOptionsParam: {
+			/** Include Usage */
+			include_usage?: boolean;
+		};
+		/** ChatCompletionSystemMessageParam */
+		ChatCompletionSystemMessageParam: {
+			/** Content */
+			content:
+				| string
+				| components["schemas"]["ChatCompletionContentPartTextParam"][];
+			/**
+			 * Role
+			 * @constant
+			 */
+			role: "system";
+			/** Name */
+			name?: string;
+		};
+		/** ChatCompletionToolMessageParam */
+		ChatCompletionToolMessageParam: {
+			/** Content */
+			content:
+				| string
+				| components["schemas"]["ChatCompletionContentPartTextParam"][];
+			/**
+			 * Role
+			 * @constant
+			 */
+			role: "tool";
+			/** Tool Call Id */
+			tool_call_id: string;
+		};
+		/** ChatCompletionToolParam */
+		ChatCompletionToolParam: {
+			function: components["schemas"]["FunctionDefinition"];
+			/**
+			 * Type
+			 * @constant
+			 */
+			type: "function";
+		};
+		/** ChatCompletionUserMessageParam */
+		ChatCompletionUserMessageParam: {
+			/** Content */
+			content:
+				| string
+				| (
+						| components["schemas"]["ChatCompletionContentPartTextParam"]
+						| components["schemas"]["ChatCompletionContentPartImageParam"]
+						| components["schemas"]["ChatCompletionContentPartInputAudioParam"]
+				  )[];
+			/**
+			 * Role
+			 * @constant
+			 */
+			role: "user";
+			/** Name */
+			name?: string;
+		};
 		/** ChatFolderIdForm */
 		ChatFolderIdForm: {
 			/** Folder Id */
@@ -4588,13 +4767,6 @@ export interface components {
 			/** Created At */
 			created_at: number;
 		};
-		/** ChatTitleMessagesForm */
-		ChatTitleMessagesForm: {
-			/** Title */
-			title: string;
-			/** Messages */
-			messages: Record<string, never>[];
-		};
 		/** ChunkParamUpdateForm */
 		ChunkParamUpdateForm: {
 			/** Text Splitter */
@@ -4603,11 +4775,6 @@ export interface components {
 			chunk_size: number;
 			/** Chunk Overlap */
 			chunk_overlap: number;
-		};
-		/** CodeFormatRequest */
-		CodeFormatRequest: {
-			/** Code */
-			code: string;
 		};
 		/** ComfyUIConfigForm */
 		ComfyUIConfigForm: {
@@ -4619,6 +4786,259 @@ export interface components {
 			COMFYUI_WORKFLOW: string;
 			/** Comfyui Workflow Nodes */
 			COMFYUI_WORKFLOW_NODES: Record<string, never>[];
+		};
+		/** CompletionCreateParamsNonStreaming */
+		CompletionCreateParamsNonStreaming: {
+			/** Messages */
+			messages: (
+				| components["schemas"]["ChatCompletionDeveloperMessageParam"]
+				| components["schemas"]["ChatCompletionSystemMessageParam"]
+				| components["schemas"]["ChatCompletionUserMessageParam"]
+				| components["schemas"]["ChatCompletionAssistantMessageParam"]
+				| components["schemas"]["ChatCompletionToolMessageParam"]
+				| components["schemas"]["ChatCompletionFunctionMessageParam"]
+			)[];
+			/** Model */
+			model:
+				| string
+				| (
+						| "o1"
+						| "o1-2024-12-17"
+						| "o1-preview"
+						| "o1-preview-2024-09-12"
+						| "o1-mini"
+						| "o1-mini-2024-09-12"
+						| "gpt-4o"
+						| "gpt-4o-2024-11-20"
+						| "gpt-4o-2024-08-06"
+						| "gpt-4o-2024-05-13"
+						| "gpt-4o-audio-preview"
+						| "gpt-4o-audio-preview-2024-10-01"
+						| "gpt-4o-audio-preview-2024-12-17"
+						| "gpt-4o-mini-audio-preview"
+						| "gpt-4o-mini-audio-preview-2024-12-17"
+						| "chatgpt-4o-latest"
+						| "gpt-4o-mini"
+						| "gpt-4o-mini-2024-07-18"
+						| "gpt-4-turbo"
+						| "gpt-4-turbo-2024-04-09"
+						| "gpt-4-0125-preview"
+						| "gpt-4-turbo-preview"
+						| "gpt-4-1106-preview"
+						| "gpt-4-vision-preview"
+						| "gpt-4"
+						| "gpt-4-0314"
+						| "gpt-4-0613"
+						| "gpt-4-32k"
+						| "gpt-4-32k-0314"
+						| "gpt-4-32k-0613"
+						| "gpt-3.5-turbo"
+						| "gpt-3.5-turbo-16k"
+						| "gpt-3.5-turbo-0301"
+						| "gpt-3.5-turbo-0613"
+						| "gpt-3.5-turbo-1106"
+						| "gpt-3.5-turbo-0125"
+						| "gpt-3.5-turbo-16k-0613"
+				  );
+			audio?: components["schemas"]["ChatCompletionAudioParam"] | null;
+			/** Frequency Penalty */
+			frequency_penalty?: number | null;
+			/** Function Call */
+			function_call?:
+				| ("none" | "auto")
+				| components["schemas"]["ChatCompletionFunctionCallOptionParam"];
+			/** Functions */
+			functions?: components["schemas"]["openai__types__chat__completion_create_params__Function"][];
+			/** Logit Bias */
+			logit_bias?: {
+				[key: string]: number;
+			} | null;
+			/** Logprobs */
+			logprobs?: boolean | null;
+			/** Max Completion Tokens */
+			max_completion_tokens?: number | null;
+			/** Max Tokens */
+			max_tokens?: number | null;
+			/** Metadata */
+			metadata?: {
+				[key: string]: string;
+			} | null;
+			/** Modalities */
+			modalities?: ("text" | "audio")[] | null;
+			/** N */
+			n?: number | null;
+			/** Parallel Tool Calls */
+			parallel_tool_calls?: boolean;
+			prediction?:
+				| components["schemas"]["ChatCompletionPredictionContentParam"]
+				| null;
+			/** Presence Penalty */
+			presence_penalty?: number | null;
+			/**
+			 * Reasoning Effort
+			 * @enum {string}
+			 */
+			reasoning_effort?: "low" | "medium" | "high";
+			/** Response Format */
+			response_format?:
+				| components["schemas"]["ResponseFormatText"]
+				| components["schemas"]["ResponseFormatJSONObject"]
+				| components["schemas"]["ResponseFormatJSONSchema"];
+			/** Seed */
+			seed?: number | null;
+			/** Service Tier */
+			service_tier?: ("auto" | "default") | null;
+			/** Stop */
+			stop?: string | string[] | null;
+			/** Store */
+			store?: boolean | null;
+			stream_options?:
+				| components["schemas"]["ChatCompletionStreamOptionsParam"]
+				| null;
+			/** Temperature */
+			temperature?: number | null;
+			/** Tool Choice */
+			tool_choice?:
+				| ("none" | "auto" | "required")
+				| components["schemas"]["ChatCompletionNamedToolChoiceParam"];
+			/** Tools */
+			tools?: components["schemas"]["ChatCompletionToolParam"][];
+			/** Top Logprobs */
+			top_logprobs?: number | null;
+			/** Top P */
+			top_p?: number | null;
+			/** User */
+			user?: string;
+			/** Stream */
+			stream?: false | null;
+		};
+		/** CompletionCreateParamsStreaming */
+		CompletionCreateParamsStreaming: {
+			/** Messages */
+			messages: (
+				| components["schemas"]["ChatCompletionDeveloperMessageParam"]
+				| components["schemas"]["ChatCompletionSystemMessageParam"]
+				| components["schemas"]["ChatCompletionUserMessageParam"]
+				| components["schemas"]["ChatCompletionAssistantMessageParam"]
+				| components["schemas"]["ChatCompletionToolMessageParam"]
+				| components["schemas"]["ChatCompletionFunctionMessageParam"]
+			)[];
+			/** Model */
+			model:
+				| string
+				| (
+						| "o1"
+						| "o1-2024-12-17"
+						| "o1-preview"
+						| "o1-preview-2024-09-12"
+						| "o1-mini"
+						| "o1-mini-2024-09-12"
+						| "gpt-4o"
+						| "gpt-4o-2024-11-20"
+						| "gpt-4o-2024-08-06"
+						| "gpt-4o-2024-05-13"
+						| "gpt-4o-audio-preview"
+						| "gpt-4o-audio-preview-2024-10-01"
+						| "gpt-4o-audio-preview-2024-12-17"
+						| "gpt-4o-mini-audio-preview"
+						| "gpt-4o-mini-audio-preview-2024-12-17"
+						| "chatgpt-4o-latest"
+						| "gpt-4o-mini"
+						| "gpt-4o-mini-2024-07-18"
+						| "gpt-4-turbo"
+						| "gpt-4-turbo-2024-04-09"
+						| "gpt-4-0125-preview"
+						| "gpt-4-turbo-preview"
+						| "gpt-4-1106-preview"
+						| "gpt-4-vision-preview"
+						| "gpt-4"
+						| "gpt-4-0314"
+						| "gpt-4-0613"
+						| "gpt-4-32k"
+						| "gpt-4-32k-0314"
+						| "gpt-4-32k-0613"
+						| "gpt-3.5-turbo"
+						| "gpt-3.5-turbo-16k"
+						| "gpt-3.5-turbo-0301"
+						| "gpt-3.5-turbo-0613"
+						| "gpt-3.5-turbo-1106"
+						| "gpt-3.5-turbo-0125"
+						| "gpt-3.5-turbo-16k-0613"
+				  );
+			audio?: components["schemas"]["ChatCompletionAudioParam"] | null;
+			/** Frequency Penalty */
+			frequency_penalty?: number | null;
+			/** Function Call */
+			function_call?:
+				| ("none" | "auto")
+				| components["schemas"]["ChatCompletionFunctionCallOptionParam"];
+			/** Functions */
+			functions?: components["schemas"]["openai__types__chat__completion_create_params__Function"][];
+			/** Logit Bias */
+			logit_bias?: {
+				[key: string]: number;
+			} | null;
+			/** Logprobs */
+			logprobs?: boolean | null;
+			/** Max Completion Tokens */
+			max_completion_tokens?: number | null;
+			/** Max Tokens */
+			max_tokens?: number | null;
+			/** Metadata */
+			metadata?: {
+				[key: string]: string;
+			} | null;
+			/** Modalities */
+			modalities?: ("text" | "audio")[] | null;
+			/** N */
+			n?: number | null;
+			/** Parallel Tool Calls */
+			parallel_tool_calls?: boolean;
+			prediction?:
+				| components["schemas"]["ChatCompletionPredictionContentParam"]
+				| null;
+			/** Presence Penalty */
+			presence_penalty?: number | null;
+			/**
+			 * Reasoning Effort
+			 * @enum {string}
+			 */
+			reasoning_effort?: "low" | "medium" | "high";
+			/** Response Format */
+			response_format?:
+				| components["schemas"]["ResponseFormatText"]
+				| components["schemas"]["ResponseFormatJSONObject"]
+				| components["schemas"]["ResponseFormatJSONSchema"];
+			/** Seed */
+			seed?: number | null;
+			/** Service Tier */
+			service_tier?: ("auto" | "default") | null;
+			/** Stop */
+			stop?: string | string[] | null;
+			/** Store */
+			store?: boolean | null;
+			stream_options?:
+				| components["schemas"]["ChatCompletionStreamOptionsParam"]
+				| null;
+			/** Temperature */
+			temperature?: number | null;
+			/** Tool Choice */
+			tool_choice?:
+				| ("none" | "auto" | "required")
+				| components["schemas"]["ChatCompletionNamedToolChoiceParam"];
+			/** Tools */
+			tools?: components["schemas"]["ChatCompletionToolParam"][];
+			/** Top Logprobs */
+			top_logprobs?: number | null;
+			/** Top P */
+			top_p?: number | null;
+			/** User */
+			user?: string;
+			/**
+			 * Stream
+			 * @constant
+			 */
+			stream: true;
 		};
 		/** ConfigForm */
 		ConfigForm: {
@@ -4867,6 +5287,24 @@ export interface components {
 			/** Parent Id */
 			parent_id?: string | null;
 		};
+		/** FunctionCall */
+		FunctionCall: {
+			/** Arguments */
+			arguments: string;
+			/** Name */
+			name: string;
+		};
+		/** FunctionDefinition */
+		FunctionDefinition: {
+			/** Name */
+			name: string;
+			/** Description */
+			description?: string;
+			/** Parameters */
+			parameters?: Record<string, never>;
+			/** Strict */
+			strict?: boolean | null;
+		};
 		/** GenerateCompletionForm */
 		GenerateCompletionForm: {
 			/** Model */
@@ -4997,10 +5435,41 @@ export interface components {
 			/** Image Steps */
 			IMAGE_STEPS: number;
 		};
+		/** ImageURL */
+		ImageURL: {
+			/** Url */
+			url: string;
+			/**
+			 * Detail
+			 * @enum {string}
+			 */
+			detail?: "auto" | "low" | "high";
+		};
 		/** ImportConfigForm */
 		ImportConfigForm: {
 			/** Config */
 			config: Record<string, never>;
+		};
+		/** InputAudio */
+		InputAudio: {
+			/** Data */
+			data: string;
+			/**
+			 * Format
+			 * @enum {string}
+			 */
+			format: "wav" | "mp3";
+		};
+		/** JSONSchema */
+		JSONSchema: {
+			/** Name */
+			name: string;
+			/** Description */
+			description?: string;
+			/** Schema */
+			schema?: Record<string, never>;
+			/** Strict */
+			strict?: boolean | null;
 		};
 		/** KnowledgeFileIdForm */
 		KnowledgeFileIdForm: {
@@ -5148,11 +5617,6 @@ export interface components {
 			 * @default ALL
 			 */
 			ciphers: string | null;
-		};
-		/** MarkdownForm */
-		MarkdownForm: {
-			/** Md */
-			md: string;
 		};
 		/** MemoryModel */
 		MemoryModel: {
@@ -5520,6 +5984,35 @@ export interface components {
 			/** Reranking Model */
 			reranking_model: string;
 		};
+		/** ResponseFormatJSONObject */
+		ResponseFormatJSONObject: {
+			/**
+			 * Type
+			 * @constant
+			 */
+			type: "json_object";
+		};
+		/** ResponseFormatJSONSchema */
+		ResponseFormatJSONSchema: {
+			json_schema: components["schemas"]["JSONSchema"];
+			/**
+			 * Type
+			 * @constant
+			 */
+			type: "json_schema";
+		};
+		/** ResponseFormatText */
+		ResponseFormatText: {
+			/**
+			 * Type
+			 * @constant
+			 */
+			type: "text";
+		};
+		/** RootModel[Union[CompletionCreateParamsNonStreaming, CompletionCreateParamsStreaming]] */
+		RootModel_Union_CompletionCreateParamsNonStreaming__CompletionCreateParamsStreaming__:
+			| components["schemas"]["CompletionCreateParamsNonStreaming"]
+			| components["schemas"]["CompletionCreateParamsStreaming"];
 		/** RootModel[dict[SemanticVersion, ChangelogItem]] */
 		RootModel_dict_SemanticVersion__ChangelogItem__: Record<string, never>;
 		/** STTConfigForm */
@@ -6041,6 +6534,27 @@ export interface components {
 			profile_image_url: string;
 			/** Active */
 			active?: boolean | null;
+		};
+		/** Function */
+		openai__types__chat__chat_completion_message_tool_call_param__Function: {
+			/** Arguments */
+			arguments: string;
+			/** Name */
+			name: string;
+		};
+		/** Function */
+		openai__types__chat__chat_completion_named_tool_choice_param__Function: {
+			/** Name */
+			name: string;
+		};
+		/** Function */
+		openai__types__chat__completion_create_params__Function: {
+			/** Name */
+			name: string;
+			/** Description */
+			description?: string;
+			/** Parameters */
+			parameters?: Record<string, never>;
 		};
 	};
 	responses: never;
@@ -7508,133 +8022,9 @@ export interface operations {
 		};
 		requestBody: {
 			content: {
-				"application/json": Record<string, never>;
+				"application/json": components["schemas"]["RootModel_Union_CompletionCreateParamsNonStreaming__CompletionCreateParamsStreaming__"];
 			};
 		};
-		responses: {
-			/** @description Successful Response */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": unknown;
-				};
-			};
-			/** @description Validation Error */
-			422: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["HTTPValidationError"];
-				};
-			};
-		};
-	};
-	proxy_openai__path__get: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				path: string;
-			};
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Successful Response */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": unknown;
-				};
-			};
-			/** @description Validation Error */
-			422: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["HTTPValidationError"];
-				};
-			};
-		};
-	};
-	proxy_openai__path__get: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				path: string;
-			};
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Successful Response */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": unknown;
-				};
-			};
-			/** @description Validation Error */
-			422: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["HTTPValidationError"];
-				};
-			};
-		};
-	};
-	proxy_openai__path__get: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				path: string;
-			};
-			cookie?: never;
-		};
-		requestBody?: never;
-		responses: {
-			/** @description Successful Response */
-			200: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": unknown;
-				};
-			};
-			/** @description Validation Error */
-			422: {
-				headers: {
-					[name: string]: unknown;
-				};
-				content: {
-					"application/json": components["schemas"]["HTTPValidationError"];
-				};
-			};
-		};
-	};
-	proxy_openai__path__get: {
-		parameters: {
-			query?: never;
-			header?: never;
-			path: {
-				path: string;
-			};
-			cookie?: never;
-		};
-		requestBody?: never;
 		responses: {
 			/** @description Successful Response */
 			200: {
@@ -13552,16 +13942,14 @@ export interface operations {
 	};
 	format_code_api_v1_utils_code_format_post: {
 		parameters: {
-			query?: never;
+			query: {
+				code: string;
+			};
 			header?: never;
 			path?: never;
 			cookie?: never;
 		};
-		requestBody: {
-			content: {
-				"application/json": components["schemas"]["CodeFormatRequest"];
-			};
-		};
+		requestBody?: never;
 		responses: {
 			/** @description Successful Response */
 			200: {
@@ -13585,16 +13973,14 @@ export interface operations {
 	};
 	get_html_from_markdown_api_v1_utils_markdown_post: {
 		parameters: {
-			query?: never;
+			query: {
+				md: string;
+			};
 			header?: never;
 			path?: never;
 			cookie?: never;
 		};
-		requestBody: {
-			content: {
-				"application/json": components["schemas"]["MarkdownForm"];
-			};
-		};
+		requestBody?: never;
 		responses: {
 			/** @description Successful Response */
 			200: {
@@ -13618,14 +14004,16 @@ export interface operations {
 	};
 	download_chat_as_pdf_api_v1_utils_pdf_post: {
 		parameters: {
-			query?: never;
+			query: {
+				title: string;
+			};
 			header?: never;
 			path?: never;
 			cookie?: never;
 		};
 		requestBody: {
 			content: {
-				"application/json": components["schemas"]["ChatTitleMessagesForm"];
+				"application/json": Record<string, never>[];
 			};
 		};
 		responses: {

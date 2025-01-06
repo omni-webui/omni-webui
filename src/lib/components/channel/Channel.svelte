@@ -1,17 +1,14 @@
 <script lang="ts">
-import { Pane, PaneGroup, PaneResizer } from "paneforge";
-import { toast } from "svelte-sonner";
-
 import { goto } from "$app/navigation";
-import { onDestroy, onMount, tick } from "svelte";
-
 import {
 	getChannelById,
 	getChannelMessages,
 	sendMessage,
 } from "$lib/apis/channels";
 import { chatId, showSidebar, socket, user } from "$lib/stores";
-
+import { Pane, PaneGroup, PaneResizer } from "paneforge";
+import { onDestroy, onMount, tick } from "svelte";
+import { toast } from "svelte-sonner";
 import Drawer from "../common/Drawer.svelte";
 import EllipsisVertical from "../icons/EllipsisVertical.svelte";
 import MessageInput from "./MessageInput.svelte";
@@ -33,10 +30,6 @@ let threadId = null;
 
 let typingUsers = [];
 let typingUsersTimeout = {};
-
-$: if (id) {
-	initHandler();
-}
 
 const scrollToBottom = () => {
 	if (messagesContainerElement) {
@@ -71,6 +64,10 @@ const initHandler = async () => {
 		goto("/");
 	}
 };
+
+$: if (id) {
+	initHandler();
+}
 
 const channelEventHandler = async (event) => {
 	if (event.channel_id === id) {
@@ -170,7 +167,7 @@ const onChange = async () => {
 	});
 };
 
-let mediaQuery;
+let mediaQuery: MediaQueryList;
 let largeScreen = false;
 
 onMount(() => {
@@ -182,7 +179,7 @@ onMount(() => {
 
 	mediaQuery = window.matchMedia("(min-width: 1024px)");
 
-	const handleMediaQuery = async (e) => {
+	const handleMediaQuery = async (e: MediaQueryListEvent) => {
 		if (e.matches) {
 			largeScreen = true;
 		} else {

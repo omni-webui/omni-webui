@@ -1,44 +1,38 @@
 <script lang="ts">
-import { toast } from "svelte-sonner";
-
-import dayjs from "dayjs";
-import isToday from "dayjs/plugin/isToday";
-import isYesterday from "dayjs/plugin/isYesterday";
-import relativeTime from "dayjs/plugin/relativeTime";
-
-dayjs.extend(relativeTime);
-dayjs.extend(isToday);
-dayjs.extend(isYesterday);
-import { createEventDispatcher, getContext, onMount, tick } from "svelte";
-
-import { settings, user } from "$lib/stores";
-
 import {
 	addReaction,
 	deleteMessage,
 	removeReaction,
 	updateMessage,
 } from "$lib/apis/channels";
+import { settings, user } from "$lib/stores";
+import dayjs from "dayjs";
+import isToday from "dayjs/plugin/isToday";
+import isYesterday from "dayjs/plugin/isYesterday";
+import relativeTime from "dayjs/plugin/relativeTime";
+import { tick } from "svelte";
+import { toast } from "svelte-sonner";
 import Loader from "../common/Loader.svelte";
 import Spinner from "../common/Spinner.svelte";
 import Message from "./Messages/Message.svelte";
 
-const i18n = getContext("i18n");
-
+dayjs.extend(relativeTime);
+dayjs.extend(isToday);
+dayjs.extend(isYesterday);
 export let id = null;
 export let channel = null;
 export let messages = [];
 export let top = false;
 export let thread = false;
 
-export let onLoad: Function = () => {};
-export let onThread: Function = () => {};
+export let onLoad: () => Promise<void>;
+export let onThread: (id: string) => void = (_) => {};
 
 let messagesLoading = false;
 
 const loadMoreMessages = async () => {
 	// scroll slightly down to disable continuous loading
-	const element = document.getElementById("messages-container");
+	const element = document.getElementById("messages-container") as HTMLElement;
 	element.scrollTop = element.scrollTop + 100;
 
 	messagesLoading = true;

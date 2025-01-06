@@ -10,31 +10,27 @@ import {
 } from "$lib/stores";
 import { type Model } from "$lib/stores";
 import { sanitizeResponseContent } from "$lib/utils";
+import type { i18n as i18nType } from "i18next";
 import { marked } from "marked";
 import { createEventDispatcher, getContext, onMount, tick } from "svelte";
 import { toast } from "svelte-sonner";
+import type { Writable } from "svelte/store";
 import { fade } from "svelte/transition";
 import MessageInput from "./MessageInput.svelte";
 import Suggestions from "./Suggestions.svelte";
 
-const i18n = getContext("i18n");
+const i: Writable<i18n> = getContext("i18n");
 const dispatch = createEventDispatcher();
 
 export let transparentBackground = false;
-
 export let createMessagePair: (userPrompt: string) => Promise<void>;
 export let stopResponse: () => void;
-
 export let autoScroll = false;
-
 export let atSelectedModel: Model | undefined;
 export let selectedModels: [""];
-
 export let history: OmniWebUI.History;
-
 export let prompt = "";
 export let files = [];
-
 export let selectedToolIds = [];
 export let webSearchEnabled = false;
 
@@ -45,7 +41,7 @@ const selectSuggestionPrompt = async (p) => {
 
 	if (p.includes("{{CLIPBOARD}}")) {
 		const clipboardText = await navigator.clipboard.readText().catch((err) => {
-			toast.error($i18n.t("Failed to read clipboard contents"));
+			toast.error($i.t("Failed to read clipboard contents"));
 			return "{{CLIPBOARD}}";
 		});
 
@@ -124,7 +120,7 @@ onMount(() => {});
 									<img
 										crossorigin="anonymous"
 										src={model?.info?.meta?.profile_image_url ??
-											($i18n.language === 'dg-DG'
+											($i.language === 'dg-DG'
 												? `/doge.png`
 												: `${WEBUI_BASE_URL}/static/favicon.png`)}
 										class=" size-9 sm:size-10 rounded-full border-[1px] border-gray-200 dark:border-none"
@@ -141,7 +137,7 @@ onMount(() => {});
 					{#if models[selectedModelIdx]?.name}
 						{models[selectedModelIdx]?.name}
 					{:else}
-						{$i18n.t('Hello, {{name}}', { name: $user.name })}
+						{$i.t('Hello, {{name}}', { name: $user.name })}
 					{/if}
 				</div>
 			</div>
@@ -202,7 +198,7 @@ onMount(() => {});
 					{transparentBackground}
 					{stopResponse}
 					{createMessagePair}
-					placeholder={$i18n.t('How can I help you today?')}
+					placeholder={$i.t('How can I help you today?')}
 					on:upload={(e) => {
 						dispatch('upload', e.detail);
 					}}

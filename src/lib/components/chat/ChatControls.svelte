@@ -24,7 +24,7 @@ export let eventTarget: EventTarget;
 export let submitPrompt: (userPrompt: string) => Promise<void>;
 export let stopResponse: () => void;
 export let showMessage: (message: OmniWebUI.Message) => Promise<void>;
-export let files;
+export let files: OmniWebUI.File[] = [];
 export let modelId: string | undefined;
 export let pane: PaneAPI | null;
 
@@ -44,7 +44,7 @@ export const openPane = () => {
 	}
 };
 
-const handleMediaQuery = async (e: MediaQueryList) => {
+const handleMediaQuery = async (e: MediaQueryListEvent) => {
 	if (e.matches) {
 		largeScreen = true;
 
