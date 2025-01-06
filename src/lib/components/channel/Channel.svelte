@@ -20,14 +20,10 @@ export let id = "";
 
 let scrollEnd = true;
 let messagesContainerElement = null;
-
 let top = false;
-
 let channel = null;
 let messages = null;
-
 let threadId = null;
-
 let typingUsers = [];
 let typingUsersTimeout = {};
 
