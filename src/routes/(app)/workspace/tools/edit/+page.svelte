@@ -1,16 +1,18 @@
 <script lang="ts">
 import { goto } from "$app/navigation";
-import { page } from "$app/stores";
+import { page } from "$app/state";
 import { getToolById, getTools, updateToolById } from "$lib/apis/tools";
 import Spinner from "$lib/components/common/Spinner.svelte";
 import ToolkitEditor from "$lib/components/workspace/Tools/ToolkitEditor.svelte";
 import { WEBUI_VERSION } from "$lib/constants";
 import { tools } from "$lib/stores";
 import { compareVersion, extractFrontmatter } from "$lib/utils";
+import { type i18n } from "i18next";
 import { getContext, onMount } from "svelte";
 import { toast } from "svelte-sonner";
+import { type Writable } from "svelte/store";
 
-const i18n = getContext("i18n");
+const i: Writable<i18n> = getContext("i18n");
 
 let tool = null;
 
@@ -26,7 +28,7 @@ const saveHandler = async (data) => {
 	) {
 		console.log("Version is lower than required");
 		toast.error(
-			$i18n.t(
+			$i.t(
 				"Open WebUI version (v{{OPEN_WEBUI_VERSION}}) is lower than required version (v{{REQUIRED_VERSION}})",
 				{
 					OPEN_WEBUI_VERSION: WEBUI_VERSION,
@@ -49,7 +51,7 @@ const saveHandler = async (data) => {
 	});
 
 	if (res) {
-		toast.success($i18n.t("Tool updated successfully"));
+		toast.success($i.t("Tool updated successfully"));
 		tools.set(await getTools(localStorage.token));
 
 		// await goto('/workspace/tools');
@@ -58,7 +60,7 @@ const saveHandler = async (data) => {
 
 onMount(async () => {
 	console.log("mounted");
-	const id = $page.url.searchParams.get("id");
+	const id = page.url.searchParams.get("id");
 
 	if (id) {
 		tool = await getToolById(localStorage.token, id).catch((error) => {

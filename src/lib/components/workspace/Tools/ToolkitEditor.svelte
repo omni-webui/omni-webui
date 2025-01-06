@@ -5,7 +5,9 @@ import ConfirmDialog from "$lib/components/common/ConfirmDialog.svelte";
 import Tooltip from "$lib/components/common/Tooltip.svelte";
 import ChevronLeft from "$lib/components/icons/ChevronLeft.svelte";
 import LockClosed from "$lib/components/icons/LockClosed.svelte";
+import { type i18n } from "i18next";
 import { createEventDispatcher, getContext, tick } from "svelte";
+import { type Writable } from "svelte/store";
 import type { AccessControl } from "../common/AccessControl.svelte";
 import AccessControlModal from "../common/AccessControlModal.svelte";
 
@@ -19,7 +21,7 @@ export let meta = {
 export let content = "";
 export let accessControl: AccessControl;
 
-const i18n = getContext("i18n");
+const i: Writable<i18n> = getContext("i18n");
 const dispatch = createEventDispatcher();
 
 let formElement: HTMLFormElement;
@@ -191,7 +193,7 @@ const submitHandler = async () => {
 				<div class="w-full mb-2 flex flex-col gap-0.5">
 					<div class="flex w-full items-center">
 						<div class=" flex-shrink-0 mr-2">
-							<Tooltip content={$i18n.t('Back')}>
+							<Tooltip content={$i.t('Back')}>
 								<button
 									class="w-full text-left text-sm py-1.5 px-1 rounded-lg dark:text-gray-300 dark:hover:text-white hover:bg-black/5 dark:hover:bg-gray-850"
 									on:click={() => {
@@ -205,11 +207,11 @@ const submitHandler = async () => {
 						</div>
 
 						<div class="flex-1">
-							<Tooltip content={$i18n.t('e.g. My Tools')} placement="top-start">
+							<Tooltip content={$i.t('e.g. My Tools')} placement="top-start">
 								<input
 									class="w-full text-2xl font-semibold bg-transparent outline-none"
 									type="text"
-									placeholder={$i18n.t('Tool Name')}
+									placeholder={$i.t('Tool Name')}
 									bind:value={name}
 									required
 								/>
@@ -227,7 +229,7 @@ const submitHandler = async () => {
 								<LockClosed strokeWidth="2.5" className="size-3.5" />
 
 								<div class="text-sm font-medium flex-shrink-0">
-									{$i18n.t('Access')}
+									{$i.t('Access')}
 								</div>
 							</button>
 						</div>
@@ -239,11 +241,11 @@ const submitHandler = async () => {
 								{id}
 							</div>
 						{:else}
-							<Tooltip className="w-full" content={$i18n.t('e.g. my_tools')} placement="top-start">
+							<Tooltip className="w-full" content={$i.t('e.g. my_tools')} placement="top-start">
 								<input
 									class="w-full text-sm disabled:text-gray-500 bg-transparent outline-none"
 									type="text"
-									placeholder={$i18n.t('Tool ID')}
+									placeholder={$i.t('Tool ID')}
 									bind:value={id}
 									required
 									disabled={edit}
@@ -253,13 +255,13 @@ const submitHandler = async () => {
 
 						<Tooltip
 							className="w-full self-center items-center flex"
-							content={$i18n.t('e.g. Tools for performing various operations')}
+							content={$i.t('e.g. Tools for performing various operations')}
 							placement="top-start"
 						>
 							<input
 								class="w-full text-sm bg-transparent outline-none"
 								type="text"
-								placeholder={$i18n.t('Tool Description')}
+								placeholder={$i.t('Tool Description')}
 								bind:value={meta.description}
 								required
 							/>
@@ -287,10 +289,10 @@ const submitHandler = async () => {
 				<div class="pb-3 flex justify-between">
 					<div class="flex-1 pr-3">
 						<div class="text-xs text-gray-500 line-clamp-2">
-							<span class=" font-semibold dark:text-gray-200">{$i18n.t('Warning:')}</span>
-							{$i18n.t('Tools are a function calling system with arbitrary code execution')} <br />—
+							<span class=" font-semibold dark:text-gray-200">{$i.t('Warning:')}</span>
+							{$i.t('Tools are a function calling system with arbitrary code execution')} <br />—
 							<span class=" font-medium dark:text-gray-400"
-								>{$i18n.t(`don't install random tools from sources you don't trust.`)}</span
+								>{$i.t(`don't install random tools from sources you don't trust.`)}</span
 							>
 						</div>
 					</div>
@@ -299,7 +301,7 @@ const submitHandler = async () => {
 						class="px-3.5 py-1.5 text-sm font-medium bg-black hover:bg-gray-900 text-white dark:bg-white dark:text-black dark:hover:bg-gray-100 transition rounded-full"
 						type="submit"
 					>
-						{$i18n.t('Save')}
+						{$i.t('Save')}
 					</button>
 				</div>
 			</div>
@@ -315,18 +317,18 @@ const submitHandler = async () => {
 >
 	<div class="text-sm text-gray-500">
 		<div class=" bg-yellow-500/20 text-yellow-700 dark:text-yellow-200 rounded-lg px-4 py-3">
-			<div>{$i18n.t('Please carefully review the following warnings:')}</div>
+			<div>{$i.t('Please carefully review the following warnings:')}</div>
 
 			<ul class=" mt-1 list-disc pl-4 text-xs">
 				<li>
-					{$i18n.t('Tools have a function calling system that allows arbitrary code execution.')}
+					{$i.t('Tools have a function calling system that allows arbitrary code execution.')}
 				</li>
-				<li>{$i18n.t('Do not install tools from sources you do not fully trust.')}</li>
+				<li>{$i.t('Do not install tools from sources you do not fully trust.')}</li>
 			</ul>
 		</div>
 
 		<div class="my-3">
-			{$i18n.t(
+			{$i.t(
 				'I acknowledge that I have read and I understand the implications of my action. I am aware of the risks associated with executing arbitrary code and I have verified the trustworthiness of the source.'
 			)}
 		</div>

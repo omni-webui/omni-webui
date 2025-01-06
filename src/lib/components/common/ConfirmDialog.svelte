@@ -1,26 +1,23 @@
 <script lang="ts">
-import { createEventDispatcher, getContext, onMount } from "svelte";
-const i18n = getContext("i18n");
-const dispatch = createEventDispatcher();
-
 import { flyAndScale } from "$lib/utils/transitions";
+import { type i18n } from "i18next";
+import { createEventDispatcher, getContext, onMount } from "svelte";
+import { type Writable } from "svelte/store";
 import { fade } from "svelte/transition";
 
+const i: Writable<i18n> = getContext("i18n");
 export let title = "";
 export let message = "";
-
-export let cancelLabel = $i18n.t("Cancel");
-export let confirmLabel = $i18n.t("Confirm");
-
+export let cancelLabel = $i.t("Cancel");
+export let confirmLabel = $i.t("Confirm");
 export let onConfirm = () => {};
-
 export let input = false;
 export let inputPlaceholder = "";
 export let inputValue = "";
-
 export let show = false;
 
-let modalElement = null;
+const dispatch = createEventDispatcher();
+let modalElement: HTMLDivElement | null = null;
 let mounted = false;
 
 const handleKeyDown = (event: KeyboardEvent) => {
@@ -83,7 +80,7 @@ $: if (mounted) {
 					{#if title !== ''}
 						{title}
 					{:else}
-						{$i18n.t('Confirm your action')}
+						{$i.t('Confirm your action')}
 					{/if}
 				</div>
 
@@ -92,13 +89,13 @@ $: if (mounted) {
 						{#if message !== ''}
 							{message}
 						{:else}
-							{$i18n.t('This action cannot be undone. Do you wish to continue?')}
+							{$i.t('This action cannot be undone. Do you wish to continue?')}
 						{/if}
 
 						{#if input}
 							<textarea
 								bind:value={inputValue}
-								placeholder={inputPlaceholder ? inputPlaceholder : $i18n.t('Enter your message')}
+								placeholder={inputPlaceholder ? inputPlaceholder : $i.t('Enter your message')}
 								class="w-full mt-2 rounded-lg px-4 py-2 text-sm dark:text-gray-300 dark:bg-gray-900 outline-none resize-none"
 								rows="3"
 								required

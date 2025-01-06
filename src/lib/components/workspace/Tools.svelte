@@ -25,7 +25,6 @@ import Plus from "../icons/Plus.svelte";
 import Search from "../icons/Search.svelte";
 import ToolMenu from "./Tools/ToolMenu.svelte";
 import ManifestModal from "./common/ManifestModal.svelte";
-import ValvesModal from "./common/ValvesModal.svelte";
 
 const i18n = getContext("i18n");
 
@@ -33,13 +32,12 @@ let shiftKey = false;
 let loaded = false;
 
 let toolsImportInputElement: HTMLInputElement;
-let importFiles;
+let importFiles: FileList;
 
 let showConfirm = false;
 let query = "";
 
 let showManifestModal = false;
-let showValvesModal = false;
 let selectedTool = null;
 
 let showDeleteConfirm = false;
@@ -302,7 +300,6 @@ onMount(async () => {
 								type="button"
 								on:click={() => {
 									selectedTool = tool;
-									showValvesModal = true;
 								}}
 							>
 								<svg
@@ -475,7 +472,6 @@ onMount(async () => {
 		</div>
 	</DeleteConfirmDialog>
 
-	<ValvesModal bind:show={showValvesModal} type="tool" id={selectedTool?.id ?? null} />
 	<ManifestModal bind:show={showManifestModal} manifest={selectedTool?.meta?.manifest ?? {}} />
 
 	<ConfirmDialog

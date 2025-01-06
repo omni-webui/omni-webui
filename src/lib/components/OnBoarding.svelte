@@ -1,6 +1,8 @@
 <script lang="ts">
 import { WEBUI_BASE_URL } from "$lib/constants";
+import { type i18n } from "i18next";
 import { getContext } from "svelte";
+import { type Writable } from "svelte/store";
 import Marquee from "./common/Marquee.svelte";
 import SlideShow from "./common/SlideShow.svelte";
 import ArrowRightCircle from "./icons/ArrowRightCircle.svelte";
@@ -8,7 +10,7 @@ import ArrowRightCircle from "./icons/ArrowRightCircle.svelte";
 export let show = true;
 export let getStartedHandler = () => {};
 
-const i18n = getContext("i18n");
+const i: Writable<i18n> = getContext("i18n");
 </script>
 
 {#if show}
@@ -40,20 +42,20 @@ const i18n = getContext("i18n");
 					<Marquee
 						duration={5000}
 						words={[
-							$i18n.t('Explore the cosmos'),
-							$i18n.t('Unlock mysteries'),
-							$i18n.t('Chart new frontiers'),
-							$i18n.t('Dive into knowledge'),
-							$i18n.t('Discover wonders'),
-							$i18n.t('Ignite curiosity'),
-							$i18n.t('Forge new paths'),
-							$i18n.t('Unravel secrets'),
-							$i18n.t('Pioneer insights'),
-							$i18n.t('Embark on adventures')
+							$i.t('Explore the cosmos'),
+							$i.t('Unlock mysteries'),
+							$i.t('Chart new frontiers'),
+							$i.t('Dive into knowledge'),
+							$i.t('Discover wonders'),
+							$i.t('Ignite curiosity'),
+							$i.t('Forge new paths'),
+							$i.t('Unravel secrets'),
+							$i.t('Pioneer insights'),
+							$i.t('Embark on adventures')
 						]}
 					/>
 
-					<div class="mt-0.5">{$i18n.t(`wherever you are`)}</div>
+					<div class="mt-0.5">{$i.t(`wherever you are`)}</div>
 				</div>
 
 				<div class="flex justify-center mt-8">
@@ -66,7 +68,7 @@ const i18n = getContext("i18n");
 						>
 							<ArrowRightCircle className="size-6" />
 						</button>
-						<div class="mt-1.5 font-primary text-base font-medium">{$i18n.t(`Get started`)}</div>
+						<div class="mt-1.5 font-primary text-base font-medium">{$i.t(`Get started`)}</div>
 					</div>
 				</div>
 			</div>
