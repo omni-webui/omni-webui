@@ -55,10 +55,10 @@ Then, install the dependencies, `uv` is required (for read frontend files from c
 uv sync
 ```
 
-Build the whole project, you don't need to do `deno task build` because `uv build` will do it for you:
+Build the frontend:
 
 ```bash
-uv build
+deno task build
 ```
 
 Run the development server:
