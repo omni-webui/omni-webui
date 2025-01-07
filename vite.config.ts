@@ -57,6 +57,16 @@ export default defineConfig({
 		}),
 		sveltekit(),
 		viteStaticCopyPyodide(),
+		viteStaticCopy(
+			{
+				targets: [
+					{
+						src: normalizePath(join(dirname(fileURLToPath(import.meta.resolve("@discordapp/twemoji"))), "svg")),
+						dest: "assets/emojis",
+					}
+				]
+			}
+		),
 		ClosePlugin(), // ridiculous bug, solution from https://stackoverflow.com/a/76920975/5434822
 	],
 	define: {

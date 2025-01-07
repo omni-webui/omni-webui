@@ -1,0 +1,19 @@
+{
+    "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+    "overrides": [
+      {
+        "include": ["*.svelte"],
+        "formatter": {
+            "enabled": false
+        },
+        "linter": {
+          "rules": {
+            "style": {
+              "useConst": "off",
+              "useImportType": "off"
+            }
+          }
+        }
+      }
+    ]
+  }

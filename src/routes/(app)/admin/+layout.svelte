@@ -1,27 +1,26 @@
 <script lang="ts">
-import { goto } from "$app/navigation";
-import { getContext, onMount } from "svelte";
+	import { onMount, getContext } from 'svelte';
+	import { goto } from '$app/navigation';
 
-import { page } from "$app/stores";
-import MenuLines from "$lib/components/icons/MenuLines.svelte";
-import * as m from "$lib/paraglide/messages";
-import { WEBUI_NAME, showSidebar, user } from "$lib/stores";
+	import { WEBUI_NAME, showSidebar, user } from '$lib/stores';
+	import MenuLines from '$lib/components/icons/MenuLines.svelte';
+	import { page } from '$app/stores';
 
-const i18n = getContext("i18n");
+	const i18n = getContext('i18n');
 
-let loaded = false;
+	let loaded = false;
 
-onMount(async () => {
-	if ($user?.role !== "admin") {
-		await goto("/");
-	}
-	loaded = true;
-});
+	onMount(async () => {
+		if ($user?.role !== 'admin') {
+			await goto('/');
+		}
+		loaded = true;
+	});
 </script>
 
 <svelte:head>
 	<title>
-		{m.adminPanel()} | {$WEBUI_NAME}
+		{$i18n.t('Admin Panel')} | {$WEBUI_NAME}
 	</title>
 </svelte:head>
 
@@ -56,28 +55,28 @@ onMount(async () => {
 							class="min-w-fit rounded-full p-1.5 {['/admin/users'].includes($page.url.pathname)
 								? ''
 								: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
-							href="/admin">{m.users()}</a
+							href="/admin">{$i18n.t('Users')}</a
 						>
 
 						<a
 							class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes('/admin/evaluations')
 								? ''
 								: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
-							href="/admin/evaluations">{m.arenaEvaluations()}</a
+							href="/admin/evaluations">{$i18n.t('Evaluations')}</a
 						>
 
 						<a
-							class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes('/admin/mcp')
+							class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes('/admin/functions')
 								? ''
 								: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
-							href="/admin/mcp">{m.mcpServers()}</a
+							href="/admin/functions">{$i18n.t('Functions')}</a
 						>
 
 						<a
 							class="min-w-fit rounded-full p-1.5 {$page.url.pathname.includes('/admin/settings')
 								? ''
 								: 'text-gray-300 dark:text-gray-600 hover:text-gray-700 dark:hover:text-white'} transition"
-							href="/admin/settings">{m.settings()}</a
+							href="/admin/settings">{$i18n.t('Settings')}</a
 						>
 					</div>
 				</div>
