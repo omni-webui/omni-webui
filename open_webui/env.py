@@ -1,24 +1,45 @@
 """Environment variables and settings for Open WebUI."""
 
-import logging
 import os
 import pkgutil
 import shutil
-import sys
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 import markdown
 from bs4 import BeautifulSoup
-from pydantic_settings import BaseSettings
+from loguru import logger
+from pydantic import AliasChoices, Field, field_validator
+from pydantic_settings import BaseSettings, NoDecode
 
 from open_webui.constants import ERROR_MESSAGES
+
+OPENAI_BASE_URL = "https://api.openai.com/v1"
 
 
 class Environments(BaseSettings, case_sensitive=True):
     """Environment variables."""
 
     USE_CUDA_DOCKER: bool = False
+    OPENAI_API_KEY: str = ""
+    OPENAI_API_KEYS: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    OPENAI_BASE_URL: Annotated[
+        str,
+        Field(validation_alias=AliasChoices("OPENAI_BASE_URL", "OPENAI_API_BASE_URL")),
+    ] = OPENAI_BASE_URL
+
+    @field_validator("OPENAI_API_KEYS")
+    @classmethod
+    def validate_openai_api_keys(cls, value: str | list[str]) -> list[str]:
+        """Validate OpenAI API keys."""
+        if isinstance(value, str):
+            return [key.strip() for key in value.split(";") if key.strip()]
+        return value
+
+    def model_post_init(self, __context):
+        """Post init."""
+        if len(self.OPENAI_API_KEYS) == 0 and self.OPENAI_API_KEY:
+            self.OPENAI_API_KEYS = [self.OPENAI_API_KEY]
 
 
 env = Environments()
@@ -58,13 +79,8 @@ DEVICE_TYPE = get_device_type()
 log_levels = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
 
 GLOBAL_LOG_LEVEL = os.environ.get("GLOBAL_LOG_LEVEL", "").upper()
-if GLOBAL_LOG_LEVEL in log_levels:
-    logging.basicConfig(stream=sys.stdout, level=GLOBAL_LOG_LEVEL, force=True)
-else:
+if GLOBAL_LOG_LEVEL not in log_levels:
     GLOBAL_LOG_LEVEL = "INFO"
-
-log = logging.getLogger(__name__)
-log.info(f"GLOBAL_LOG_LEVEL: {GLOBAL_LOG_LEVEL}")
 
 log_sources = [
     "AUDIO",
@@ -88,9 +104,7 @@ for source in log_sources:
     SRC_LOG_LEVELS[source] = os.environ.get(log_env_var, "").upper()
     if SRC_LOG_LEVELS[source] not in log_levels:
         SRC_LOG_LEVELS[source] = GLOBAL_LOG_LEVEL
-    log.info(f"{log_env_var}: {SRC_LOG_LEVELS[source]}")
-
-log.setLevel(SRC_LOG_LEVELS["CONFIG"])
+    logger.info(f"{log_env_var}: {SRC_LOG_LEVELS[source]}")
 
 
 WEBUI_NAME = os.environ.get("WEBUI_NAME", "Open WebUI")
@@ -177,7 +191,7 @@ if FROM_INIT_PY:
 
     # Check if the data directory exists in the package directory
     if DATA_DIR.exists() and DATA_DIR != NEW_DATA_DIR:
-        log.info(f"Moving {DATA_DIR} to {NEW_DATA_DIR}")
+        logger.info(f"Moving {DATA_DIR} to {NEW_DATA_DIR}")
         for item in DATA_DIR.iterdir():
             dest = NEW_DATA_DIR / item.name
             if item.is_dir():
@@ -212,7 +226,7 @@ if FROM_INIT_PY:
 if os.path.exists(f"{DATA_DIR}/ollama.db"):
     # Rename the file
     os.rename(f"{DATA_DIR}/ollama.db", f"{DATA_DIR}/webui.db")
-    log.info("Database migrated from Ollama-WebUI successfully.")
+    logger.info("Database migrated from Ollama-WebUI successfully.")
 else:
     pass
 

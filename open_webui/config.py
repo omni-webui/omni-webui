@@ -1,82 +1,88 @@
+"""Configuration module for Open Web UI."""
+
 import json
 import logging
 import os
 import shutil
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Generic, Optional, TypeVar
 from urllib.parse import urlparse
 
-import chromadb
-import requests
-import yaml
-from open_webui.internal.db import Base, get_db
+import chromadb.config
+from loguru import logger
+from pydantic import BaseModel
+from sqlalchemy import func
+from sqlmodel import JSON, Field, SQLModel, col
+
 from open_webui.env import (
-    OPEN_WEBUI_DIR,
     DATA_DIR,
+    DATABASE_URL,
     ENV,
     FRONTEND_BUILD_DIR,
-    WEBUI_AUTH,
-    WEBUI_FAVICON_URL,
-    WEBUI_NAME,
-    log,
-    DATABASE_URL,
     OFFLINE_MODE,
+    OPEN_WEBUI_DIR,
+    OPENAI_BASE_URL,
+    WEBUI_AUTH,
+    env,
 )
-from pydantic import BaseModel
-from sqlalchemy import JSON, Column, DateTime, Integer, func
+from open_webui.env import WEBUI_FAVICON_URL as WEBUI_FAVICON_URL
+from open_webui.env import WEBUI_NAME as WEBUI_NAME
+from open_webui.internal.db import get_db
 
 
 class EndpointFilter(logging.Filter):
+    """Filter out /health from the logs."""
+
     def filter(self, record: logging.LogRecord) -> bool:
+        """Filter out /health from the logs."""
         return record.getMessage().find("/health") == -1
 
 
-# Filter out /endpoint
 logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
 
-####################################
-# Config helpers
-####################################
 
-
-# Function to run the alembic migrations
 def run_migrations():
-    print("Running migrations")
-    try:
-        from alembic import command
-        from alembic.config import Config
+    """Run the alembic migrations."""
+    logger.info("Running migrations")
+    from alembic import command
+    from alembic.config import Config
 
-        alembic_cfg = Config(OPEN_WEBUI_DIR / "alembic.ini")
+    alembic_cfg = Config(OPEN_WEBUI_DIR / "alembic.ini")
 
-        # Set the script location dynamically
-        migrations_path = OPEN_WEBUI_DIR / "migrations"
-        alembic_cfg.set_main_option("script_location", str(migrations_path))
+    # Set the script location dynamically
+    migrations_path = OPEN_WEBUI_DIR / "migrations"
+    alembic_cfg.set_main_option("script_location", str(migrations_path))
 
-        command.upgrade(alembic_cfg, "head")
-    except Exception as e:
-        print(f"Error: {e}")
+    command.upgrade(alembic_cfg, "head")
 
 
-run_migrations()
+try:
+    run_migrations()
+except Exception as e:
+    logger.exception(e)
 
 
-class Config(Base):
-    __tablename__ = "config"
+class Config(SQLModel, table=True):
+    """Config model."""
 
-    id = Column(Integer, primary_key=True)
-    data = Column(JSON, nullable=False)
-    version = Column(Integer, nullable=False, default=0)
-    created_at = Column(DateTime, nullable=False, server_default=func.now())
-    updated_at = Column(DateTime, nullable=True, onupdate=func.now())
+    id: int | None = Field(default=None, primary_key=True)
+    data: dict = Field(sa_type=JSON, nullable=False)
+    version: int = 0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime | None = Field(
+        default=None, sa_column_kwargs=dict(onupdate=func.now())
+    )
 
 
 def load_json_config():
+    """Load the JSON config."""
     with open(f"{DATA_DIR}/config.json", "r") as file:
         return json.load(file)
 
 
 def save_to_db(data):
+    """Save the config to the database."""
     with get_db() as db:
         existing_config = db.query(Config).first()
         if not existing_config:
@@ -84,18 +90,18 @@ def save_to_db(data):
             db.add(new_config)
         else:
             existing_config.data = data
-            existing_config.updated_at = datetime.now()
+            existing_config.updated_at = datetime.now(UTC)
             db.add(existing_config)
         db.commit()
 
 
 def reset_config():
+    """Reset the config."""
     with get_db() as db:
         db.query(Config).delete()
         db.commit()
 
 
-# When initializing, check if config.json exists and migrate it to the database
 if os.path.exists(f"{DATA_DIR}/config.json"):
     data = load_json_config()
     save_to_db(data)
@@ -155,8 +161,9 @@ DEFAULT_CONFIG = {
 
 
 def get_config():
+    """Get the config."""
     with get_db() as db:
-        config_entry = db.query(Config).order_by(Config.id.desc()).first()
+        config_entry = db.query(Config).order_by(col(Config.id).desc()).first()
         return config_entry.data if config_entry else DEFAULT_CONFIG
 
 
@@ -164,6 +171,7 @@ CONFIG_DATA = get_config()
 
 
 def get_config_value(config_path: str):
+    """Get the config value."""
     path_parts = config_path.split(".")
     cur_config = CONFIG_DATA
     for key in path_parts:
@@ -178,6 +186,7 @@ PERSISTENT_CONFIG_REGISTRY = []
 
 
 def save_config(config):
+    """Save the config."""
     global CONFIG_DATA
     global PERSISTENT_CONFIG_REGISTRY
     try:
@@ -188,7 +197,7 @@ def save_config(config):
         for config_item in PERSISTENT_CONFIG_REGISTRY:
             config_item.update()
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         return False
     return True
 
@@ -197,13 +206,23 @@ T = TypeVar("T")
 
 
 class PersistentConfig(Generic[T]):
+    """Persistent config class."""
+
     def __init__(self, env_name: str, config_path: str, env_value: T):
+        """Initialize the class.
+
+        Args:
+            env_name (str): The environment variable name
+            config_path (str): The config path
+            env_value (T): The environment value
+
+        """
         self.env_name = env_name
         self.config_path = config_path
         self.env_value = env_value
         self.config_value = get_config_value(config_path)
         if self.config_value is not None:
-            log.info(f"'{env_name}' loaded from the latest database entry")
+            logger.info(f"'{env_name}' loaded from the latest database entry")
             self.value = self.config_value
         else:
             self.value = env_value
@@ -213,12 +232,6 @@ class PersistentConfig(Generic[T]):
     def __str__(self):
         return str(self.value)
 
-    @property
-    def __dict__(self):
-        raise TypeError(
-            "PersistentConfig object cannot be converted to dict, use config_get or .value instead."
-        )
-
     def __getattribute__(self, item):
         if item == "__dict__":
             raise TypeError(
@@ -227,13 +240,15 @@ class PersistentConfig(Generic[T]):
         return super().__getattribute__(item)
 
     def update(self):
+        """Update the config."""
         new_value = get_config_value(self.config_path)
         if new_value is not None:
             self.value = new_value
-            log.info(f"Updated {self.env_name} to new value {self.value}")
+            logger.info(f"Updated {self.env_name} to new value {self.value}")
 
     def save(self):
-        log.info(f"Saving '{self.env_name}' to the database")
+        """Save the config."""
+        logger.info(f"Saving '{self.env_name}' to the database")
         path_parts = self.config_path.split(".")
         sub_config = CONFIG_DATA
         for key in path_parts[:-1]:
@@ -246,9 +261,11 @@ class PersistentConfig(Generic[T]):
 
 
 class AppConfig:
+    """App config class."""
+
     _state: dict[str, PersistentConfig]
 
-    def __init__(self):
+    def __init__(self):  # noqa: D107
         super().__setattr__("_state", {})
 
     def __setattr__(self, key, value):
@@ -261,10 +278,6 @@ class AppConfig:
     def __getattr__(self, key):
         return self._state[key].value
 
-
-####################################
-# WEBUI_AUTH (Required for security)
-####################################
 
 ENABLE_API_KEY = PersistentConfig(
     "ENABLE_API_KEY",
@@ -289,9 +302,6 @@ JWT_EXPIRES_IN = PersistentConfig(
     "JWT_EXPIRES_IN", "auth.jwt_expiry", os.environ.get("JWT_EXPIRES_IN", "-1")
 )
 
-####################################
-# OAuth config
-####################################
 
 ENABLE_OAUTH_SIGNUP = PersistentConfig(
     "ENABLE_OAUTH_SIGNUP",
@@ -466,6 +476,7 @@ OAUTH_ALLOWED_DOMAINS = PersistentConfig(
 
 
 def load_oauth_providers():
+    """Load the OAuth providers."""
     OAUTH_PROVIDERS.clear()
     if GOOGLE_CLIENT_ID.value and GOOGLE_CLIENT_SECRET.value:
         OAUTH_PROVIDERS["google"] = {
@@ -506,10 +517,6 @@ def load_oauth_providers():
 
 load_oauth_providers()
 
-####################################
-# Static DIR
-####################################
-
 STATIC_DIR = Path(os.getenv("STATIC_DIR", OPEN_WEBUI_DIR / "static")).resolve()
 
 frontend_favicon = FRONTEND_BUILD_DIR / "static" / "favicon.png"
@@ -518,9 +525,9 @@ if frontend_favicon.exists():
     try:
         shutil.copyfile(frontend_favicon, STATIC_DIR / "favicon.png")
     except Exception as e:
-        logging.error(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
 else:
-    logging.warning(f"Frontend favicon not found at {frontend_favicon}")
+    logger.warning(f"Frontend favicon not found at {frontend_favicon}")
 
 frontend_splash = FRONTEND_BUILD_DIR / "static" / "splash.png"
 
@@ -528,57 +535,10 @@ if frontend_splash.exists():
     try:
         shutil.copyfile(frontend_splash, STATIC_DIR / "splash.png")
     except Exception as e:
-        logging.error(f"An error occurred: {e}")
+        logger.error(f"An error occurred: {e}")
 else:
-    logging.warning(f"Frontend splash not found at {frontend_splash}")
+    logger.warning(f"Frontend splash not found at {frontend_splash}")
 
-
-####################################
-# CUSTOM_NAME
-####################################
-
-CUSTOM_NAME = os.environ.get("CUSTOM_NAME", "")
-
-if CUSTOM_NAME:
-    try:
-        r = requests.get(f"https://api.openwebui.com/api/v1/custom/{CUSTOM_NAME}")
-        data = r.json()
-        if r.ok:
-            if "logo" in data:
-                WEBUI_FAVICON_URL = url = (
-                    f"https://api.openwebui.com{data['logo']}"
-                    if data["logo"][0] == "/"
-                    else data["logo"]
-                )
-
-                r = requests.get(url, stream=True)
-                if r.status_code == 200:
-                    with open(f"{STATIC_DIR}/favicon.png", "wb") as f:
-                        r.raw.decode_content = True
-                        shutil.copyfileobj(r.raw, f)
-
-            if "splash" in data:
-                url = (
-                    f"https://api.openwebui.com{data['splash']}"
-                    if data["splash"][0] == "/"
-                    else data["splash"]
-                )
-
-                r = requests.get(url, stream=True)
-                if r.status_code == 200:
-                    with open(f"{STATIC_DIR}/splash.png", "wb") as f:
-                        r.raw.decode_content = True
-                        shutil.copyfileobj(r.raw, f)
-
-            WEBUI_NAME = data["name"]
-    except Exception as e:
-        log.exception(e)
-        pass
-
-
-####################################
-# STORAGE PROVIDER
-####################################
 
 STORAGE_PROVIDER = os.environ.get("STORAGE_PROVIDER", "")  # defaults to local, s3
 
@@ -588,24 +548,13 @@ S3_REGION_NAME = os.environ.get("S3_REGION_NAME", None)
 S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME", None)
 S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL", None)
 
-####################################
-# File Upload DIR
-####################################
 
 UPLOAD_DIR = f"{DATA_DIR}/uploads"
 Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
 
-
-####################################
-# Cache DIR
-####################################
-
 CACHE_DIR = f"{DATA_DIR}/cache"
 Path(CACHE_DIR).mkdir(parents=True, exist_ok=True)
 
-####################################
-# OLLAMA_BASE_URL
-####################################
 
 ENABLE_OLLAMA_API = PersistentConfig(
     "ENABLE_OLLAMA_API",
@@ -661,11 +610,6 @@ OLLAMA_API_CONFIGS = PersistentConfig(
     {},
 )
 
-####################################
-# OPENAI_API
-####################################
-
-
 ENABLE_OPENAI_API = PersistentConfig(
     "ENABLE_OPENAI_API",
     "openai.enable",
@@ -673,19 +617,12 @@ ENABLE_OPENAI_API = PersistentConfig(
 )
 
 
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-OPENAI_API_BASE_URL = os.environ.get("OPENAI_API_BASE_URL", "")
+OPENAI_API_KEY = env.OPENAI_API_KEY
+OPENAI_API_BASE_URL = env.OPENAI_BASE_URL
 
 
-if OPENAI_API_BASE_URL == "":
-    OPENAI_API_BASE_URL = "https://api.openai.com/v1"
-
-OPENAI_API_KEYS = os.environ.get("OPENAI_API_KEYS", "")
-OPENAI_API_KEYS = OPENAI_API_KEYS if OPENAI_API_KEYS != "" else OPENAI_API_KEY
-
-OPENAI_API_KEYS = [url.strip() for url in OPENAI_API_KEYS.split(";")]
 OPENAI_API_KEYS = PersistentConfig(
-    "OPENAI_API_KEYS", "openai.api_keys", OPENAI_API_KEYS
+    "OPENAI_API_KEYS", "openai.api_keys", env.OPENAI_API_KEYS
 )
 
 OPENAI_API_BASE_URLS = os.environ.get("OPENAI_API_BASE_URLS", "")
@@ -694,7 +631,7 @@ OPENAI_API_BASE_URLS = (
 )
 
 OPENAI_API_BASE_URLS = [
-    url.strip() if url != "" else "https://api.openai.com/v1"
+    url.strip() if url != "" else OPENAI_BASE_URL
     for url in OPENAI_API_BASE_URLS.split(";")
 ]
 OPENAI_API_BASE_URLS = PersistentConfig(
@@ -711,16 +648,11 @@ OPENAI_API_CONFIGS = PersistentConfig(
 OPENAI_API_KEY = ""
 try:
     OPENAI_API_KEY = OPENAI_API_KEYS.value[
-        OPENAI_API_BASE_URLS.value.index("https://api.openai.com/v1")
+        OPENAI_API_BASE_URLS.value.index(OPENAI_BASE_URL)  # type: ignore
     ]
 except Exception:
     pass
-OPENAI_API_BASE_URL = "https://api.openai.com/v1"
-
-####################################
-# WEBUI
-####################################
-
+OPENAI_API_BASE_URL = OPENAI_BASE_URL
 
 WEBUI_URL = PersistentConfig(
     "WEBUI_URL", "webui.url", os.environ.get("WEBUI_URL", "http://localhost:3000")
@@ -905,13 +837,15 @@ ENABLE_MESSAGE_RATING = PersistentConfig(
 )
 
 
-def validate_cors_origins(origins):
+def validate_cors_origins(origins: list[str]):
+    """Validate the CORS origins."""
     for origin in origins:
         if origin != "*":
             validate_cors_origin(origin)
 
 
-def validate_cors_origin(origin):
+def validate_cors_origin(origin: str):
+    """Validate the CORS origin."""
     parsed_url = urlparse(origin)
 
     # Check if the scheme is either http or https
@@ -933,7 +867,7 @@ def validate_cors_origin(origin):
 CORS_ALLOW_ORIGIN = os.environ.get("CORS_ALLOW_ORIGIN", "*").split(";")
 
 if "*" in CORS_ALLOW_ORIGIN:
-    log.warning(
+    logger.warning(
         "\n\nWARNING: CORS_ALLOW_ORIGIN IS SET TO '*' - NOT RECOMMENDED FOR PRODUCTION DEPLOYMENTS.\n"
     )
 
@@ -941,6 +875,8 @@ validate_cors_origins(CORS_ALLOW_ORIGIN)
 
 
 class BannerModel(BaseModel):
+    """Banner model."""
+
     id: str
     type: str
     title: Optional[str] = None
@@ -953,7 +889,7 @@ try:
     banners = json.loads(os.environ.get("WEBUI_BANNERS", "[]"))
     banners = [BannerModel(**banner) for banner in banners]
 except Exception as e:
-    print(f"Error loading WEBUI_BANNERS: {e}")
+    logger.error(f"Error loading WEBUI_BANNERS: {e}")
     banners = []
 
 WEBUI_BANNERS = PersistentConfig("WEBUI_BANNERS", "ui.banners", banners)
@@ -970,12 +906,6 @@ ADMIN_EMAIL = PersistentConfig(
     "auth.admin.email",
     os.environ.get("ADMIN_EMAIL", None),
 )
-
-
-####################################
-# TASKS
-####################################
-
 
 TASK_MODEL = PersistentConfig(
     "TASK_MODEL",
@@ -1173,8 +1103,8 @@ VECTOR_DB = os.environ.get("VECTOR_DB", "chroma")
 
 # Chroma
 CHROMA_DATA_PATH = f"{DATA_DIR}/vector_db"
-CHROMA_TENANT = os.environ.get("CHROMA_TENANT", chromadb.DEFAULT_TENANT)
-CHROMA_DATABASE = os.environ.get("CHROMA_DATABASE", chromadb.DEFAULT_DATABASE)
+CHROMA_TENANT = os.environ.get("CHROMA_TENANT", chromadb.config.DEFAULT_TENANT)
+CHROMA_DATABASE = os.environ.get("CHROMA_DATABASE", chromadb.config.DEFAULT_DATABASE)
 CHROMA_HTTP_HOST = os.environ.get("CHROMA_HTTP_HOST", "")
 CHROMA_HTTP_PORT = int(os.environ.get("CHROMA_HTTP_PORT", "8000"))
 CHROMA_CLIENT_AUTH_PROVIDER = os.environ.get("CHROMA_CLIENT_AUTH_PROVIDER", "")
@@ -1270,21 +1200,13 @@ ENABLE_RAG_HYBRID_SEARCH = PersistentConfig(
 RAG_FILE_MAX_COUNT = PersistentConfig(
     "RAG_FILE_MAX_COUNT",
     "rag.file.max_count",
-    (
-        int(os.environ.get("RAG_FILE_MAX_COUNT"))
-        if os.environ.get("RAG_FILE_MAX_COUNT")
-        else None
-    ),
+    int(count) if (count := os.getenv("RAG_FILE_MAX_COUNT")) else None,
 )
 
 RAG_FILE_MAX_SIZE = PersistentConfig(
     "RAG_FILE_MAX_SIZE",
     "rag.file.max_size",
-    (
-        int(os.environ.get("RAG_FILE_MAX_SIZE"))
-        if os.environ.get("RAG_FILE_MAX_SIZE")
-        else None
-    ),
+    int(size) if (size := os.getenv("RAG_FILE_MAX_SIZE")) else None,
 )
 
 ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION = PersistentConfig(
@@ -1310,7 +1232,7 @@ RAG_EMBEDDING_MODEL = PersistentConfig(
     "rag.embedding_model",
     os.environ.get("RAG_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"),
 )
-log.info(f"Embedding model set: {RAG_EMBEDDING_MODEL.value}")
+logger.info(f"Embedding model set: {RAG_EMBEDDING_MODEL.value}")
 
 RAG_EMBEDDING_MODEL_AUTO_UPDATE = (
     not OFFLINE_MODE
@@ -1336,7 +1258,7 @@ RAG_RERANKING_MODEL = PersistentConfig(
     os.environ.get("RAG_RERANKING_MODEL", ""),
 )
 if RAG_RERANKING_MODEL.value != "":
-    log.info(f"Reranking model set: {RAG_RERANKING_MODEL.value}")
+    logger.info(f"Reranking model set: {RAG_RERANKING_MODEL.value}")
 
 RAG_RERANKING_MODEL_AUTO_UPDATE = (
     not OFFLINE_MODE
@@ -1616,11 +1538,7 @@ AUTOMATIC1111_API_AUTH = PersistentConfig(
 AUTOMATIC1111_CFG_SCALE = PersistentConfig(
     "AUTOMATIC1111_CFG_SCALE",
     "image_generation.automatic1111.cfg_scale",
-    (
-        float(os.environ.get("AUTOMATIC1111_CFG_SCALE"))
-        if os.environ.get("AUTOMATIC1111_CFG_SCALE")
-        else None
-    ),
+    float(scale) if (scale := os.getenv("AUTOMATIC1111_CFG_SCALE")) else None,
 )
 
 

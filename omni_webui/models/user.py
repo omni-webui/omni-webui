@@ -1,4 +1,5 @@
-from datetime import timedelta
+"""User model."""
+
 from typing import TYPE_CHECKING, Annotated
 
 import bcrypt
@@ -12,18 +13,21 @@ from sqlmodel import JSON, Field, Relationship, SQLModel, select
 
 from .._types import MutableBaseModel
 from ..deps import EnvDepends, SessionDepends
-from ._utils import get_random_string, now, now_timestamp
-from .config import ConfigDepends
+from ._utils import get_random_string, now_timestamp
 
 if TYPE_CHECKING:
     from .file import File
 
 
 class UserSettings(MutableBaseModel):
+    """User settings model."""
+
     ui: Annotated[dict, Field(default_factory=MutableDict)]
 
 
 class User(SQLModel, table=True):
+    """User model."""
+
     id: str = Field(
         primary_key=True, default_factory=lambda: f"user_{get_random_string(24)}"
     )
@@ -53,26 +57,17 @@ security = HTTPBearer(auto_error=False)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify password."""
     return bcrypt.checkpw(plain_password.encode(), hashed_password.encode())
 
 
 def get_password_hash(password: str) -> str:
+    """Get password hash."""
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
 
 
-def create_token(
-    data: dict, secret_key: str, expires_delta: timedelta | None = None
-) -> str:
-    payload = data.copy()
-
-    if expires_delta:
-        expire = now() + expires_delta
-        payload.update({"exp": expire})
-
-    return jwt.encode(payload, secret_key, algorithm="HS256")
-
-
 def decode_token(token: str, secret_key: str) -> dict:
+    """Decode token."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -90,17 +85,12 @@ async def get_user(
     token: Annotated[str | None, Cookie()] = None,
     env: EnvDepends,
     session: SessionDepends,
-    config: ConfigDepends,
 ) -> User | None:
+    """Get user."""
     token = (bearer.credentials if bearer else None) or token
     if token is None:
         return None
     if token.startswith("sk-"):
-        if not config.auth.api_key.enable:
-            raise HTTPException(
-                status.HTTP_403_FORBIDDEN,
-                detail="Use of API key is not enabled in the environment.",
-            )
         return (
             await session.exec(select(User).where(User.api_key == token))
         ).one_or_none()
@@ -120,6 +110,7 @@ UserDepends = Annotated[User | None, Depends(get_user)]
 
 
 async def get_current_user(user: UserDepends):
+    """Get current user."""
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
     return user
@@ -129,6 +120,7 @@ CurrentUserDepends = Annotated[User, Depends(get_current_user)]
 
 
 def get_admin_user(user: CurrentUserDepends):
+    """Get admin user."""
     if user.role != "admin":
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,

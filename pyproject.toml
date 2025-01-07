@@ -112,6 +112,9 @@ exclude_also = [
 
 [tool.ruff.lint]
 extend-select = ["I", "T20", "D"]
+ignore = [
+    "D105",  # Missing docstring in magic method
+]
 
 [tool.pyright]
 venvPath = "."
