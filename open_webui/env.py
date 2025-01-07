@@ -1,67 +1,59 @@
-import importlib.metadata
-import json
+"""Environment variables and settings for Open WebUI."""
+
 import logging
 import os
 import pkgutil
-import sys
 import shutil
+import sys
 from pathlib import Path
+from typing import Literal
 
 import markdown
 from bs4 import BeautifulSoup
+from pydantic_settings import BaseSettings
+
 from open_webui.constants import ERROR_MESSAGES
 
-####################################
-# Load .env file
-####################################
+
+class Environments(BaseSettings, case_sensitive=True):
+    """Environment variables."""
+
+    USE_CUDA_DOCKER: bool = False
+
+
+env = Environments()
 
 OPEN_WEBUI_DIR = Path(__file__).parent  # the path containing this file
-print(OPEN_WEBUI_DIR)
-
 BACKEND_DIR = OPEN_WEBUI_DIR.parent  # the path containing this file
-BASE_DIR = BACKEND_DIR.parent  # the path containing the backend/
 
-print(BACKEND_DIR)
-print(BASE_DIR)
-
-try:
-    from dotenv import find_dotenv, load_dotenv
-
-    load_dotenv(find_dotenv(str(BASE_DIR / ".env")))
-except ImportError:
-    print("dotenv not installed, skipping...")
 
 DOCKER = os.environ.get("DOCKER", "False").lower() == "true"
 
-# device type embedding models - "cpu" (default), "cuda" (nvidia gpu required) or "mps" (apple silicon) - choosing this right can lead to better performance
-USE_CUDA = os.environ.get("USE_CUDA_DOCKER", "false")
 
-if USE_CUDA.lower() == "true":
+def get_device_type() -> Literal["cpu", "cuda", "mps"]:
+    """Get device type embedding models.
+
+    "cpu" (default), "cuda" (nvidia gpu required) or "mps" (apple silicon) - choosing
+    this right can lead to better performance
+
+    Returns
+    -------
+    Literal["cpu", "cuda", "mps"]
+        device type
+
+    """
     try:
         import torch
-
-        assert torch.cuda.is_available(), "CUDA not available"
-        DEVICE_TYPE = "cuda"
-    except Exception as e:
-        cuda_error = (
-            "Error when testing CUDA but USE_CUDA_DOCKER is true. "
-            f"Resetting USE_CUDA_DOCKER to false: {e}"
-        )
-        os.environ["USE_CUDA_DOCKER"] = "false"
-        USE_CUDA = "false"
-        DEVICE_TYPE = "cpu"
-else:
-    DEVICE_TYPE = "cpu"
-
-try:
+    except ImportError:
+        return "cpu"
+    if torch.cuda.is_available() and env.USE_CUDA_DOCKER:
+        return "cuda"
     if torch.backends.mps.is_available() and torch.backends.mps.is_built():
-        DEVICE_TYPE = "mps"
-except Exception:
-    pass
+        return "mps"
+    return "cpu"
 
-####################################
-# LOGGING
-####################################
+
+DEVICE_TYPE = get_device_type()
 
 log_levels = ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
 
@@ -73,9 +65,6 @@ else:
 
 log = logging.getLogger(__name__)
 log.info(f"GLOBAL_LOG_LEVEL: {GLOBAL_LOG_LEVEL}")
-
-if "cuda_error" in locals():
-    log.exception(cuda_error)
 
 log_sources = [
     "AUDIO",
@@ -110,29 +99,15 @@ if WEBUI_NAME != "Open WebUI":
 
 WEBUI_FAVICON_URL = "https://openwebui.com/favicon.png"
 
-
-####################################
-# ENV (dev,test,prod)
-####################################
-
 ENV = os.environ.get("ENV", "dev")
 
 FROM_INIT_PY = os.environ.get("FROM_INIT_PY", "False").lower() == "true"
 
-if FROM_INIT_PY:
-    PACKAGE_DATA = {"version": importlib.metadata.version("open-webui")}
-else:
-    try:
-        PACKAGE_DATA = json.loads((BASE_DIR / "package.json").read_text())
-    except Exception:
-        PACKAGE_DATA = {"version": "0.0.0"}
+VERSION = "0.5.4"
 
 
-VERSION = PACKAGE_DATA["version"]
-
-
-# Function to parse each section
 def parse_section(section):
+    """Parse each section of the changelog."""
     items = []
     for li in section.find_all("li"):
         # Extract raw HTML string
@@ -150,13 +125,7 @@ def parse_section(section):
     return items
 
 
-try:
-    changelog_path = BASE_DIR / "CHANGELOG.md"
-    with open(str(changelog_path.absolute()), "r", encoding="utf8") as file:
-        changelog_content = file.read()
-
-except Exception:
-    changelog_content = (pkgutil.get_data("open_webui", "CHANGELOG.md") or b"").decode()
+changelog_content = (pkgutil.get_data("open_webui", "CHANGELOG.md") or b"").decode()
 
 
 # Convert markdown content to HTML
@@ -192,30 +161,13 @@ for version in soup.find_all("h2"):
 
 CHANGELOG = changelog_json
 
-####################################
-# SAFE_MODE
-####################################
-
 SAFE_MODE = os.environ.get("SAFE_MODE", "false").lower() == "true"
-
-####################################
-# ENABLE_FORWARD_USER_INFO_HEADERS
-####################################
 
 ENABLE_FORWARD_USER_INFO_HEADERS = (
     os.environ.get("ENABLE_FORWARD_USER_INFO_HEADERS", "False").lower() == "true"
 )
 
-
-####################################
-# WEBUI_BUILD_HASH
-####################################
-
 WEBUI_BUILD_HASH = os.environ.get("WEBUI_BUILD_HASH", "dev-build")
-
-####################################
-# DATA/FRONTEND BUILD DIR
-####################################
 
 DATA_DIR = Path(os.getenv("DATA_DIR", BACKEND_DIR / "data")).resolve()
 
@@ -234,7 +186,7 @@ if FROM_INIT_PY:
                 shutil.copy2(item, dest)
 
         # Zip the data directory
-        shutil.make_archive(DATA_DIR.parent / "open_webui_data", "zip", DATA_DIR)
+        shutil.make_archive(str(DATA_DIR.parent / "open_webui_data"), "zip", DATA_DIR)
 
         # Remove the old data directory
         shutil.rmtree(DATA_DIR)
@@ -246,17 +198,15 @@ STATIC_DIR = Path(os.getenv("STATIC_DIR", OPEN_WEBUI_DIR / "static"))
 
 FONTS_DIR = Path(os.getenv("FONTS_DIR", OPEN_WEBUI_DIR / "static" / "fonts"))
 
-FRONTEND_BUILD_DIR = Path(os.getenv("FRONTEND_BUILD_DIR", BASE_DIR / "build")).resolve()
+FRONTEND_BUILD_DIR = Path(
+    os.getenv("FRONTEND_BUILD_DIR", BACKEND_DIR / "build")
+).resolve()
 
 if FROM_INIT_PY:
     FRONTEND_BUILD_DIR = Path(
         os.getenv("FRONTEND_BUILD_DIR", OPEN_WEBUI_DIR / "frontend")
     ).resolve()
 
-
-####################################
-# Database
-####################################
 
 # Check if the file exists
 if os.path.exists(f"{DATA_DIR}/ollama.db"):
@@ -321,15 +271,7 @@ ENABLE_REALTIME_CHAT_SAVE = (
     os.environ.get("ENABLE_REALTIME_CHAT_SAVE", "False").lower() == "true"
 )
 
-####################################
-# REDIS
-####################################
-
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
-
-####################################
-# WEBUI_AUTH (Required for security)
-####################################
 
 WEBUI_AUTH = os.environ.get("WEBUI_AUTH", "True").lower() == "true"
 WEBUI_AUTH_TRUSTED_EMAIL_HEADER = os.environ.get(
@@ -340,10 +282,6 @@ WEBUI_AUTH_TRUSTED_NAME_HEADER = os.environ.get("WEBUI_AUTH_TRUSTED_NAME_HEADER"
 BYPASS_MODEL_ACCESS_CONTROL = (
     os.environ.get("BYPASS_MODEL_ACCESS_CONTROL", "False").lower() == "true"
 )
-
-####################################
-# WEBUI_SECRET_KEY
-####################################
 
 WEBUI_SECRET_KEY = os.environ.get(
     "WEBUI_SECRET_KEY",
@@ -396,10 +334,6 @@ else:
         )
     except Exception:
         AIOHTTP_CLIENT_TIMEOUT_OPENAI_MODEL_LIST = 5
-
-####################################
-# OFFLINE_MODE
-####################################
 
 OFFLINE_MODE = os.environ.get("OFFLINE_MODE", "false").lower() == "true"
 

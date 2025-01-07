@@ -14,6 +14,15 @@ repos:
     hooks:
     -   id: biome-check
         additional_dependencies: ["@biomejs/biome@1.9.4"]
+-   repo: https://github.com/pre-commit/mirrors-eslint
+    rev: v9.17.0
+    hooks:
+    -   id: eslint
+        additional_dependencies:
+        -   eslint@9.17.0
+        -   "@eslint/js"
+        -   typescript-eslint
+        -   eslint-plugin-svelte
 -   repo: https://github.com/jorisroovers/gitlint
     rev: v0.19.1
     hooks:

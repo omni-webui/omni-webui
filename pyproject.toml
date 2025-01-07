@@ -53,6 +53,7 @@ dependencies = [
     "sqlmodel>=0.0.22",
     "swarmx>=0.4.1",
     "tiktoken>=0.8.0",
+    "torch>=2.4.1",
     "typer>=0.15.1",
     "unstructured>=0.16.12",
     "uvicorn[standard]>=0.34.0",
@@ -110,7 +111,7 @@ exclude_also = [
 ]
 
 [tool.ruff.lint]
-extend-select = ["I", "T20"]
+extend-select = ["I", "T20", "D"]
 
 [tool.pyright]
 venvPath = "."
