@@ -47,7 +47,7 @@ class DenoBuildHook(BuildHookInterface):
             .decode()
             .strip()
         )
-        webui_dir = cache_dir.joinpath("git-v0/checkouts/d6dc8c520e52253d/4bc9904b3")
+        webui_dir = cache_dir.joinpath("git-v0/checkouts/d6dc8c520e52253d/506dc0149")
         if not webui_dir.exists():
             # TODO: currently solution is so dirty, need to find a better way to clone the repo
             subprocess.run(
@@ -57,7 +57,7 @@ class DenoBuildHook(BuildHookInterface):
                     "--depth",
                     "1",
                     "--branch",
-                    "v0.5.3",
+                    "v0.5.4",
                     "https://github.com/open-webui/open-webui",
                     webui_dir,
                 ],
