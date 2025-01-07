@@ -20,13 +20,15 @@ OPENAI_BASE_URL = "https://api.openai.com/v1"
 class Environments(BaseSettings, case_sensitive=True):
     """Environment variables."""
 
-    USE_CUDA_DOCKER: bool = False
     OPENAI_API_KEY: str = ""
     OPENAI_API_KEYS: Annotated[list[str], NoDecode] = Field(default_factory=list)
     OPENAI_BASE_URL: Annotated[
         str,
         Field(validation_alias=AliasChoices("OPENAI_BASE_URL", "OPENAI_API_BASE_URL")),
     ] = OPENAI_BASE_URL
+    USE_CUDA_DOCKER: bool = False
+    WEBUI_SESSION_COOKIE_SAME_SITE: Literal["lax", "strict", "none"] = "lax"
+    WEBUI_SESSION_COOKIE_SECURE: bool = False
 
     @field_validator("OPENAI_API_KEYS")
     @classmethod
@@ -302,16 +304,6 @@ WEBUI_SECRET_KEY = os.environ.get(
     os.environ.get(
         "WEBUI_JWT_SECRET_KEY", "t0p-s3cr3t"
     ),  # DEPRECATED: remove at next major version
-)
-
-WEBUI_SESSION_COOKIE_SAME_SITE = os.environ.get(
-    "WEBUI_SESSION_COOKIE_SAME_SITE",
-    os.environ.get("WEBUI_SESSION_COOKIE_SAME_SITE", "lax"),
-)
-
-WEBUI_SESSION_COOKIE_SECURE = os.environ.get(
-    "WEBUI_SESSION_COOKIE_SECURE",
-    os.environ.get("WEBUI_SESSION_COOKIE_SECURE", "false").lower() == "true",
 )
 
 if WEBUI_AUTH and WEBUI_SECRET_KEY == "":

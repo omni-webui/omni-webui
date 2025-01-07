@@ -1,17 +1,18 @@
+"""User Model and Table."""
+
 import time
 from typing import Optional
 
-from open_webui.internal.db import Base, JSONField, get_db
-from open_webui.models.chats import Chats
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import BigInteger, Column, String, Text
 
-####################
-# User DB Schema
-####################
+from open_webui.internal.db import Base, JSONField, get_db
+from open_webui.models.chats import Chats
 
 
 class User(Base):
+    """User Table."""
+
     __tablename__ = "user"
 
     id = Column(String, primary_key=True)
@@ -31,13 +32,15 @@ class User(Base):
     oauth_sub = Column(Text, unique=True)
 
 
-class UserSettings(BaseModel):
+class UserSettings(BaseModel, extra="allow"):
+    """User Settings Model."""
+
     ui: Optional[dict] = {}
-    model_config = ConfigDict(extra="allow")
-    pass
 
 
 class UserModel(BaseModel):
+    """User Model."""
+
     id: str
     name: str
     email: str
@@ -57,12 +60,9 @@ class UserModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-####################
-# Forms
-####################
-
-
 class UserResponse(BaseModel):
+    """User Response Model."""
+
     id: str
     name: str
     email: str
@@ -71,6 +71,8 @@ class UserResponse(BaseModel):
 
 
 class UserNameResponse(BaseModel):
+    """User Name Response Model."""
+
     id: str
     name: str
     role: str
@@ -78,18 +80,24 @@ class UserNameResponse(BaseModel):
 
 
 class UserRoleUpdateForm(BaseModel):
+    """User Role Update Form."""
+
     id: str
     role: str
 
 
 class UserUpdateForm(BaseModel):
+    """User Update Form."""
+
     name: str
     email: str
     profile_image_url: str
-    password: Optional[str] = None
+    password: str | None = None
 
 
 class UsersTable:
+    """Users Table."""
+
     def insert_new_user(
         self,
         id: str,
@@ -97,8 +105,9 @@ class UsersTable:
         email: str,
         profile_image_url: str = "/user.png",
         role: str = "pending",
-        oauth_sub: Optional[str] = None,
-    ) -> Optional[UserModel]:
+        oauth_sub: str | None = None,
+    ) -> UserModel | None:
+        """Insert New User."""
         with get_db() as db:
             user = UserModel(
                 **{
@@ -122,7 +131,8 @@ class UsersTable:
             else:
                 return None
 
-    def get_user_by_id(self, id: str) -> Optional[UserModel]:
+    def get_user_by_id(self, id: str) -> UserModel | None:
+        """Get User by ID."""
         try:
             with get_db() as db:
                 user = db.query(User).filter_by(id=id).first()
@@ -130,7 +140,8 @@ class UsersTable:
         except Exception:
             return None
 
-    def get_user_by_api_key(self, api_key: str) -> Optional[UserModel]:
+    def get_user_by_api_key(self, api_key: str) -> UserModel | None:
+        """Get User by API Key."""
         try:
             with get_db() as db:
                 user = db.query(User).filter_by(api_key=api_key).first()
@@ -138,7 +149,8 @@ class UsersTable:
         except Exception:
             return None
 
-    def get_user_by_email(self, email: str) -> Optional[UserModel]:
+    def get_user_by_email(self, email: str) -> UserModel | None:
+        """Get User by Email."""
         try:
             with get_db() as db:
                 user = db.query(User).filter_by(email=email).first()
@@ -146,7 +158,8 @@ class UsersTable:
         except Exception:
             return None
 
-    def get_user_by_oauth_sub(self, sub: str) -> Optional[UserModel]:
+    def get_user_by_oauth_sub(self, sub: str) -> UserModel | None:
+        """Get User by OAuth Sub."""
         try:
             with get_db() as db:
                 user = db.query(User).filter_by(oauth_sub=sub).first()
@@ -157,8 +170,8 @@ class UsersTable:
     def get_users(
         self, skip: Optional[int] = None, limit: Optional[int] = None
     ) -> list[UserModel]:
+        """Get Users."""
         with get_db() as db:
-
             query = db.query(User).order_by(User.created_at.desc())
 
             if skip:
@@ -171,15 +184,18 @@ class UsersTable:
             return [UserModel.model_validate(user) for user in users]
 
     def get_users_by_user_ids(self, user_ids: list[str]) -> list[UserModel]:
+        """Get Users by User IDs."""
         with get_db() as db:
             users = db.query(User).filter(User.id.in_(user_ids)).all()
             return [UserModel.model_validate(user) for user in users]
 
-    def get_num_users(self) -> Optional[int]:
+    def get_num_users(self) -> int:
+        """Get Number of Users."""
         with get_db() as db:
             return db.query(User).count()
 
-    def get_first_user(self) -> UserModel:
+    def get_first_user(self) -> UserModel | None:
+        """Get First User."""
         try:
             with get_db() as db:
                 user = db.query(User).order_by(User.created_at).first()
@@ -187,23 +203,25 @@ class UsersTable:
         except Exception:
             return None
 
-    def get_user_webhook_url_by_id(self, id: str) -> Optional[str]:
+    def get_user_webhook_url_by_id(self, id: str) -> str | None:
+        """Get User Webhook URL by ID."""
         try:
             with get_db() as db:
-                user = db.query(User).filter_by(id=id).first()
+                user = UserModel.model_validate(db.query(User).filter_by(id=id).first())
 
                 if user.settings is None:
                     return None
                 else:
                     return (
-                        user.settings.get("ui", {})
+                        (user.settings.ui or {})
                         .get("notifications", {})
                         .get("webhook_url", None)
                     )
         except Exception:
             return None
 
-    def update_user_role_by_id(self, id: str, role: str) -> Optional[UserModel]:
+    def update_user_role_by_id(self, id: str, role: str) -> UserModel | None:
+        """Update User Role by ID."""
         try:
             with get_db() as db:
                 db.query(User).filter_by(id=id).update({"role": role})
@@ -215,7 +233,8 @@ class UsersTable:
 
     def update_user_profile_image_url_by_id(
         self, id: str, profile_image_url: str
-    ) -> Optional[UserModel]:
+    ) -> UserModel | None:
+        """Update User Profile Image URL by ID."""
         try:
             with get_db() as db:
                 db.query(User).filter_by(id=id).update(
@@ -228,7 +247,8 @@ class UsersTable:
         except Exception:
             return None
 
-    def update_user_last_active_by_id(self, id: str) -> Optional[UserModel]:
+    def update_user_last_active_by_id(self, id: str) -> UserModel | None:
+        """Update User Last Active by ID."""
         try:
             with get_db() as db:
                 db.query(User).filter_by(id=id).update(
@@ -241,9 +261,8 @@ class UsersTable:
         except Exception:
             return None
 
-    def update_user_oauth_sub_by_id(
-        self, id: str, oauth_sub: str
-    ) -> Optional[UserModel]:
+    def update_user_oauth_sub_by_id(self, id: str, oauth_sub: str) -> UserModel | None:
+        """Update User OAuth Sub by ID."""
         try:
             with get_db() as db:
                 db.query(User).filter_by(id=id).update({"oauth_sub": oauth_sub})
@@ -254,7 +273,8 @@ class UsersTable:
         except Exception:
             return None
 
-    def update_user_by_id(self, id: str, updated: dict) -> Optional[UserModel]:
+    def update_user_by_id(self, id: str, updated: dict) -> UserModel | None:
+        """Update User by ID."""
         try:
             with get_db() as db:
                 db.query(User).filter_by(id=id).update(updated)
@@ -267,6 +287,7 @@ class UsersTable:
             return None
 
     def delete_user_by_id(self, id: str) -> bool:
+        """Delete User by ID."""
         try:
             # Delete User Chats
             result = Chats.delete_chats_by_user_id(id)
@@ -283,19 +304,21 @@ class UsersTable:
         except Exception:
             return False
 
-    def update_user_api_key_by_id(self, id: str, api_key: str) -> str:
+    def update_user_api_key_by_id(self, id: str, api_key: str | None) -> bool:
+        """Update User API Key by ID."""
         try:
             with get_db() as db:
                 result = db.query(User).filter_by(id=id).update({"api_key": api_key})
                 db.commit()
-                return True if result == 1 else False
+                return result == 1
         except Exception:
             return False
 
-    def get_user_api_key_by_id(self, id: str) -> Optional[str]:
+    def get_user_api_key_by_id(self, id: str) -> str | None:
+        """Get User API Key by ID."""
         try:
             with get_db() as db:
-                user = db.query(User).filter_by(id=id).first()
+                user = UserModel.model_validate(db.query(User).filter_by(id=id).first())
                 return user.api_key
         except Exception:
             return None

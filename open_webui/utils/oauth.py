@@ -1,7 +1,9 @@
+"""OAuth utilities."""
+
 import base64
-import logging
 import mimetypes
 import uuid
+from typing import Literal, cast
 
 import aiohttp
 from authlib.integrations.starlette_client import OAuth
@@ -10,37 +12,36 @@ from fastapi import (
     HTTPException,
     status,
 )
+from loguru import logger
 from starlette.responses import RedirectResponse
 
-from open_webui.models.auths import Auths
-from open_webui.models.users import Users
-from open_webui.models.groups import Groups, GroupModel, GroupUpdateForm
 from open_webui.config import (
     DEFAULT_USER_ROLE,
-    ENABLE_OAUTH_SIGNUP,
-    OAUTH_MERGE_ACCOUNTS_BY_EMAIL,
-    OAUTH_PROVIDERS,
-    ENABLE_OAUTH_ROLE_MANAGEMENT,
     ENABLE_OAUTH_GROUP_MANAGEMENT,
-    OAUTH_ROLES_CLAIM,
-    OAUTH_GROUPS_CLAIM,
-    OAUTH_EMAIL_CLAIM,
-    OAUTH_PICTURE_CLAIM,
-    OAUTH_USERNAME_CLAIM,
-    OAUTH_ALLOWED_ROLES,
+    ENABLE_OAUTH_ROLE_MANAGEMENT,
+    ENABLE_OAUTH_SIGNUP,
+    JWT_EXPIRES_IN,
     OAUTH_ADMIN_ROLES,
     OAUTH_ALLOWED_DOMAINS,
+    OAUTH_ALLOWED_ROLES,
+    OAUTH_EMAIL_CLAIM,
+    OAUTH_GROUPS_CLAIM,
+    OAUTH_MERGE_ACCOUNTS_BY_EMAIL,
+    OAUTH_PICTURE_CLAIM,
+    OAUTH_PROVIDERS,
+    OAUTH_ROLES_CLAIM,
+    OAUTH_USERNAME_CLAIM,
     WEBHOOK_URL,
-    JWT_EXPIRES_IN,
     AppConfig,
 )
 from open_webui.constants import ERROR_MESSAGES
-from open_webui.env import WEBUI_SESSION_COOKIE_SAME_SITE, WEBUI_SESSION_COOKIE_SECURE
+from open_webui.env import env
+from open_webui.models.auths import Auths
+from open_webui.models.groups import GroupModel, Groups, GroupUpdateForm
+from open_webui.models.users import Users
+from open_webui.utils.auth import create_token, get_password_hash
 from open_webui.utils.misc import parse_duration
-from open_webui.utils.auth import get_password_hash, create_token
 from open_webui.utils.webhook import post_webhook
-
-log = logging.getLogger(__name__)
 
 auth_manager_config = AppConfig()
 auth_manager_config.DEFAULT_USER_ROLE = DEFAULT_USER_ROLE
@@ -61,7 +62,9 @@ auth_manager_config.JWT_EXPIRES_IN = JWT_EXPIRES_IN
 
 
 class OAuthManager:
-    def __init__(self):
+    """OAuth Manager."""
+
+    def __init__(self):  # noqa: D107
         self.oauth = OAuth()
         for provider_name, provider_config in OAUTH_PROVIDERS.items():
             self.oauth.register(
@@ -75,10 +78,12 @@ class OAuthManager:
                 redirect_uri=provider_config["redirect_uri"],
             )
 
-    def get_client(self, provider_name):
+    def get_client(self, provider_name: str):
+        """Get the OAuth client for the given provider."""
         return self.oauth.create_client(provider_name)
 
-    def get_user_role(self, user, user_data):
+    def get_user_role(self, user, user_data) -> Literal["admin", "user", "pending"]:
+        """Get the role for the user based on the OAuth data."""
         if user and Users.get_num_users() == 1:
             # If the user is the only user, assign the role "admin" - actually repairs role for single user on login
             return "admin"
@@ -87,7 +92,7 @@ class OAuthManager:
             return "admin"
 
         if auth_manager_config.ENABLE_OAUTH_ROLE_MANAGEMENT:
-            oauth_claim = auth_manager_config.OAUTH_ROLES_CLAIM
+            oauth_claim = cast(str, auth_manager_config.OAUTH_ROLES_CLAIM)
             oauth_allowed_roles = auth_manager_config.OAUTH_ALLOWED_ROLES
             oauth_admin_roles = auth_manager_config.OAUTH_ADMIN_ROLES
             oauth_roles = None
@@ -117,14 +122,18 @@ class OAuthManager:
         else:
             if not user:
                 # If role management is disabled, use the default role for new users
-                role = auth_manager_config.DEFAULT_USER_ROLE
+                role = cast(
+                    Literal["admin", "user", "pending"],
+                    auth_manager_config.DEFAULT_USER_ROLE,
+                )
             else:
                 # If role management is disabled, use the existing role for existing users
-                role = user.role
+                role = cast(Literal["admin", "user", "pending"], user.role)
 
         return role
 
     def update_user_groups(self, user, user_data, default_permissions):
+        """Update the user's groups based on the OAuth data."""
         oauth_claim = auth_manager_config.OAUTH_GROUPS_CLAIM
 
         user_oauth_groups: list[str] = user_data.get(oauth_claim, list())
@@ -180,6 +189,7 @@ class OAuthManager:
                 )
 
     async def handle_login(self, provider, request):
+        """Handle the login process for the given OAuth provider."""
         if provider not in OAUTH_PROVIDERS:
             raise HTTPException(404)
         # If the provider has a custom redirect URL, use that, otherwise automatically generate one
@@ -192,37 +202,38 @@ class OAuthManager:
         return await client.authorize_redirect(request, redirect_uri)
 
     async def handle_callback(self, provider, request, response):
+        """Handle the callback process for the given OAuth provider."""
         if provider not in OAUTH_PROVIDERS:
             raise HTTPException(404)
         client = self.get_client(provider)
         try:
-            token = await client.authorize_access_token(request)
+            token = await client.authorize_access_token(request)  # type: ignore
         except Exception as e:
-            log.warning(f"OAuth callback error: {e}")
+            logger.warning(f"OAuth callback error: {e}")
             raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
         user_data: UserInfo = token["userinfo"]
         if not user_data:
-            user_data: UserInfo = await client.userinfo(token=token)
+            user_data: UserInfo = await client.userinfo(token=token)  # type: ignore
         if not user_data:
-            log.warning(f"OAuth callback failed, user data is missing: {token}")
+            logger.warning(f"OAuth callback failed, user data is missing: {token}")
             raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
 
         sub = user_data.get("sub")
         if not sub:
-            log.warning(f"OAuth callback failed, sub is missing: {user_data}")
+            logger.warning(f"OAuth callback failed, sub is missing: {user_data}")
             raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
         provider_sub = f"{provider}@{sub}"
         email_claim = auth_manager_config.OAUTH_EMAIL_CLAIM
         email = user_data.get(email_claim, "").lower()
         # We currently mandate that email addresses are provided
         if not email:
-            log.warning(f"OAuth callback failed, email is missing: {user_data}")
+            logger.warning(f"OAuth callback failed, email is missing: {user_data}")
             raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
         if (
             "*" not in auth_manager_config.OAUTH_ALLOWED_DOMAINS
             and email.split("@")[-1] not in auth_manager_config.OAUTH_ALLOWED_DOMAINS
         ):
-            log.warning(
+            logger.warning(
                 f"OAuth callback failed, e-mail domain is not in the list of allowed domains: {user_data}"
             )
             raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
@@ -271,7 +282,7 @@ class OAuthManager:
                                     guessed_mime_type = "image/jpeg"
                                 picture_url = f"data:{guessed_mime_type};base64,{base64_encoded_picture}"
                     except Exception as e:
-                        log.error(
+                        logger.error(
                             f"Error downloading profile image '{picture_url}': {e}"
                         )
                         picture_url = ""
@@ -283,24 +294,21 @@ class OAuthManager:
 
                 user = Auths.insert_new_auth(
                     email=email,
-                    password=get_password_hash(
-                        str(uuid.uuid4())
-                    ),  # Random password, not used
+                    password=get_password_hash(str(uuid.uuid4())),
                     name=user_data.get(username_claim, "User"),
                     profile_image_url=picture_url,
                     role=role,
                     oauth_sub=provider_sub,
                 )
+                assert user is not None
 
                 if auth_manager_config.WEBHOOK_URL:
                     post_webhook(
-                        auth_manager_config.WEBHOOK_URL,
-                        auth_manager_config.WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
+                        cast(str, auth_manager_config.WEBHOOK_URL),
+                        f"New user {user.name} signed up",
                         {
                             "action": "signup",
-                            "message": auth_manager_config.WEBHOOK_MESSAGES.USER_SIGNUP(
-                                user.name
-                            ),
+                            "message": f"New user {user.name} signed up",
                             "user": user.model_dump_json(exclude_none=True),
                         },
                     )
@@ -311,7 +319,7 @@ class OAuthManager:
 
         jwt_token = create_token(
             data={"id": user.id},
-            expires_delta=parse_duration(auth_manager_config.JWT_EXPIRES_IN),
+            expires_delta=parse_duration(cast(str, auth_manager_config.JWT_EXPIRES_IN)),
         )
 
         if auth_manager_config.ENABLE_OAUTH_GROUP_MANAGEMENT:
@@ -326,8 +334,8 @@ class OAuthManager:
             key="token",
             value=jwt_token,
             httponly=True,  # Ensures the cookie is not accessible via JavaScript
-            samesite=WEBUI_SESSION_COOKIE_SAME_SITE,
-            secure=WEBUI_SESSION_COOKIE_SECURE,
+            samesite=env.WEBUI_SESSION_COOKIE_SAME_SITE,
+            secure=env.WEBUI_SESSION_COOKIE_SECURE,
         )
 
         if ENABLE_OAUTH_SIGNUP.value:
@@ -336,8 +344,8 @@ class OAuthManager:
                 key="oauth_id_token",
                 value=oauth_id_token,
                 httponly=True,
-                samesite=WEBUI_SESSION_COOKIE_SAME_SITE,
-                secure=WEBUI_SESSION_COOKIE_SECURE,
+                samesite=env.WEBUI_SESSION_COOKIE_SAME_SITE,
+                secure=env.WEBUI_SESSION_COOKIE_SECURE,
             )
         # Redirect back to the frontend with the JWT token
         redirect_url = f"{request.base_url}auth#token={jwt_token}"
