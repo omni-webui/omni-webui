@@ -18,6 +18,8 @@ from pydantic import BaseModel
 from open_webui.config import (
     ENABLE_OAUTH_SIGNUP,
     OPENID_PROVIDER_URL,
+    ConfigDepends,
+    parse_duration,
 )
 from open_webui.constants import ERROR_MESSAGES, WEBHOOK_MESSAGES
 from open_webui.env import (
@@ -49,7 +51,7 @@ from open_webui.utils.auth import (
     get_password_hash,
     get_verified_user,
 )
-from open_webui.utils.misc import parse_duration, validate_email_format
+from open_webui.utils.misc import validate_email_format
 from open_webui.utils.webhook import post_webhook
 
 router = APIRouter()
@@ -67,10 +69,13 @@ class SessionUserResponse(Token, UserResponse):
 
 @router.get("/", response_model=SessionUserResponse)
 async def get_session_user(
-    request: Request, response: Response, user=Depends(get_current_user)
+    request: Request,
+    response: Response,
+    config: ConfigDepends,
+    user=Depends(get_current_user),
 ):
     """Get session user."""
-    expires_delta = parse_duration(request.app.state.config.JWT_EXPIRES_IN)
+    expires_delta = config.auth.jwt_expiry
     expires_at = None
     if expires_delta:
         expires_at = int(time.time()) + int(expires_delta.total_seconds())
@@ -151,7 +156,9 @@ async def update_password(
 
 
 @router.post("/ldap", response_model=SigninResponse)
-async def ldap_auth(request: Request, response: Response, form_data: LdapForm):
+async def ldap_auth(
+    request: Request, response: Response, config: ConfigDepends, form_data: LdapForm
+):
     """LDAP authentication."""
     ENABLE_LDAP = request.app.state.config.ENABLE_LDAP
     LDAP_SERVER_HOST = request.app.state.config.LDAP_SERVER_HOST
@@ -255,9 +262,7 @@ async def ldap_auth(request: Request, response: Response, form_data: LdapForm):
             if user:
                 token = create_token(
                     data={"id": user.id},
-                    expires_delta=parse_duration(
-                        request.app.state.config.JWT_EXPIRES_IN
-                    ),
+                    expires_delta=config.auth.jwt_expiry,
                 )
 
                 # Set the cookie token
@@ -288,7 +293,9 @@ async def ldap_auth(request: Request, response: Response, form_data: LdapForm):
 
 
 @router.post("/signin", response_model=SessionUserResponse)
-async def signin(request: Request, response: Response, form_data: SigninForm):
+async def signin(
+    request: Request, response: Response, config: ConfigDepends, form_data: SigninForm
+):
     """Sign in."""
     if WEBUI_AUTH_TRUSTED_EMAIL_HEADER:
         if WEBUI_AUTH_TRUSTED_EMAIL_HEADER not in request.headers:
@@ -304,6 +311,7 @@ async def signin(request: Request, response: Response, form_data: SigninForm):
             await signup(
                 request,
                 response,
+                config,
                 SignupForm(
                     email=trusted_email, password=str(uuid.uuid4()), name=trusted_name
                 ),
@@ -322,6 +330,7 @@ async def signin(request: Request, response: Response, form_data: SigninForm):
             await signup(
                 request,
                 response,
+                config,
                 SignupForm(email=admin_email, password=admin_password, name="User"),
             )
 
@@ -330,7 +339,7 @@ async def signin(request: Request, response: Response, form_data: SigninForm):
         user = Auths.authenticate_user(form_data.email.lower(), form_data.password)
 
     if user:
-        expires_delta = parse_duration(request.app.state.config.JWT_EXPIRES_IN)
+        expires_delta = config.auth.jwt_expiry
         expires_at = None
         if expires_delta:
             expires_at = int(time.time()) + int(expires_delta.total_seconds())
@@ -376,7 +385,9 @@ async def signin(request: Request, response: Response, form_data: SigninForm):
 
 
 @router.post("/signup", response_model=SessionUserResponse)
-async def signup(request: Request, response: Response, form_data: SignupForm):
+async def signup(
+    request: Request, response: Response, config: ConfigDepends, form_data: SignupForm
+):
     """Sign up."""
     if env.WEBUI_AUTH:
         if (
@@ -421,7 +432,7 @@ async def signup(request: Request, response: Response, form_data: SignupForm):
         )
 
         if user:
-            expires_delta = parse_duration(request.app.state.config.JWT_EXPIRES_IN)
+            expires_delta = config.auth.jwt_expiry
             expires_at = None
             if expires_delta:
                 expires_at = int(time.time()) + int(expires_delta.total_seconds())
@@ -573,7 +584,9 @@ async def get_admin_details(request: Request, user=Depends(get_current_user)):
 
 
 @router.get("/admin/config")
-async def get_admin_config(request: Request, user=Depends(get_admin_user)):
+async def get_admin_config(
+    request: Request, config: ConfigDepends, user=Depends(get_admin_user)
+):
     """Get admin configuration."""
     return {
         "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
@@ -584,7 +597,7 @@ async def get_admin_config(request: Request, user=Depends(get_admin_user)):
         "API_KEY_ALLOWED_ENDPOINTS": request.app.state.config.API_KEY_ALLOWED_ENDPOINTS,
         "ENABLE_CHANNELS": request.app.state.config.ENABLE_CHANNELS,
         "DEFAULT_USER_ROLE": request.app.state.config.DEFAULT_USER_ROLE,
-        "JWT_EXPIRES_IN": request.app.state.config.JWT_EXPIRES_IN,
+        "JWT_EXPIRES_IN": config.auth.model_dump()["jwt_expiry"],
         "ENABLE_COMMUNITY_SHARING": request.app.state.config.ENABLE_COMMUNITY_SHARING,
         "ENABLE_MESSAGE_RATING": request.app.state.config.ENABLE_MESSAGE_RATING,
     }
@@ -608,7 +621,10 @@ class AdminConfig(BaseModel):
 
 @router.post("/admin/config")
 async def update_admin_config(
-    request: Request, form_data: AdminConfig, user=Depends(get_admin_user)
+    request: Request,
+    form_data: AdminConfig,
+    config: ConfigDepends,
+    user=Depends(get_admin_user),
 ):
     """Update admin configuration."""
     request.app.state.config.SHOW_ADMIN_DETAILS = form_data.SHOW_ADMIN_DETAILS
@@ -632,7 +648,7 @@ async def update_admin_config(
 
     # Check if the input string matches the pattern
     if re.match(pattern, form_data.JWT_EXPIRES_IN):
-        request.app.state.config.JWT_EXPIRES_IN = form_data.JWT_EXPIRES_IN
+        config.auth.jwt_expiry = parse_duration(form_data.JWT_EXPIRES_IN)
 
     request.app.state.config.ENABLE_COMMUNITY_SHARING = (
         form_data.ENABLE_COMMUNITY_SHARING
@@ -648,7 +664,7 @@ async def update_admin_config(
         "API_KEY_ALLOWED_ENDPOINTS": request.app.state.config.API_KEY_ALLOWED_ENDPOINTS,
         "ENABLE_CHANNELS": request.app.state.config.ENABLE_CHANNELS,
         "DEFAULT_USER_ROLE": request.app.state.config.DEFAULT_USER_ROLE,
-        "JWT_EXPIRES_IN": request.app.state.config.JWT_EXPIRES_IN,
+        "JWT_EXPIRES_IN": config.auth.model_dump()["jwt_expiry"],
         "ENABLE_COMMUNITY_SHARING": request.app.state.config.ENABLE_COMMUNITY_SHARING,
         "ENABLE_MESSAGE_RATING": request.app.state.config.ENABLE_MESSAGE_RATING,
     }

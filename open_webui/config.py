@@ -23,6 +23,7 @@ from typing import (
 from urllib.parse import urlparse
 
 import chromadb.config
+from fastapi import Depends
 from loguru import logger
 from ollama import AsyncClient
 from openai import AsyncOpenAI
@@ -663,6 +664,11 @@ def get_config():
         return config_entry.data.model_dump() if config_entry else DEFAULT_CONFIG
 
 
+ConfigDepends = Annotated[
+    ConfigData, Depends(lambda: ConfigData.model_validate(get_config()))
+]
+
+
 CONFIG_DATA = get_config()
 
 
@@ -792,12 +798,6 @@ API_KEY_ALLOWED_ENDPOINTS = PersistentConfig(
     "auth.api_key.allowed_endpoints",
     os.environ.get("API_KEY_ALLOWED_ENDPOINTS", ""),
 )
-
-
-JWT_EXPIRES_IN = PersistentConfig(
-    "JWT_EXPIRES_IN", "auth.jwt_expiry", os.environ.get("JWT_EXPIRES_IN", "-1")
-)
-
 
 ENABLE_OAUTH_SIGNUP = PersistentConfig(
     "ENABLE_OAUTH_SIGNUP",

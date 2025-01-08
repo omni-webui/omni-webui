@@ -20,7 +20,6 @@ from open_webui.config import (
     ENABLE_OAUTH_GROUP_MANAGEMENT,
     ENABLE_OAUTH_ROLE_MANAGEMENT,
     ENABLE_OAUTH_SIGNUP,
-    JWT_EXPIRES_IN,
     OAUTH_ADMIN_ROLES,
     OAUTH_ALLOWED_DOMAINS,
     OAUTH_ALLOWED_ROLES,
@@ -33,6 +32,7 @@ from open_webui.config import (
     OAUTH_USERNAME_CLAIM,
     WEBHOOK_URL,
     AppConfig,
+    ConfigDepends,
 )
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import env
@@ -40,7 +40,6 @@ from open_webui.models.auths import Auths
 from open_webui.models.groups import GroupModel, Groups, GroupUpdateForm
 from open_webui.models.users import Users
 from open_webui.utils.auth import create_token, get_password_hash
-from open_webui.utils.misc import parse_duration
 from open_webui.utils.webhook import post_webhook
 
 auth_manager_config = AppConfig()
@@ -58,7 +57,6 @@ auth_manager_config.OAUTH_ALLOWED_ROLES = OAUTH_ALLOWED_ROLES
 auth_manager_config.OAUTH_ADMIN_ROLES = OAUTH_ADMIN_ROLES
 auth_manager_config.OAUTH_ALLOWED_DOMAINS = OAUTH_ALLOWED_DOMAINS
 auth_manager_config.WEBHOOK_URL = WEBHOOK_URL
-auth_manager_config.JWT_EXPIRES_IN = JWT_EXPIRES_IN
 
 
 class OAuthManager:
@@ -201,7 +199,7 @@ class OAuthManager:
             raise HTTPException(404)
         return await client.authorize_redirect(request, redirect_uri)
 
-    async def handle_callback(self, provider, request, response):
+    async def handle_callback(self, provider, request, response, config: ConfigDepends):
         """Handle the callback process for the given OAuth provider."""
         if provider not in OAUTH_PROVIDERS:
             raise HTTPException(404)
@@ -319,7 +317,7 @@ class OAuthManager:
 
         jwt_token = create_token(
             data={"id": user.id},
-            expires_delta=parse_duration(cast(str, auth_manager_config.JWT_EXPIRES_IN)),
+            expires_delta=config.auth.jwt_expiry,
         )
 
         if auth_manager_config.ENABLE_OAUTH_GROUP_MANAGEMENT:

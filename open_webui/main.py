@@ -116,7 +116,6 @@ from open_webui.config import (
     IMAGES_OPENAI_API_BASE_URL,
     IMAGES_OPENAI_API_KEY,
     JINA_API_KEY,
-    JWT_EXPIRES_IN,
     KAGI_SEARCH_API_KEY,
     LDAP_APP_DN,
     LDAP_APP_PASSWORD,
@@ -194,6 +193,7 @@ from open_webui.config import (
     YOUTUBE_LOADER_LANGUAGE,
     YOUTUBE_LOADER_PROXY_URL,
     AppConfig,
+    ConfigDepends,
     reset_config,
 )
 from open_webui.env import (
@@ -326,7 +326,6 @@ app.state.config.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS = (
     ENABLE_API_KEY_ENDPOINT_RESTRICTIONS
 )
 app.state.config.API_KEY_ALLOWED_ENDPOINTS = API_KEY_ALLOWED_ENDPOINTS
-app.state.config.JWT_EXPIRES_IN = JWT_EXPIRES_IN
 app.state.config.SHOW_ADMIN_DETAILS = SHOW_ADMIN_DETAILS
 app.state.config.ADMIN_EMAIL = ADMIN_EMAIL
 app.state.config.DEFAULT_MODELS = DEFAULT_MODELS
@@ -977,8 +976,11 @@ async def oauth_login(provider: str, request: Request):  # noqa: D103
 # 3. If there is no user, and ENABLE_OAUTH_SIGNUP is true, create a user
 #    - Email addresses are considered unique, so we fail registration if the email address is already taken
 @app.get("/oauth/{provider}/callback")
-async def oauth_callback(provider: str, request: Request, response: Response):  # noqa: D103
-    return await oauth_manager.handle_callback(provider, request, response)
+async def oauth_callback(
+    provider: str, request: Request, response: Response, config: ConfigDepends
+):
+    """Handle OAuth callback."""
+    return await oauth_manager.handle_callback(provider, request, response, config)
 
 
 @app.get("/manifest.json")
