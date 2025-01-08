@@ -9,6 +9,7 @@ import jwt
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from open_webui.config import ConfigDepends
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import env
 from open_webui.models.users import Users
@@ -66,6 +67,7 @@ def get_http_authorization_cred(auth_header: str):
 
 def get_current_user(
     request: Request,
+    config: ConfigDepends,
     auth_token: HTTPAuthorizationCredentials = Depends(bearer_security),
 ):
     """Get current user."""
@@ -82,18 +84,13 @@ def get_current_user(
 
     # auth by api key
     if token.startswith("sk-"):
-        if not request.state.enable_api_key:
+        if not config.auth.api_key.enable:
             raise HTTPException(
                 status.HTTP_403_FORBIDDEN, detail=ERROR_MESSAGES.API_KEY_NOT_ALLOWED
             )
 
-        if request.app.state.config.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS:
-            allowed_paths = [
-                path.strip()
-                for path in str(
-                    request.app.state.config.API_KEY_ALLOWED_ENDPOINTS
-                ).split(",")
-            ]
+        if config.auth.api_key.endpoint_restrictions:
+            allowed_paths = config.auth.api_key.allowed_endpoints
 
             if request.url.path not in allowed_paths:
                 raise HTTPException(

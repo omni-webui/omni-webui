@@ -36,7 +36,6 @@ from starlette.responses import Response
 
 from open_webui.config import (
     ADMIN_EMAIL,
-    API_KEY_ALLOWED_ENDPOINTS,
     # Audio
     AUDIO_STT_ENGINE,
     AUDIO_STT_MODEL,
@@ -78,7 +77,6 @@ from open_webui.config import (
     # Admin
     ENABLE_ADMIN_CHAT_ACCESS,
     ENABLE_ADMIN_EXPORT,
-    ENABLE_API_KEY_ENDPOINT_RESTRICTIONS,
     ENABLE_AUTOCOMPLETE_GENERATION,
     ENABLE_CHANNELS,
     ENABLE_COMMUNITY_SHARING,
@@ -320,10 +318,6 @@ app.state.OPENAI_MODELS = {}
 app.state.config.WEBUI_URL = WEBUI_URL
 app.state.config.ENABLE_SIGNUP = ENABLE_SIGNUP
 app.state.config.ENABLE_LOGIN_FORM = ENABLE_LOGIN_FORM
-app.state.config.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS = (
-    ENABLE_API_KEY_ENDPOINT_RESTRICTIONS
-)
-app.state.config.API_KEY_ALLOWED_ENDPOINTS = API_KEY_ALLOWED_ENDPOINTS
 app.state.config.SHOW_ADMIN_DETAILS = SHOW_ADMIN_DETAILS
 app.state.config.ADMIN_EMAIL = ADMIN_EMAIL
 app.state.config.DEFAULT_MODELS = DEFAULT_MODELS

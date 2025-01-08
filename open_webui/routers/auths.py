@@ -596,8 +596,8 @@ async def get_admin_config(
         "WEBUI_URL": request.app.state.config.WEBUI_URL,
         "ENABLE_SIGNUP": request.app.state.config.ENABLE_SIGNUP,
         "ENABLE_API_KEY": config.auth.api_key.enable,
-        "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS": request.app.state.config.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS,
-        "API_KEY_ALLOWED_ENDPOINTS": request.app.state.config.API_KEY_ALLOWED_ENDPOINTS,
+        "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS": config.auth.api_key.endpoint_restrictions,
+        "API_KEY_ALLOWED_ENDPOINTS": ",".join(config.auth.api_key.allowed_endpoints),
         "ENABLE_CHANNELS": request.app.state.config.ENABLE_CHANNELS,
         "DEFAULT_USER_ROLE": request.app.state.config.DEFAULT_USER_ROLE,
         "JWT_EXPIRES_IN": config.auth.model_dump()["jwt_expiry"],
@@ -637,11 +637,13 @@ async def update_admin_config(
     request.app.state.config.ENABLE_SIGNUP = form_data.ENABLE_SIGNUP
 
     config.auth.api_key.enable = form_data.ENABLE_API_KEY
-    request.app.state.config.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS = (
+    config.auth.api_key.endpoint_restrictions = (
         form_data.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS
     )
-    request.app.state.config.API_KEY_ALLOWED_ENDPOINTS = (
-        form_data.API_KEY_ALLOWED_ENDPOINTS
+    config.auth.api_key.allowed_endpoints = (
+        [x.strip() for x in form_data.API_KEY_ALLOWED_ENDPOINTS.split(",")]
+        if form_data.API_KEY_ALLOWED_ENDPOINTS
+        else []
     )
 
     request.app.state.config.ENABLE_CHANNELS = form_data.ENABLE_CHANNELS
@@ -671,8 +673,8 @@ async def update_admin_config(
         "WEBUI_URL": request.app.state.config.WEBUI_URL,
         "ENABLE_SIGNUP": request.app.state.config.ENABLE_SIGNUP,
         "ENABLE_API_KEY": config.auth.api_key.enable,
-        "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS": request.app.state.config.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS,
-        "API_KEY_ALLOWED_ENDPOINTS": request.app.state.config.API_KEY_ALLOWED_ENDPOINTS,
+        "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS": config.auth.api_key.endpoint_restrictions,
+        "API_KEY_ALLOWED_ENDPOINTS": ",".join(config.auth.api_key.allowed_endpoints),
         "ENABLE_CHANNELS": request.app.state.config.ENABLE_CHANNELS,
         "DEFAULT_USER_ROLE": request.app.state.config.DEFAULT_USER_ROLE,
         "JWT_EXPIRES_IN": config.auth.model_dump()["jwt_expiry"],

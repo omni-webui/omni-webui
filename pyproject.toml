@@ -115,6 +115,8 @@ exclude_also = [
 extend-select = ["I", "T20", "D"]
 ignore = [
     "D105",  # Missing docstring in magic method
+    "D203",  # 1 blank line required before class docstring (conflicts with D211)
+    "D213",  # multi-line docstring summary should start at the second line (conflicts with D212)
 ]
 
 [tool.pyright]

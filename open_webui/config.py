@@ -155,6 +155,25 @@ class AuthConfig(BaseSettings):
         enable: Annotated[
             bool, Field(validation_alias=AliasChoices("ENABLE_API_KEY", "enable"))
         ] = True
+        endpoint_restrictions: Annotated[
+            bool,
+            Field(
+                validation_alias=AliasChoices(
+                    "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS", "endpoint_restrictions"
+                )
+            ),
+        ] = False
+        allowed_endpoints: Annotated[list[str], NoDecode] = Field(default_factory=list)
+
+        @field_validator("allowed_endpoints", mode="before")
+        @classmethod
+        def parse_comma_separated_values(cls, v: Any) -> list[str]:
+            """Parse the semicolon-separated values."""
+            if isinstance(v, str):
+                return v.split(",")
+            if isinstance(v, list) and all(isinstance(i, str) for i in v):
+                return v
+            raise ValidationError("Invalid value")
 
     api_key: APIKey = Field(default_factory=APIKey)
     jwt_expiry: Annotated[
@@ -786,18 +805,6 @@ class AppConfig:
     def __getattr__(self, key):
         return self._state[key].value
 
-
-ENABLE_API_KEY_ENDPOINT_RESTRICTIONS = PersistentConfig(
-    "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS",
-    "auth.api_key.endpoint_restrictions",
-    os.environ.get("ENABLE_API_KEY_ENDPOINT_RESTRICTIONS", "False").lower() == "true",
-)
-
-API_KEY_ALLOWED_ENDPOINTS = PersistentConfig(
-    "API_KEY_ALLOWED_ENDPOINTS",
-    "auth.api_key.allowed_endpoints",
-    os.environ.get("API_KEY_ALLOWED_ENDPOINTS", ""),
-)
 
 ENABLE_OAUTH_SIGNUP = PersistentConfig(
     "ENABLE_OAUTH_SIGNUP",
