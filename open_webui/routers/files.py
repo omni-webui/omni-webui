@@ -1,111 +1,88 @@
-import logging
+"""Files router."""
+
 import os
 import uuid
 from pathlib import Path
 from typing import Optional
-from pydantic import BaseModel
-import mimetypes
 from urllib.parse import quote
 
-from open_webui.storage.provider import Storage
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
+from fastapi.responses import FileResponse, StreamingResponse
+from loguru import logger
+from pydantic import BaseModel
 
+from open_webui.constants import ERROR_MESSAGES
 from open_webui.models.files import (
     FileForm,
     FileModel,
     FileModelResponse,
     Files,
 )
-from open_webui.routers.retrieval import process_file, ProcessFileForm
-
-from open_webui.config import UPLOAD_DIR
-from open_webui.env import SRC_LOG_LEVELS
-from open_webui.constants import ERROR_MESSAGES
-
-
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status, Request
-from fastapi.responses import FileResponse, StreamingResponse
-
-
+from open_webui.routers.retrieval import ProcessFileForm, process_file
+from open_webui.storage.provider import Storage
 from open_webui.utils.auth import get_admin_user, get_verified_user
 
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MODELS"])
-
-
 router = APIRouter()
-
-############################
-# Upload File
-############################
 
 
 @router.post("/", response_model=FileModelResponse)
 def upload_file(
     request: Request, file: UploadFile = File(...), user=Depends(get_verified_user)
 ):
-    log.info(f"file.content_type: {file.content_type}")
+    """Upload file."""
+    logger.info(f"{file.content_type=}")
+    unsanitized_filename = file.filename
+    assert unsanitized_filename is not None
+    filename = os.path.basename(unsanitized_filename)
+
+    # replace filename with uuid
+    id = str(uuid.uuid4())
+    name = filename
+    filename = f"{id}_{filename}"
+    contents, file_path = Storage.upload_file(file.file, filename)
+
+    file_item = Files.insert_new_file(
+        user.id,
+        FileForm(
+            **{
+                "id": id,
+                "filename": name,
+                "path": file_path,
+                "meta": {
+                    "name": name,
+                    "content_type": file.content_type,
+                    "size": len(contents),
+                },
+            }
+        ),
+    )
+    assert file_item is not None
+
     try:
-        unsanitized_filename = file.filename
-        filename = os.path.basename(unsanitized_filename)
-
-        # replace filename with uuid
-        id = str(uuid.uuid4())
-        name = filename
-        filename = f"{id}_{filename}"
-        contents, file_path = Storage.upload_file(file.file, filename)
-
-        file_item = Files.insert_new_file(
-            user.id,
-            FileForm(
-                **{
-                    "id": id,
-                    "filename": name,
-                    "path": file_path,
-                    "meta": {
-                        "name": name,
-                        "content_type": file.content_type,
-                        "size": len(contents),
-                    },
-                }
-            ),
+        process_file(request, ProcessFileForm(file_id=id))
+        file_item = Files.get_file_by_id(id=id)
+    except Exception as e:
+        logger.exception(e)
+        logger.error(f"Error processing file: {file_item.id}")
+        file_item = FileModelResponse(
+            **{
+                **file_item.model_dump(),
+                "error": getattr(e, "detail") if hasattr(e, "detail") else str(e),
+            }
         )
 
-        try:
-            process_file(request, ProcessFileForm(file_id=id))
-            file_item = Files.get_file_by_id(id=id)
-        except Exception as e:
-            log.exception(e)
-            log.error(f"Error processing file: {file_item.id}")
-            file_item = FileModelResponse(
-                **{
-                    **file_item.model_dump(),
-                    "error": str(e.detail) if hasattr(e, "detail") else str(e),
-                }
-            )
-
-        if file_item:
-            return file_item
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=ERROR_MESSAGES.DEFAULT("Error uploading file"),
-            )
-
-    except Exception as e:
-        log.exception(e)
+    if file_item:
+        return file_item
+    else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT(e),
+            detail="Error uploading file",
         )
-
-
-############################
-# List Files
-############################
 
 
 @router.get("/", response_model=list[FileModelResponse])
 async def list_files(user=Depends(get_verified_user)):
+    """List files."""
     if user.role == "admin":
         files = Files.get_files()
     else:
@@ -113,39 +90,31 @@ async def list_files(user=Depends(get_verified_user)):
     return files
 
 
-############################
-# Delete All Files
-############################
-
-
 @router.delete("/all")
 async def delete_all_files(user=Depends(get_admin_user)):
+    """Delete all files."""
     result = Files.delete_all_files()
     if result:
         try:
             Storage.delete_all_files()
         except Exception as e:
-            log.exception(e)
-            log.error(f"Error deleting files")
+            logger.exception(e)
+            logger.error("Error deleting files")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=ERROR_MESSAGES.DEFAULT("Error deleting files"),
+                detail="Error deleting files",
             )
         return {"message": "All files deleted successfully"}
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT("Error deleting files"),
+            detail="Error deleting files",
         )
-
-
-############################
-# Get File By Id
-############################
 
 
 @router.get("/{id}", response_model=Optional[FileModel])
 async def get_file_by_id(id: str, user=Depends(get_verified_user)):
+    """Get file by id."""
     file = Files.get_file_by_id(id)
 
     if file and (file.user_id == user.id or user.role == "admin"):
@@ -157,17 +126,13 @@ async def get_file_by_id(id: str, user=Depends(get_verified_user)):
         )
 
 
-############################
-# Get File Data Content By Id
-############################
-
-
 @router.get("/{id}/data/content")
 async def get_file_data_content_by_id(id: str, user=Depends(get_verified_user)):
+    """Get file data content by id."""
     file = Files.get_file_by_id(id)
 
     if file and (file.user_id == user.id or user.role == "admin"):
-        return {"content": file.data.get("content", "")}
+        return {"content": (file.data or {}).get("content", "")}
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -175,12 +140,9 @@ async def get_file_data_content_by_id(id: str, user=Depends(get_verified_user)):
         )
 
 
-############################
-# Update File Data Content By Id
-############################
-
-
 class ContentForm(BaseModel):
+    """Request model for updating file data content."""
+
     content: str
 
 
@@ -188,7 +150,9 @@ class ContentForm(BaseModel):
 async def update_file_data_content_by_id(
     request: Request, id: str, form_data: ContentForm, user=Depends(get_verified_user)
 ):
+    """Update file data content by id."""
     file = Files.get_file_by_id(id)
+    assert file is not None
 
     if file and (file.user_id == user.id or user.role == "admin"):
         try:
@@ -197,10 +161,11 @@ async def update_file_data_content_by_id(
             )
             file = Files.get_file_by_id(id=id)
         except Exception as e:
-            log.exception(e)
-            log.error(f"Error processing file: {file.id}")
+            logger.exception(e)
+            logger.error(f"Error processing file: {file.id}")
 
-        return {"content": file.data.get("content", "")}
+        assert file is not None
+        return {"content": (file.data or {}).get("content", "")}
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -208,27 +173,23 @@ async def update_file_data_content_by_id(
         )
 
 
-############################
-# Get File Content By Id
-############################
-
-
 @router.get("/{id}/content")
 async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
+    """Get file content by id."""
     file = Files.get_file_by_id(id)
     if file and (file.user_id == user.id or user.role == "admin"):
         try:
-            file_path = Storage.get_file(file.path)
+            file_path = Storage.get_file(file.path or "")
             file_path = Path(file_path)
 
             # Check if the file already exists in the cache
             if file_path.is_file():
                 # Handle Unicode filenames
-                filename = file.meta.get("name", file.filename)
+                filename = (file.meta or {}).get("name", file.filename)
                 encoded_filename = quote(filename)  # RFC5987 encoding
 
                 headers = {}
-                if file.meta.get("content_type") not in [
+                if (file.meta or {}).get("content_type") not in [
                     "application/pdf",
                     "text/plain",
                 ]:
@@ -245,11 +206,11 @@ async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
                     detail=ERROR_MESSAGES.NOT_FOUND,
                 )
         except Exception as e:
-            log.exception(e)
-            log.error(f"Error getting file content")
+            logger.exception(e)
+            logger.error("Error getting file content")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=ERROR_MESSAGES.DEFAULT("Error getting file content"),
+                detail="Error getting file content",
             )
     else:
         raise HTTPException(
@@ -260,15 +221,16 @@ async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
 
 @router.get("/{id}/content/html")
 async def get_html_file_content_by_id(id: str, user=Depends(get_verified_user)):
+    """Get HTML file content by id."""
     file = Files.get_file_by_id(id)
     if file and (file.user_id == user.id or user.role == "admin"):
         try:
-            file_path = Storage.get_file(file.path)
+            file_path = Storage.get_file(file.path or "")
             file_path = Path(file_path)
 
             # Check if the file already exists in the cache
             if file_path.is_file():
-                print(f"file_path: {file_path}")
+                logger.info(f"{file_path=}")
                 return FileResponse(file_path)
             else:
                 raise HTTPException(
@@ -276,8 +238,8 @@ async def get_html_file_content_by_id(id: str, user=Depends(get_verified_user)):
                     detail=ERROR_MESSAGES.NOT_FOUND,
                 )
         except Exception as e:
-            log.exception(e)
-            log.error(f"Error getting file content")
+            logger.exception(e)
+            logger.error("Error getting file content")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_MESSAGES.DEFAULT("Error getting file content"),
@@ -290,14 +252,15 @@ async def get_html_file_content_by_id(id: str, user=Depends(get_verified_user)):
 
 
 @router.get("/{id}/content/{file_name}")
-async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
+async def get_file_content_by_id_and_name(id: str, user=Depends(get_verified_user)):
+    """Get file content by id and file name."""
     file = Files.get_file_by_id(id)
 
     if file and (file.user_id == user.id or user.role == "admin"):
         file_path = file.path
 
         # Handle Unicode filenames
-        filename = file.meta.get("name", file.filename)
+        filename = (file.meta or {}).get("name", file.filename)
         encoded_filename = quote(filename)  # RFC5987 encoding
         headers = {
             "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
@@ -317,8 +280,7 @@ async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
                 )
         else:
             # File path doesn’t exist, return the content as .txt if possible
-            file_content = file.content.get("content", "")
-            file_name = file.filename
+            file_content = file.content.get("content", "")  # type: ignore
 
             # Create a generator that encodes the file content
             def generator():
@@ -336,31 +298,27 @@ async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
         )
 
 
-############################
-# Delete File By Id
-############################
-
-
 @router.delete("/{id}")
 async def delete_file_by_id(id: str, user=Depends(get_verified_user)):
+    """Delete file by id."""
     file = Files.get_file_by_id(id)
     if file and (file.user_id == user.id or user.role == "admin"):
         result = Files.delete_file_by_id(id)
         if result:
             try:
-                Storage.delete_file(file.path)
+                Storage.delete_file(file.path or "")
             except Exception as e:
-                log.exception(e)
-                log.error(f"Error deleting files")
+                logger.exception(e)
+                logger.error("Error deleting files")
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=ERROR_MESSAGES.DEFAULT("Error deleting files"),
+                    detail="Error deleting files",
                 )
             return {"message": "File deleted successfully"}
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=ERROR_MESSAGES.DEFAULT("Error deleting file"),
+                detail="Error deleting file",
             )
     else:
         raise HTTPException(
