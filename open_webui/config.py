@@ -3,17 +3,47 @@
 import json
 import logging
 import os
+import re
 import shutil
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from functools import cached_property
+from itertools import zip_longest
 from pathlib import Path
-from typing import Generic, Optional, TypeVar
+from typing import (
+    Annotated,
+    Any,
+    Generic,
+    NotRequired,
+    Optional,
+    TypedDict,
+    TypeVar,
+    get_args,
+    get_type_hints,
+)
 from urllib.parse import urlparse
 
 import chromadb.config
 from loguru import logger
-from pydantic import BaseModel
-from sqlalchemy import func
-from sqlmodel import JSON, Field, SQLModel, col
+from ollama import AsyncClient
+from openai import AsyncOpenAI
+from openai.types.audio import SpeechCreateParams, SpeechModel
+from pydantic import (
+    AliasChoices,
+    Field,
+    ValidationError,
+    ValidatorFunctionWrapHandler,
+    WrapValidator,
+    field_validator,
+)
+from pydantic_settings import (
+    BaseSettings as _BaseSettings,
+)
+from pydantic_settings import (
+    NoDecode,
+)
+from sqlmodel import Field as SQLModelField
+from sqlmodel import SQLModel, col, func
+from typing_extensions import deprecated
 
 from open_webui.env import (
     DATABASE_URL,
@@ -25,6 +55,477 @@ from open_webui.env import (
 )
 from open_webui.env import WEBUI_FAVICON_URL as WEBUI_FAVICON_URL
 from open_webui.internal.db import get_db
+
+from ._types import MutableBaseModel as BaseModel
+
+
+class BaseSettings(BaseModel, _BaseSettings):
+    """Mutable BaseSettings class."""
+
+
+class AudioConfig(BaseModel):
+    """Audio configuration."""
+
+    class TTS(BaseSettings, env_prefix="AUDIO_TTS_"):
+        """Text-to-speech configuration."""
+
+        class Azure(BaseSettings, env_prefix="AUDIO_TTS_AZURE_"):
+            """Azure configuration."""
+
+            speech_region: str = "eastus"  # East US
+            speech_output_format: str = "audio-24khz-160kbitrate-mono-mp3"
+
+        azure: Azure = Field(default_factory=Azure)
+        engine: str = ""
+        model: str = get_args(SpeechModel)[0]
+        voice: str = get_args(get_type_hints(SpeechCreateParams)["voice"])[0]
+        split_on: str = "punctuation"
+
+    tts: TTS = Field(default_factory=TTS)
+
+    class STT(BaseSettings, env_prefix="AUDIO_STT_"):
+        """Speech-to-text configuration."""
+
+        engine: str = ""
+
+    stt: STT = Field(default_factory=STT)
+
+
+@deprecated("Open WebUI self-defined rules, would be remove @1.0")
+def parse_duration(duration: str) -> timedelta | None:
+    """Parse the duration."""
+    if duration == "-1" or duration == "0":
+        return None
+
+    # Regular expression to find number and unit pairs
+    pattern = r"(-?\d+(\.\d+)?)(ms|s|m|h|d|w)"
+    matches = re.findall(pattern, duration)
+
+    if not matches:
+        raise ValueError("Invalid duration string")
+
+    total_duration = timedelta()
+
+    for number, _, unit in matches:
+        number = float(number)
+        if unit == "ms":
+            total_duration += timedelta(milliseconds=number)
+        elif unit == "s":
+            total_duration += timedelta(seconds=number)
+        elif unit == "m":
+            total_duration += timedelta(minutes=number)
+        elif unit == "h":
+            total_duration += timedelta(hours=number)
+        elif unit == "d":
+            total_duration += timedelta(days=number)
+        elif unit == "w":
+            total_duration += timedelta(weeks=number)
+
+    return total_duration
+
+
+@deprecated("Backward-compatible with Open WebUI, would be removed @1.0")
+def unparse_duration(duration: timedelta | None) -> str:
+    """Unparse the duration."""
+    if duration is None:
+        return "-1"
+    return f"{duration.total_seconds()}s"
+
+
+@deprecated("Backward-compatible with Open WebUI, would be removed @1.0")
+def validate_duration(value: Any, handler: ValidatorFunctionWrapHandler):
+    """Validate the duration."""
+    try:
+        return handler(value)
+    except ValidationError:
+        try:
+            return parse_duration(value)
+        except ValueError:
+            raise ValidationError
+
+
+class AuthConfig(BaseSettings):
+    """Authentication configuration."""
+
+    class APIKey(BaseSettings):
+        """API key configuration."""
+
+        enable: Annotated[
+            bool, Field(validation_alias=AliasChoices("ENABLE_API_KEY", "enable"))
+        ] = True
+
+    api_key: APIKey = Field(default_factory=APIKey)
+    jwt_expiry: Annotated[
+        timedelta | None,
+        Field(validation_alias=AliasChoices("JWT_EXPIRES_IN", "jwt_expiry")),
+        WrapValidator(validate_duration),
+    ] = None
+
+
+class ArenaModel(BaseModel):
+    """Arena model configuration."""
+
+    class Meta(BaseModel):
+        """Arena model meta configuration."""
+
+        profile_image_url: str = "/favicon.png"
+        description: str = "Submit your questions to anonymous AI chatbots and vote on the best response."
+
+    id: str = "arena-model"
+    name: str = "Arena Model"
+    meta: Meta = Field(default_factory=Meta)
+
+
+class Evaluation(BaseModel):
+    """Evaluation configuration."""
+
+    class Arena(BaseSettings):
+        """Evaluation Arena configuration."""
+
+        enable: Annotated[
+            bool,
+            Field(
+                validation_alias=AliasChoices(
+                    "ENABLE_EVALUATION_ARENA_MODELS", "enable"
+                )
+            ),
+        ] = True
+        models: list[ArenaModel] = Field(default_factory=lambda: [ArenaModel()])
+
+    arena: Arena = Field(default_factory=Arena)
+
+
+class ImageGenerationConfig(BaseSettings):
+    """Image generation configuration."""
+
+    enable: Annotated[
+        bool, Field(validation_alias=AliasChoices("ENABLE_IMAGE_GENERATION", "enable"))
+    ] = True
+
+
+class LDAPConfig(BaseModel):
+    """LDAP configuration."""
+
+    enable: Annotated[
+        bool, Field(validation_alias=AliasChoices("ENABLE_LDAP", "enable"))
+    ] = False
+
+
+class OAuthProvider(TypedDict):
+    """OAuth provider model."""
+
+    client_id: str
+    client_secret: str
+    scope: str
+    redirect_uri: str
+    name: NotRequired[str]
+
+
+class OAuthConfig(BaseModel):
+    """OAuth configuration."""
+
+    class Provider(BaseSettings):
+        """OAuth provider configuration."""
+
+        client_id: str = ""
+        client_secret: str = ""
+        scope: str = "openid email profile"
+        redirect_uri: str = ""
+
+    class Google(Provider, env_prefix="GOOGLE_"):
+        """Google OAuth provider configuration."""
+
+    class Microsoft(Provider, env_prefix="MICROSOFT_"):
+        """Microsoft OAuth provider configuration."""
+
+        tenant_id: str = ""
+
+    class OIDC(Provider, env_prefix="OAUTH_"):
+        """OIDC OAuth provider configuration."""
+
+        provider_url: Annotated[
+            str, Field(serialization_alias="server_metadata_url")
+        ] = ""
+        provider_name: str = "SSO"
+        username_claim: str = "name"
+        avatar_claim: Annotated[
+            str,
+            Field(validation_alias=AliasChoices("OAUTH_PICTURE_CLAIM", "avatar_claim")),
+        ] = "picture"
+        email_claim: str = "email"
+        enable_role_mapping: Annotated[
+            bool,
+            Field(
+                validation_alias=AliasChoices(
+                    "ENABLE_OAUTH_ROLE_MANAGEMENT", "enable_role_mapping"
+                )
+            ),
+        ] = False
+        roles_claim: str = "roles"
+        allowed_roles: list[str] = ["user", "admin"]
+        admin_roles: list[str] = ["admin"]
+
+    enable_signup: Annotated[
+        bool,
+        Field(validation_alias=AliasChoices("ENABLE_OAUTH_SIGNUP", "enable_signup")),
+    ] = False
+    merge_accounts_by_email: Annotated[
+        bool,
+        Field(
+            validation_alias=AliasChoices(
+                "OAUTH_MERGE_ACCOUNTS_BY_EMAIL", "merge_accounts_by_email"
+            )
+        ),
+    ] = False
+    google: Google = Field(default_factory=Google)
+    microsoft: Microsoft = Field(default_factory=Microsoft)
+    oidc: OIDC = Field(default_factory=OIDC)
+
+    @property
+    def providers(self) -> dict[str, OAuthProvider]:
+        """Get the OAuth providers."""
+        providers = {}
+        if self.google.client_id and self.google.client_secret:
+            providers["google"] = self.google.model_dump() | {
+                "server_metadata_url": "https://accounts.google.com/.well-known/openid-configuration"
+            }
+        if (
+            self.microsoft.client_id
+            and self.microsoft.client_secret
+            and self.microsoft.tenant_id
+        ):
+            providers["microsoft"] = self.microsoft.model_dump(
+                exclude={"tenant_id"}
+            ) | {
+                "server_metadata_url": f"https://login.microsoftonline.com/{self.microsoft.tenant_id}/v2.0/.well-known/openid-configuration",
+            }
+        if self.oidc.client_id and self.oidc.client_secret and self.oidc.provider_url:
+            providers["oidc"] = self.oidc.model_dump(
+                by_alias=True,
+                include={
+                    "client_id",
+                    "client_secret",
+                    "server_metadata_url",
+                    "scope",
+                    "name",
+                    "redirect_uri",
+                },
+            )
+        return providers
+
+
+class ClientConfig(BaseModel):
+    """OpenAI/Ollama client configuration."""
+
+    enable: bool = True
+    prefix_id: str | None = None
+
+
+class OllamaConfig(BaseSettings, env_prefix="OLLAMA_"):
+    """Ollama configuration."""
+
+    enable: Annotated[
+        bool, Field(validation_alias=AliasChoices("ENABLE_OLLAMA_API", "enable"))
+    ] = True
+    base_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    api_configs: dict[str, ClientConfig] = Field(default_factory=dict)
+
+    @field_validator("base_urls", mode="before")
+    @classmethod
+    def parse_semicolon_separated_values(cls, v: Any) -> list[str]:
+        """Parse the semicolon-separated values."""
+        if isinstance(v, str):
+            return v.split(";")
+        if isinstance(v, list) and all(isinstance(i, str) for i in v):
+            return v
+        raise ValidationError("Invalid value")
+
+    def model_post_init(self, __context):
+        """Post-initialization model hook."""
+        self.base_urls = [base_url for base_url in self.base_urls if base_url]
+        if not self.base_urls:
+            self.base_urls = ["http://127.0.0.1:11434"]
+
+    @cached_property
+    def clients(self) -> list[AsyncOpenAI]:
+        """Get the Ollama clients."""
+        return [
+            AsyncOpenAI(
+                api_key="ollama",
+                base_url=base_url,
+            )
+            for base_url in self.base_urls
+            if (api_config := self.api_configs.get(base_url)) is None
+            or api_config.enable
+        ]
+
+    @cached_property
+    def ollama_clients(self) -> list[AsyncClient]:
+        """Get the Ollama clients."""
+        return [AsyncClient(host=base_url) for base_url in self.base_urls]
+
+
+class OpenAIConfig(BaseSettings, env_prefix="OPENAI_"):
+    """OpenAI configuration."""
+
+    enable: Annotated[
+        bool, Field(validation_alias=AliasChoices("ENABLE_OPENAI_API", "enable"))
+    ] = True
+    api_keys: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    api_base_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    api_configs: dict[str, ClientConfig] = Field(default_factory=dict)
+
+    @field_validator("api_keys", "api_base_urls", mode="before")
+    @classmethod
+    def parse_semicolon_separated_values(cls, v: Any) -> list[str]:
+        """Parse the semicolon-separated values."""
+        if isinstance(v, str):
+            return v.split(";")
+        if isinstance(v, list) and all(isinstance(i, str) for i in v):
+            return v
+        raise ValidationError("Invalid value")
+
+    @cached_property
+    def clients(self) -> list[AsyncOpenAI]:
+        """Get the OpenAI clients."""
+        return [
+            AsyncOpenAI(
+                api_key=api_key,
+                base_url=base_url,
+            )
+            for api_key, base_url in zip_longest(
+                self.api_keys,
+                self.api_base_urls,
+                fillvalue=""
+                if len(self.api_keys) < len(self.api_base_urls)
+                else OPENAI_BASE_URL,
+            )
+            if (api_config := self.api_configs.get(base_url)) is None
+            or api_config.enable
+        ]
+
+
+class RAGConfig(BaseModel):
+    """RAG configuration."""
+
+    class Web(BaseModel):
+        """Web configuration."""
+
+        class Search(BaseSettings):
+            """Search configuration."""
+
+            enable: Annotated[
+                bool,
+                Field(validation_alias=AliasChoices("ENABLE_RAG_WEB_SEARCH", "enable")),
+            ] = True
+
+        search: Search = Field(default_factory=Search)
+
+    web: Web = Field(default_factory=Web)
+
+    class File(BaseSettings, env_prefix="RAG_FILE_"):
+        """File configuration."""
+
+        max_count: int | None = None
+        max_size: float | None = None
+        """Max file size in MB"""
+
+    file: File = Field(default_factory=File)
+
+
+class UIConfig(BaseSettings):
+    """UI configuration."""
+
+    class PromptSuggestion(BaseModel):
+        """Prompt suggestion model."""
+
+        title: tuple[str, str]
+        content: str
+
+    default_locale: str = ""
+    prompt_suggestions: list[PromptSuggestion] = Field(default_factory=list)
+    enable_signup: bool = True
+    default_models: str | None = None
+    ENABLE_LOGIN_FORM: bool = True
+    enable_community_sharing: bool = True
+    enable_message_rating: bool = True
+
+
+class UserConfig(BaseModel):
+    """User configuration."""
+
+    class Permissions(BaseModel):
+        """User permissions."""
+
+        class Workspace(BaseSettings):
+            """User workspace permissions."""
+
+            models: Annotated[
+                bool,
+                Field(
+                    validation_alias=AliasChoices(
+                        "USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS", "models"
+                    )
+                ),
+            ] = True
+            knowledge: Annotated[
+                bool,
+                Field(
+                    validation_alias=AliasChoices(
+                        "USER_PERMISSIONS_WORKSPACE_KNOWLEDGE_ACCESS", "knowledge"
+                    )
+                ),
+            ] = True
+            prompts: Annotated[
+                bool,
+                Field(
+                    validation_alias=AliasChoices(
+                        "USER_PERMISSIONS_WORKSPACE_PROMPTS_ACCESS", "prompts"
+                    )
+                ),
+            ] = True
+            tools: Annotated[
+                bool,
+                Field(
+                    validation_alias=AliasChoices(
+                        "USER_PERMISSIONS_WORKSPACE_TOOLS_ACCESS", "tools"
+                    )
+                ),
+            ] = True
+
+        workspace: Workspace = Field(default_factory=Workspace)
+
+        class Chat(BaseSettings, env_prefix="USER_PERMISSIONS_CHAT_"):
+            """User chat permissions."""
+
+            file_upload: bool = True
+            delete: bool = True
+            edit: bool = True
+            temporary: bool = True
+
+        chat: Chat = Field(default_factory=Chat)
+
+    permissions: Permissions = Field(default_factory=Permissions)
+
+
+@deprecated("Backward compatibility with Open WebUI, will be removed >= 1.0")
+class ConfigData(BaseModel, nested_model_default_partial_update=True):
+    """Config data model."""
+
+    version: int = 0
+    audio: AudioConfig = Field(default_factory=AudioConfig)
+    auth: AuthConfig = Field(default_factory=AuthConfig)
+    evaluation: Evaluation = Field(default_factory=Evaluation)
+    image_generation: ImageGenerationConfig = Field(
+        default_factory=ImageGenerationConfig
+    )
+    ldap: LDAPConfig = Field(default_factory=LDAPConfig)
+    oauth: OAuthConfig = Field(default_factory=OAuthConfig)
+    ollama: OllamaConfig = Field(default_factory=OllamaConfig)
+    openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
+    rag: RAGConfig = Field(default_factory=RAGConfig)
+    ui: UIConfig = Field(default_factory=UIConfig)
+    user: UserConfig = Field(default_factory=UserConfig)
 
 
 class EndpointFilter(logging.Filter):
@@ -62,11 +563,11 @@ except Exception as e:
 class Config(SQLModel, table=True):
     """Config model."""
 
-    id: int | None = Field(default=None, primary_key=True)
-    data: dict = Field(sa_type=JSON, nullable=False)
+    id: int | None = SQLModelField(default=None, primary_key=True)
+    data: ConfigData = SQLModelField(sa_type=ConfigData.as_sa_type(), nullable=False)
     version: int = 0
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime | None = Field(
+    created_at: datetime = SQLModelField(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime | None = SQLModelField(
         default=None, sa_column_kwargs=dict(onupdate=func.now())
     )
 
@@ -159,7 +660,7 @@ def get_config():
     """Get the config."""
     with get_db() as db:
         config_entry = db.query(Config).order_by(col(Config.id).desc()).first()
-        return config_entry.data if config_entry else DEFAULT_CONFIG
+        return config_entry.data.model_dump() if config_entry else DEFAULT_CONFIG
 
 
 CONFIG_DATA = get_config()
@@ -998,7 +1499,7 @@ Analyze the chat history to determine the necessity of generating search queries
 - Always prioritize providing actionable and broad queries that maximize informational coverage.
 
 ### Output:
-Strictly return in JSON format: 
+Strictly return in JSON format:
 {
   "queries": ["query1", "query2"]
 }
@@ -1029,44 +1530,44 @@ AUTOCOMPLETE_GENERATION_PROMPT_TEMPLATE = PersistentConfig(
 
 
 DEFAULT_AUTOCOMPLETE_GENERATION_PROMPT_TEMPLATE = """### Task:
-You are an autocompletion system. Continue the text in `<text>` based on the **completion type** in `<type>` and the given language.  
+You are an autocompletion system. Continue the text in `<text>` based on the **completion type** in `<type>` and the given language.
 
 ### **Instructions**:
-1. Analyze `<text>` for context and meaning.  
-2. Use `<type>` to guide your output:  
-   - **General**: Provide a natural, concise continuation.  
-   - **Search Query**: Complete as if generating a realistic search query.  
-3. Start as if you are directly continuing `<text>`. Do **not** repeat, paraphrase, or respond as a model. Simply complete the text.  
+1. Analyze `<text>` for context and meaning.
+2. Use `<type>` to guide your output:
+   - **General**: Provide a natural, concise continuation.
+   - **Search Query**: Complete as if generating a realistic search query.
+3. Start as if you are directly continuing `<text>`. Do **not** repeat, paraphrase, or respond as a model. Simply complete the text.
 4. Ensure the continuation:
-   - Flows naturally from `<text>`.  
-   - Avoids repetition, overexplaining, or unrelated ideas.  
-5. If unsure, return: `{ "text": "" }`.  
+   - Flows naturally from `<text>`.
+   - Avoids repetition, overexplaining, or unrelated ideas.
+5. If unsure, return: `{ "text": "" }`.
 
 ### **Output Rules**:
 - Respond only in JSON format: `{ "text": "<your_completion>" }`.
 
 ### **Examples**:
-#### Example 1:  
-Input:  
-<type>General</type>  
-<text>The sun was setting over the horizon, painting the sky</text>  
-Output:  
+#### Example 1:
+Input:
+<type>General</type>
+<text>The sun was setting over the horizon, painting the sky</text>
+Output:
 { "text": "with vibrant shades of orange and pink." }
 
-#### Example 2:  
-Input:  
-<type>Search Query</type>  
-<text>Top-rated restaurants in</text>  
-Output:  
-{ "text": "New York City for Italian cuisine." }  
+#### Example 2:
+Input:
+<type>Search Query</type>
+<text>Top-rated restaurants in</text>
+Output:
+{ "text": "New York City for Italian cuisine." }
 
 ---
 ### Context:
 <chat_history>
 {{MESSAGES:END:6}}
 </chat_history>
-<type>{{TYPE}}</type>  
-<text>{{PROMPT}}</text>  
+<type>{{TYPE}}</type>
+<text>{{PROMPT}}</text>
 #### Output:
 """
 
@@ -1298,13 +1799,13 @@ Respond to the user query using the provided context, incorporating inline citat
 - Respond in the same language as the user's query.
 - If the context is unreadable or of poor quality, inform the user and provide the best possible answer.
 - If the answer isn't present in the context but you possess the knowledge, explain this to the user and provide the answer using your own understanding.
-- **Only include inline citations using [source_id] when a <source_id> tag is explicitly provided in the context.**  
-- Do not cite if the <source_id> tag is not provided in the context.  
+- **Only include inline citations using [source_id] when a <source_id> tag is explicitly provided in the context.**
+- Do not cite if the <source_id> tag is not provided in the context.
 - Do not use XML tags in your response.
 - Ensure citations are concise and directly related to the information provided.
 
 ### Example of Citation:
-If the user asks about a specific topic and the information is found in "whitepaper.pdf" with a provided <source_id>, the response should include the citation like so:  
+If the user asks about a specific topic and the information is found in "whitepaper.pdf" with a provided <source_id>, the response should include the citation like so:
 * "According to the study, the proposed method increases efficiency by 20% [whitepaper.pdf]."
 If no <source_id> is present, the response should omit the citation.
 
