@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
 
+from fastapi import Depends
 from loguru import logger
 from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode
@@ -28,6 +29,7 @@ class Environments(BaseSettings, case_sensitive=True):
     """Environment variables."""
 
     DATA_DIR: Path = get_package_dir("open_webui") / "data"
+    DATABASE_URL: str = ""
     DOCKER: bool = False
     OPENAI_API_KEY: str = ""
     OPENAI_API_KEYS: Annotated[list[str], NoDecode] = Field(default_factory=list)
@@ -60,9 +62,12 @@ class Environments(BaseSettings, case_sensitive=True):
         """Post init."""
         if len(self.OPENAI_API_KEYS) == 0 and self.OPENAI_API_KEY:
             self.OPENAI_API_KEYS = [self.OPENAI_API_KEY]
+        if self.DATABASE_URL == "":
+            self.DATABASE_URL = f"sqlite:///{self.DATA_DIR / 'webui.db'}"
 
 
 env = Environments()
+EnvDepends = Annotated[Environments, Depends(lambda: env)]
 
 OPEN_WEBUI_DIR = Path(__file__).parent  # the path containing this file
 BACKEND_DIR = OPEN_WEBUI_DIR.parent  # the path containing this file

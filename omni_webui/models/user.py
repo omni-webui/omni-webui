@@ -1,6 +1,6 @@
 """User model."""
 
-from typing import TYPE_CHECKING, Annotated
+from typing import Annotated
 
 import bcrypt
 import jwt
@@ -9,14 +9,11 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt.exceptions import InvalidTokenError
 from pydantic import EmailStr
 from sqlalchemy.ext.mutable import MutableDict
-from sqlmodel import JSON, Field, Relationship, SQLModel, select
+from sqlmodel import JSON, Field, SQLModel, select
 
 from .._types import MutableBaseModel
 from ..deps import EnvDepends, SessionDepends
 from ._utils import get_random_string, now_timestamp
-
-if TYPE_CHECKING:
-    from .file import File
 
 
 class UserSettings(MutableBaseModel):
@@ -49,8 +46,6 @@ class User(SQLModel, table=True):
         Field(sa_type=MutableDict.as_mutable(JSON), default_factory=MutableDict),  # type: ignore
     ] = None
     oauth_sub: str | None = None
-
-    files: list["File"] = Relationship(back_populates="user")
 
 
 security = HTTPBearer(auto_error=False)

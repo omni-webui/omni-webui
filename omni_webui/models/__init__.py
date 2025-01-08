@@ -1,5 +1,6 @@
+"""Omni WebUI models package."""
+
 from .auth import Auth
-from .file import File
 from .user import User
 
-__all__ = ("Auth", "File", "User")
+__all__ = ("Auth", "User")

@@ -29,7 +29,8 @@ from open_webui.config import (
 )
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import DEVICE_TYPE, env
-from open_webui.models.files import FileModel, Files
+from open_webui.models import SessionDepends
+from open_webui.models.file import File as FileModel
 from open_webui.models.knowledge import Knowledges
 from open_webui.retrieval.loaders.main import Loader
 from open_webui.retrieval.loaders.youtube import YoutubeLoader
@@ -808,14 +809,15 @@ class ProcessFileForm(BaseModel):
 
 
 @router.post("/process/file")
-def process_file(
+async def process_file(
     request: Request,
     form_data: ProcessFileForm,
+    session: SessionDepends,
     user=Depends(get_verified_user),
 ):
     """Process file and save the content to the database."""
     try:
-        file = Files.get_file_by_id(form_data.file_id)
+        file = await session.get_one(FileModel, id)
         assert file is not None, "File not found"
 
         collection_name = form_data.collection_name
@@ -892,7 +894,9 @@ def process_file(
                     PDF_EXTRACT_IMAGES=request.app.state.config.PDF_EXTRACT_IMAGES,
                 )
                 docs = loader.load(
-                    file.filename, (file.meta or {}).get("content_type", ""), file_path
+                    file.filename,
+                    (file.meta or {}).get("content_type", ""),  # type: ignore
+                    file_path,
                 )
 
                 docs = [
@@ -924,13 +928,10 @@ def process_file(
             text_content = " ".join([doc.page_content for doc in docs])
 
         logger.debug(f"text_content: {text_content}")
-        Files.update_file_data_by_id(
-            file.id,
-            {"content": text_content},
-        )
-
-        hash = calculate_sha256_string(text_content)
-        Files.update_file_hash_by_id(file.id, hash)
+        file.hash = calculate_sha256_string(text_content)
+        file.data = (file.data or {}) | {"content": text_content}
+        session.add(file)
+        await session.commit()
 
         try:
             result = save_docs_to_vector_db(
@@ -946,12 +947,7 @@ def process_file(
             )
 
             if result:
-                Files.update_file_metadata_by_id(
-                    file.id,
-                    {
-                        "collection_name": collection_name,
-                    },
-                )
+                file.meta = (file.meta or {}) | {"collection_name": collection_name}  # type: ignore
 
                 return {
                     "status": True,
@@ -1402,11 +1398,13 @@ class DeleteForm(BaseModel):
 
 
 @router.post("/delete")
-def delete_entries_from_collection(form_data: DeleteForm, user=Depends(get_admin_user)):
+async def delete_entries_from_collection(
+    form_data: DeleteForm, session: SessionDepends, user=Depends(get_admin_user)
+):
     """Delete entries from a collection in the vector database."""
     try:
         if VECTOR_DB_CLIENT.has_collection(collection_name=form_data.collection_name):
-            file = Files.get_file_by_id(form_data.file_id)
+            file = await session.get_one(FileModel, id)
             assert file is not None, "File not found"
             hash = file.hash
 
@@ -1484,9 +1482,10 @@ class BatchProcessFilesResponse(BaseModel):
 
 
 @router.post("/process/files/batch")
-def process_files_batch(
+async def process_files_batch(
     request: Request,
     form_data: BatchProcessFilesForm,
+    session: SessionDepends,
     user=Depends(get_verified_user),
 ) -> BatchProcessFilesResponse:
     """Process a batch of files and save them to the vector database."""
@@ -1513,9 +1512,10 @@ def process_files_batch(
                 )
             ]
 
-            hash = calculate_sha256_string(text_content)
-            Files.update_file_hash_by_id(file.id, hash)
-            Files.update_file_data_by_id(file.id, {"content": text_content})
+            file.hash = calculate_sha256_string(text_content)
+            file.data = (file.data or {}) | {"content": text_content}
+            session.add(file)
+            await session.commit()
 
             all_docs.extend(docs)
             results.append(BatchProcessFilesResult(file_id=file.id, status="prepared"))
@@ -1540,9 +1540,8 @@ def process_files_batch(
 
             # Update all files with collection name
             for result in results:
-                Files.update_file_metadata_by_id(
-                    result.file_id, {"collection_name": collection_name}
-                )
+                file = await session.get_one(FileModel, result.file_id)
+                file.meta = (file.meta or {}) | {"collection_name": collection_name}  # type: ignore
                 result.status = "completed"
 
         except Exception as e:

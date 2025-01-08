@@ -1,12 +1,15 @@
+"""Tests for models."""
+
 import pytest
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from omni_webui.models import File
+from open_webui.models.file import File
 
 
 @pytest.mark.anyio
 async def test_file(session: AsyncSession, user_id: str):
+    """Test file model."""
     stmt = select(File)
     result = await session.exec(stmt)
     assert result.all() == []
@@ -17,7 +20,6 @@ async def test_file(session: AsyncSession, user_id: str):
         filename="filename",
         path="path",
         data={"data": "data"},
-        meta={"meta": "meta"},
     )
     session.add(f)
     await session.commit()

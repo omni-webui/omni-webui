@@ -1,28 +1,19 @@
-import json
-import logging
+"""Groups model for Open WebUI."""
+
 import time
-from typing import Optional
 import uuid
+from typing import Optional
+
+from loguru import logger
+from pydantic import BaseModel, ConfigDict
+from sqlalchemy import JSON, BigInteger, Column, String, Text, func
 
 from open_webui.internal.db import Base, get_db
-from open_webui.env import SRC_LOG_LEVELS
-
-from open_webui.models.files import FileMetadataResponse
-
-
-from pydantic import BaseModel, ConfigDict
-from sqlalchemy import BigInteger, Column, String, Text, JSON, func
-
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MODELS"])
-
-####################
-# UserGroup DB Schema
-####################
 
 
 class Group(Base):
+    """Group model."""
+
     __tablename__ = "group"
 
     id = Column(Text, unique=True, primary_key=True)
@@ -42,6 +33,8 @@ class Group(Base):
 
 
 class GroupModel(BaseModel):
+    """Group model."""
+
     model_config = ConfigDict(from_attributes=True)
     id: str
     user_id: str
@@ -59,12 +52,9 @@ class GroupModel(BaseModel):
     updated_at: int  # timestamp in epoch
 
 
-####################
-# Forms
-####################
-
-
 class GroupResponse(BaseModel):
+    """Group response model."""
+
     id: str
     user_id: str
     name: str
@@ -78,20 +68,27 @@ class GroupResponse(BaseModel):
 
 
 class GroupForm(BaseModel):
+    """Group form model."""
+
     name: str
     description: str
 
 
 class GroupUpdateForm(GroupForm):
+    """Group update form model."""
+
     permissions: Optional[dict] = None
     user_ids: Optional[list[str]] = None
     admin_ids: Optional[list[str]] = None
 
 
 class GroupTable:
+    """Group table."""
+
     def insert_new_group(
         self, user_id: str, form_data: GroupForm
     ) -> Optional[GroupModel]:
+        """Insert new group."""
         with get_db() as db:
             group = GroupModel(
                 **{
@@ -117,6 +114,7 @@ class GroupTable:
                 return None
 
     def get_groups(self) -> list[GroupModel]:
+        """Get groups."""
         with get_db() as db:
             return [
                 GroupModel.model_validate(group)
@@ -124,6 +122,7 @@ class GroupTable:
             ]
 
     def get_groups_by_member_id(self, user_id: str) -> list[GroupModel]:
+        """Get groups by member ID."""
         with get_db() as db:
             return [
                 GroupModel.model_validate(group)
@@ -139,6 +138,7 @@ class GroupTable:
             ]
 
     def get_group_by_id(self, id: str) -> Optional[GroupModel]:
+        """Get group by ID."""
         try:
             with get_db() as db:
                 group = db.query(Group).filter_by(id=id).first()
@@ -146,7 +146,8 @@ class GroupTable:
         except Exception:
             return None
 
-    def get_group_user_ids_by_id(self, id: str) -> Optional[str]:
+    def get_group_user_ids_by_id(self, id: str) -> Optional[list[str]]:
+        """Get group user IDs by ID."""
         group = self.get_group_by_id(id)
         if group:
             return group.user_ids
@@ -156,6 +157,7 @@ class GroupTable:
     def update_group_by_id(
         self, id: str, form_data: GroupUpdateForm, overwrite: bool = False
     ) -> Optional[GroupModel]:
+        """Update group by ID."""
         try:
             with get_db() as db:
                 db.query(Group).filter_by(id=id).update(
@@ -167,10 +169,11 @@ class GroupTable:
                 db.commit()
                 return self.get_group_by_id(id=id)
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             return None
 
     def delete_group_by_id(self, id: str) -> bool:
+        """Delete group by ID."""
         try:
             with get_db() as db:
                 db.query(Group).filter_by(id=id).delete()
@@ -180,6 +183,7 @@ class GroupTable:
             return False
 
     def delete_all_groups(self) -> bool:
+        """Delete all groups."""
         with get_db() as db:
             try:
                 db.query(Group).delete()

@@ -1,7 +1,6 @@
 """Files router."""
 
 import os
-import uuid
 from pathlib import Path
 from typing import Optional
 from urllib.parse import quote
@@ -10,24 +9,29 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from loguru import logger
 from pydantic import BaseModel
+from sqlmodel import select
 
 from open_webui.constants import ERROR_MESSAGES
-from open_webui.models.files import (
-    FileForm,
-    FileModel,
-    FileModelResponse,
-    Files,
-)
+from open_webui.models import SessionDepends
+from open_webui.models.file import File as FileModel
+from open_webui.models.files import FileModelResponse
 from open_webui.routers.retrieval import ProcessFileForm, process_file
 from open_webui.storage.provider import Storage
 from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.crypto import get_random_string
 
 router = APIRouter()
 
 
-@router.post("/", response_model=FileModelResponse)
-def upload_file(
-    request: Request, file: UploadFile = File(...), user=Depends(get_verified_user)
+@router.post(
+    "/", response_model=FileModel, response_model_exclude={"path", "access_control"}
+)
+async def upload_file(
+    *,
+    request: Request,
+    file: UploadFile = File(...),
+    user=Depends(get_verified_user),
+    session: SessionDepends,
 ):
     """Upload file."""
     logger.info(f"{file.content_type=}")
@@ -35,87 +39,73 @@ def upload_file(
     assert unsanitized_filename is not None
     filename = os.path.basename(unsanitized_filename)
 
-    # replace filename with uuid
-    id = str(uuid.uuid4())
-    name = filename
-    filename = f"{id}_{filename}"
-    contents, file_path = Storage.upload_file(file.file, filename)
-
-    file_item = Files.insert_new_file(
-        user.id,
-        FileForm(
-            **{
-                "id": id,
-                "filename": name,
-                "path": file_path,
-                "meta": {
-                    "name": name,
-                    "content_type": file.content_type,
-                    "size": len(contents),
-                },
-            }
-        ),
+    file_id = f"file-{get_random_string(24)}"
+    contents, file_path = Storage.upload_file(file.file, f"{file_id}_{filename}")
+    file_item = FileModel(
+        id=file_id,
+        user_id=user.id,
+        filename=filename,
+        path=file_path,
+        meta={
+            "name": filename,
+            "content_type": file.content_type,
+            "size": len(contents),
+        },
     )
-    assert file_item is not None
-
-    try:
-        process_file(request, ProcessFileForm(file_id=id))
-        file_item = Files.get_file_by_id(id=id)
-    except Exception as e:
-        logger.exception(e)
-        logger.error(f"Error processing file: {file_item.id}")
-        file_item = FileModelResponse(
-            **{
-                **file_item.model_dump(),
-                "error": getattr(e, "detail") if hasattr(e, "detail") else str(e),
-            }
-        )
-
-    if file_item:
-        return file_item
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Error uploading file",
-        )
+    session.add(file_item)
+    await session.commit()
+    await session.refresh(file_item)
+    await process_file(request, ProcessFileForm(file_id=file_id), session)
+    await session.refresh(file_item)
+    return file_item
 
 
-@router.get("/", response_model=list[FileModelResponse])
-async def list_files(user=Depends(get_verified_user)):
+@router.get(
+    "/",
+    response_model=list[FileModelResponse],
+    response_model_exclude={"path", "access_control"},
+)
+async def list_files(
+    session: SessionDepends,
+    user=Depends(get_verified_user),
+):
     """List files."""
     if user.role == "admin":
-        files = Files.get_files()
+        files = (await session.exec(select(FileModel))).all()
     else:
-        files = Files.get_files_by_user_id(user.id)
+        files = (
+            await session.exec(select(FileModel).where(FileModel.user_id == user.id))
+        ).all()
     return files
 
 
 @router.delete("/all")
-async def delete_all_files(user=Depends(get_admin_user)):
+async def delete_all_files(session: SessionDepends, user=Depends(get_admin_user)):
     """Delete all files."""
-    result = Files.delete_all_files()
-    if result:
-        try:
-            Storage.delete_all_files()
-        except Exception as e:
-            logger.exception(e)
-            logger.error("Error deleting files")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Error deleting files",
-            )
-        return {"message": "All files deleted successfully"}
-    else:
+    for file in (await session.exec(select(FileModel))).all():
+        await session.delete(file)
+    await session.flush()
+
+    try:
+        Storage.delete_all_files()
+    except Exception as e:
+        logger.exception(e)
+        logger.error("Error deleting files")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Error deleting files",
         )
+    return {"message": "All files deleted successfully"}
 
 
 @router.get("/{id}", response_model=Optional[FileModel])
-async def get_file_by_id(id: str, user=Depends(get_verified_user)):
+async def get_file_by_id(
+    id: str,
+    session: SessionDepends,
+    user=Depends(get_verified_user),
+):
     """Get file by id."""
-    file = Files.get_file_by_id(id)
+    file = await session.get_one(FileModel, id)
 
     if file and (file.user_id == user.id or user.role == "admin"):
         return file
@@ -127,9 +117,13 @@ async def get_file_by_id(id: str, user=Depends(get_verified_user)):
 
 
 @router.get("/{id}/data/content")
-async def get_file_data_content_by_id(id: str, user=Depends(get_verified_user)):
+async def get_file_data_content_by_id(
+    id: str,
+    session: SessionDepends,
+    user=Depends(get_verified_user),
+):
     """Get file data content by id."""
-    file = Files.get_file_by_id(id)
+    file = await session.get_one(FileModel, id)
 
     if file and (file.user_id == user.id or user.role == "admin"):
         return {"content": (file.data or {}).get("content", "")}
@@ -148,18 +142,22 @@ class ContentForm(BaseModel):
 
 @router.post("/{id}/data/content/update")
 async def update_file_data_content_by_id(
-    request: Request, id: str, form_data: ContentForm, user=Depends(get_verified_user)
+    request: Request,
+    id: str,
+    form_data: ContentForm,
+    session: SessionDepends,
+    user=Depends(get_verified_user),
 ):
     """Update file data content by id."""
-    file = Files.get_file_by_id(id)
+    file = await session.get_one(FileModel, id)
     assert file is not None
 
     if file and (file.user_id == user.id or user.role == "admin"):
         try:
-            process_file(
-                request, ProcessFileForm(file_id=id, content=form_data.content)
+            await process_file(
+                request, ProcessFileForm(file_id=id, content=form_data.content), session
             )
-            file = Files.get_file_by_id(id=id)
+            file = await session.get_one(FileModel, id)
         except Exception as e:
             logger.exception(e)
             logger.error(f"Error processing file: {file.id}")
@@ -174,9 +172,11 @@ async def update_file_data_content_by_id(
 
 
 @router.get("/{id}/content")
-async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
+async def get_file_content_by_id(
+    id: str, session: SessionDepends, user=Depends(get_verified_user)
+):
     """Get file content by id."""
-    file = Files.get_file_by_id(id)
+    file = await session.get_one(FileModel, id)
     if file and (file.user_id == user.id or user.role == "admin"):
         try:
             file_path = Storage.get_file(file.path or "")
@@ -220,9 +220,11 @@ async def get_file_content_by_id(id: str, user=Depends(get_verified_user)):
 
 
 @router.get("/{id}/content/html")
-async def get_html_file_content_by_id(id: str, user=Depends(get_verified_user)):
+async def get_html_file_content_by_id(
+    id: str, session: SessionDepends, user=Depends(get_verified_user)
+):
     """Get HTML file content by id."""
-    file = Files.get_file_by_id(id)
+    file = await session.get_one(FileModel, id)
     if file and (file.user_id == user.id or user.role == "admin"):
         try:
             file_path = Storage.get_file(file.path or "")
@@ -242,7 +244,7 @@ async def get_html_file_content_by_id(id: str, user=Depends(get_verified_user)):
             logger.error("Error getting file content")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=ERROR_MESSAGES.DEFAULT("Error getting file content"),
+                detail="Error getting file content",
             )
     else:
         raise HTTPException(
@@ -252,9 +254,11 @@ async def get_html_file_content_by_id(id: str, user=Depends(get_verified_user)):
 
 
 @router.get("/{id}/content/{file_name}")
-async def get_file_content_by_id_and_name(id: str, user=Depends(get_verified_user)):
+async def get_file_content_by_id_and_name(
+    id: str, session: SessionDepends, user=Depends(get_verified_user)
+):
     """Get file content by id and file name."""
-    file = Files.get_file_by_id(id)
+    file = await session.get_one(FileModel, id)
 
     if file and (file.user_id == user.id or user.role == "admin"):
         file_path = file.path
@@ -299,27 +303,24 @@ async def get_file_content_by_id_and_name(id: str, user=Depends(get_verified_use
 
 
 @router.delete("/{id}")
-async def delete_file_by_id(id: str, user=Depends(get_verified_user)):
+async def delete_file_by_id(
+    id: str, session: SessionDepends, user=Depends(get_verified_user)
+):
     """Delete file by id."""
-    file = Files.get_file_by_id(id)
+    file = await session.get_one(FileModel, id)
     if file and (file.user_id == user.id or user.role == "admin"):
-        result = Files.delete_file_by_id(id)
-        if result:
-            try:
-                Storage.delete_file(file.path or "")
-            except Exception as e:
-                logger.exception(e)
-                logger.error("Error deleting files")
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Error deleting files",
-                )
-            return {"message": "File deleted successfully"}
-        else:
+        await session.delete(file)
+        await session.flush()
+        try:
+            Storage.delete_file(file.path or "")
+        except Exception as e:
+            logger.exception(e)
+            logger.error("Error deleting files")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Error deleting file",
+                detail="Error deleting files",
             )
+        return {"message": "File deleted successfully"}
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
