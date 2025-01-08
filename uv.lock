@@ -2262,7 +2262,6 @@ dependencies = [
     { name = "mcp" },
     { name = "ollama" },
     { name = "opensearch-py" },
-    { name = "peewee-migrate" },
     { name = "pgvector" },
     { name = "platformdirs" },
     { name = "pydantic", extra = ["email"] },
@@ -2329,7 +2328,6 @@ requires-dist = [
     { name = "mcp", specifier = ">=1.2.0" },
     { name = "ollama", specifier = ">=0.4.5" },
     { name = "opensearch-py", specifier = ">=2.8.0" },
-    { name = "peewee-migrate", specifier = ">=1.13.0" },
     { name = "pgvector", specifier = ">=0.3.6" },
     { name = "platformdirs", specifier = ">=4.3.6" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.10.4" },
@@ -2671,25 +2669,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ca/bc/f35b8446f4531a7cb215605d100cd88b7ac6f44ab3fc94870c120ab3adbf/pathspec-0.12.1.tar.gz", hash = "sha256:a482d51503a1ab33b1c67a6c3813a26953dbdc71c31dacaef9a838c4e29f5712", size = 51043 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cc/20/ff623b09d963f88bfde16306a54e12ee5ea43e9b597108672ff3a408aad6/pathspec-0.12.1-py3-none-any.whl", hash = "sha256:a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08", size = 31191 },
-]
-
-[[package]]
-name = "peewee"
-version = "3.17.8"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b4/dc/832bcf4ea5ee2ebc4ea42ef36e44a451de5d80f8b9858bf2066e30738c67/peewee-3.17.8.tar.gz", hash = "sha256:ce1d05db3438830b989a1b9d0d0aa4e7f6134d5f6fd57686eeaa26a3e6485a8c", size = 948249 }
-
-[[package]]
-name = "peewee-migrate"
-version = "1.13.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "click" },
-    { name = "peewee" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/c7/66/8d5ad45ea396623533a9cb2bbf78fdcc52efb65f7db058d7dc2523e1dd41/peewee_migrate-1.13.0.tar.gz", hash = "sha256:1ab67f72a0936006155e1b310c18a32f79e4dff3917cfeb10112ca92518721e5", size = 17119 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e8/f9/bf657b918756b0b15d85845b351c0074b1d953798b8c72c05b4a456baf06/peewee_migrate-1.13.0-py3-none-any.whl", hash = "sha256:66597f5b8549a8ff456915db60e8382daf7839eef79352027e7cf54feec56860", size = 19425 },
 ]
 
 [[package]]

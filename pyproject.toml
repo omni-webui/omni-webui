@@ -34,7 +34,6 @@ dependencies = [
     "mcp>=1.2.0",
     "ollama>=0.4.5",
     "opensearch-py>=2.8.0",
-    "peewee-migrate>=1.13.0",
     "pgvector>=0.3.6",
     "platformdirs>=4.3.6",
     "pydantic-extra-types[semver]>=2.10.1",
