@@ -1,57 +1,40 @@
+"""OpenAI API routes."""
+
 import asyncio
 import hashlib
 import json
-import logging
 from pathlib import Path
-from typing import Literal, Optional, overload
+from typing import Optional
 
 import aiohttp
-from aiocache import cached
 import requests
-
-
-from fastapi import Depends, FastAPI, HTTPException, Request, APIRouter
-from fastapi.middleware.cors import CORSMiddleware
+from aiocache import cached
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
+from loguru import logger
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
+from typing_extensions import deprecated
 
-from open_webui.models.models import Models
-from open_webui.config import (
-    CACHE_DIR,
-)
+from open_webui.config import CACHE_DIR
+from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import (
     AIOHTTP_CLIENT_TIMEOUT,
     AIOHTTP_CLIENT_TIMEOUT_OPENAI_MODEL_LIST,
-    ENABLE_FORWARD_USER_INFO_HEADERS,
     BYPASS_MODEL_ACCESS_CONTROL,
+    ENABLE_FORWARD_USER_INFO_HEADERS,
 )
-
-from open_webui.constants import ERROR_MESSAGES
-from open_webui.env import ENV, SRC_LOG_LEVELS
-
-
+from open_webui.models.models import Models
+from open_webui.utils.access_control import has_access
+from open_webui.utils.auth import get_admin_user, get_verified_user
 from open_webui.utils.payload import (
     apply_model_params_to_body_openai,
     apply_model_system_prompt_to_body,
 )
 
-from open_webui.utils.auth import get_admin_user, get_verified_user
-from open_webui.utils.access_control import has_access
-
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["OPENAI"])
-
-
-##########################################
-#
-# Utility functions
-#
-##########################################
-
 
 async def send_get_request(url, key=None):
+    """Send a GET request to the specified URL."""
     timeout = aiohttp.ClientTimeout(total=AIOHTTP_CLIENT_TIMEOUT_OPENAI_MODEL_LIST)
     try:
         async with aiohttp.ClientSession(timeout=timeout, trust_env=True) as session:
@@ -61,7 +44,7 @@ async def send_get_request(url, key=None):
                 return await response.json()
     except Exception as e:
         # Handle connection error here
-        log.error(f"Connection error: {e}")
+        logger.error(f"Connection error: {e}")
         return None
 
 
@@ -69,6 +52,7 @@ async def cleanup_response(
     response: Optional[aiohttp.ClientResponse],
     session: Optional[aiohttp.ClientSession],
 ):
+    """Cleanup the response and session."""
     if response:
         response.close()
     if session:
@@ -76,9 +60,7 @@ async def cleanup_response(
 
 
 def openai_o1_handler(payload):
-    """
-    Handle O1 specific parameters
-    """
+    """Handle O1 specific parameters."""
     if "max_tokens" in payload:
         # Remove "max_tokens" from the payload
         payload["max_completion_tokens"] = payload["max_tokens"]
@@ -102,6 +84,7 @@ router = APIRouter()
 
 @router.get("/config")
 async def get_config(request: Request, user=Depends(get_admin_user)):
+    """Get OpenAI API configuration."""
     return {
         "ENABLE_OPENAI_API": request.app.state.config.ENABLE_OPENAI_API,
         "OPENAI_API_BASE_URLS": request.app.state.config.OPENAI_API_BASE_URLS,
@@ -111,6 +94,8 @@ async def get_config(request: Request, user=Depends(get_admin_user)):
 
 
 class OpenAIConfigForm(BaseModel):
+    """OpenAI API configuration form."""
+
     ENABLE_OPENAI_API: Optional[bool] = None
     OPENAI_API_BASE_URLS: list[str]
     OPENAI_API_KEYS: list[str]
@@ -121,6 +106,7 @@ class OpenAIConfigForm(BaseModel):
 async def update_config(
     request: Request, form_data: OpenAIConfigForm, user=Depends(get_admin_user)
 ):
+    """Update OpenAI API configuration."""
     request.app.state.config.ENABLE_OPENAI_API = form_data.ENABLE_OPENAI_API
     request.app.state.config.OPENAI_API_BASE_URLS = form_data.OPENAI_API_BASE_URLS
     request.app.state.config.OPENAI_API_KEYS = form_data.OPENAI_API_KEYS
@@ -161,6 +147,7 @@ async def update_config(
 
 @router.post("/audio/speech")
 async def speech(request: Request, user=Depends(get_verified_user)):
+    """Generate speech from text."""
     idx = None
     try:
         idx = request.app.state.config.OPENAI_API_BASE_URLS.index(
@@ -225,7 +212,7 @@ async def speech(request: Request, user=Depends(get_verified_user)):
             return FileResponse(file_path)
 
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
 
             detail = None
             if r is not None:
@@ -246,6 +233,7 @@ async def speech(request: Request, user=Depends(get_verified_user)):
 
 
 async def get_all_models_responses(request: Request) -> list:
+    """Get all models from OpenAI API."""
     if not request.app.state.config.ENABLE_OPENAI_API:
         return []
 
@@ -320,12 +308,12 @@ async def get_all_models_responses(request: Request) -> list:
                 ):
                     model["id"] = f"{prefix_id}.{model['id']}"
 
-    log.debug(f"get_all_models:responses() {responses}")
+    logger.debug(f"get_all_models:responses() {responses}")
     return responses
 
 
 async def get_filtered_models(models, user):
-    # Filter models based on user access control
+    """Filter models based on user access control."""
     filtered_models = []
     for model in models.get("data", []):
         model_info = Models.get_model_by_id(model["id"])
@@ -339,7 +327,8 @@ async def get_filtered_models(models, user):
 
 @cached(ttl=3)
 async def get_all_models(request: Request) -> dict[str, list]:
-    log.info("get_all_models()")
+    """Get all models from OpenAI API."""
+    logger.info("get_all_models()")
 
     if not request.app.state.config.ENABLE_OPENAI_API:
         return {"data": []}
@@ -354,7 +343,7 @@ async def get_all_models(request: Request) -> dict[str, list]:
         return None
 
     def merge_models_lists(model_lists):
-        log.debug(f"merge_models_lists {model_lists}")
+        logger.debug(f"merge_models_lists {model_lists}")
         merged_list = []
 
         for idx, models in enumerate(model_lists):
@@ -388,7 +377,7 @@ async def get_all_models(request: Request) -> dict[str, list]:
         return merged_list
 
     models = {"data": merge_models_lists(map(extract_data, responses))}
-    log.debug(f"models: {models}")
+    logger.debug(f"models: {models}")
 
     request.app.state.OPENAI_MODELS = {model["id"]: model for model in models["data"]}
     return models
@@ -399,6 +388,7 @@ async def get_all_models(request: Request) -> dict[str, list]:
 async def get_models(
     request: Request, url_idx: Optional[int] = None, user=Depends(get_verified_user)
 ):
+    """Get all models from OpenAI API."""
     models = {
         "data": [],
     }
@@ -465,12 +455,12 @@ async def get_models(
                     models = response_data
             except aiohttp.ClientError as e:
                 # ClientError covers all aiohttp requests issues
-                log.exception(f"Client error: {str(e)}")
+                logger.exception(f"Client error: {str(e)}")
                 raise HTTPException(
                     status_code=500, detail="Open WebUI: Server Connection Error"
                 )
             except Exception as e:
-                log.exception(f"Unexpected error: {e}")
+                logger.exception(f"Unexpected error: {e}")
                 error_detail = f"Unexpected error: {str(e)}"
                 raise HTTPException(status_code=500, detail=error_detail)
 
@@ -481,6 +471,8 @@ async def get_models(
 
 
 class ConnectionVerificationForm(BaseModel):
+    """Connection verification form."""
+
     url: str
     key: str
 
@@ -489,6 +481,7 @@ class ConnectionVerificationForm(BaseModel):
 async def verify_connection(
     form_data: ConnectionVerificationForm, user=Depends(get_admin_user)
 ):
+    """Verify connection to the OpenAI API."""
     url = form_data.url
     key = form_data.key
 
@@ -516,12 +509,12 @@ async def verify_connection(
 
         except aiohttp.ClientError as e:
             # ClientError covers all aiohttp requests issues
-            log.exception(f"Client error: {str(e)}")
+            logger.exception(f"Client error: {str(e)}")
             raise HTTPException(
                 status_code=500, detail="Open WebUI: Server Connection Error"
             )
         except Exception as e:
-            log.exception(f"Unexpected error: {e}")
+            logger.exception(f"Unexpected error: {e}")
             error_detail = f"Unexpected error: {str(e)}"
             raise HTTPException(status_code=500, detail=error_detail)
 
@@ -531,8 +524,9 @@ async def generate_chat_completion(
     request: Request,
     form_data: dict,
     user=Depends(get_verified_user),
-    bypass_filter: Optional[bool] = False,
+    bypass_filter: bool | None = False,
 ):
+    """Generate chat completions."""
     if BYPASS_MODEL_ACCESS_CONTROL:
         bypass_filter = True
 
@@ -542,6 +536,7 @@ async def generate_chat_completion(
         del payload["metadata"]
 
     model_id = form_data.get("model")
+    assert model_id, "Model ID is required"
     model_info = Models.get_model_by_id(model_id)
 
     # Check model info and override the payload
@@ -672,13 +667,13 @@ async def generate_chat_completion(
             try:
                 response = await r.json()
             except Exception as e:
-                log.error(e)
+                logger.error(e)
                 response = await r.text()
 
             r.raise_for_status()
             return response
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
 
         detail = None
         if isinstance(response, dict):
@@ -699,11 +694,9 @@ async def generate_chat_completion(
 
 
 @router.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
+@deprecated("This endpoint is deprecated and will be removed in the future.")
 async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
-    """
-    Deprecated: proxy all requests to OpenAI API
-    """
-
+    """Proxy all requests to OpenAI API."""
     body = await request.body()
 
     idx = 0
@@ -753,13 +746,12 @@ async def proxy(path: str, request: Request, user=Depends(get_verified_user)):
             return response_data
 
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
 
         detail = None
         if r is not None:
             try:
                 res = await r.json()
-                print(res)
                 if "error" in res:
                     detail = f"External: {res['error']['message'] if 'message' in res['error'] else res['error']}"
             except Exception:

@@ -1,47 +1,41 @@
+"""Audio API endpoints."""
+
 import hashlib
 import json
-import logging
 import os
 import uuid
 from functools import lru_cache
 from pathlib import Path
-from pydub import AudioSegment
-from pydub.silence import split_on_silence
 
-import aiohttp
 import aiofiles
+import aiohttp
 import requests
-
 from fastapi import (
+    APIRouter,
     Depends,
-    FastAPI,
     File,
     HTTPException,
     Request,
     UploadFile,
     status,
-    APIRouter,
 )
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from loguru import logger
 from pydantic import BaseModel
+from pydub import AudioSegment
+from pydub.utils import mediainfo
 
-
-from open_webui.utils.auth import get_admin_user, get_verified_user
 from open_webui.config import (
+    CACHE_DIR,
     WHISPER_MODEL_AUTO_UPDATE,
     WHISPER_MODEL_DIR,
-    CACHE_DIR,
 )
-
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import (
-    ENV,
-    SRC_LOG_LEVELS,
     DEVICE_TYPE,
     ENABLE_FORWARD_USER_INFO_HEADERS,
 )
-
+from open_webui.utils.auth import get_admin_user, get_verified_user
 
 router = APIRouter()
 
@@ -49,27 +43,14 @@ router = APIRouter()
 MAX_FILE_SIZE_MB = 25
 MAX_FILE_SIZE = MAX_FILE_SIZE_MB * 1024 * 1024  # Convert MB to bytes
 
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["AUDIO"])
-
 SPEECH_CACHE_DIR = Path(CACHE_DIR).joinpath("./audio/speech/")
 SPEECH_CACHE_DIR.mkdir(parents=True, exist_ok=True)
-
-
-##########################################
-#
-# Utility functions
-#
-##########################################
-
-from pydub import AudioSegment
-from pydub.utils import mediainfo
 
 
 def is_mp4_audio(file_path):
     """Check if the given file is an MP4 audio file."""
     if not os.path.isfile(file_path):
-        print(f"File not found: {file_path}")
+        logger.warning(f"File not found: {file_path}")
         return False
 
     info = mediainfo(file_path)
@@ -86,10 +67,11 @@ def convert_mp4_to_wav(file_path, output_path):
     """Convert MP4 audio file to WAV format."""
     audio = AudioSegment.from_file(file_path, format="mp4")
     audio.export(output_path, format="wav")
-    print(f"Converted {file_path} to {output_path}")
+    logger.info(f"Converted {file_path} to {output_path}")
 
 
 def set_faster_whisper_model(model: str, auto_update: bool = False):
+    """Set the faster whisper model."""
     whisper_model = None
     if model:
         from faster_whisper import WhisperModel
@@ -105,7 +87,7 @@ def set_faster_whisper_model(model: str, auto_update: bool = False):
         try:
             whisper_model = WhisperModel(**faster_whisper_kwargs)
         except Exception:
-            log.warning(
+            logger.warning(
                 "WhisperModel initialization failed, attempting download with local_files_only=False"
             )
             faster_whisper_kwargs["local_files_only"] = False
@@ -113,14 +95,9 @@ def set_faster_whisper_model(model: str, auto_update: bool = False):
     return whisper_model
 
 
-##########################################
-#
-# Audio API
-#
-##########################################
-
-
 class TTSConfigForm(BaseModel):
+    """TTS config form."""
+
     OPENAI_API_BASE_URL: str
     OPENAI_API_KEY: str
     API_KEY: str
@@ -133,6 +110,8 @@ class TTSConfigForm(BaseModel):
 
 
 class STTConfigForm(BaseModel):
+    """STT config form."""
+
     OPENAI_API_BASE_URL: str
     OPENAI_API_KEY: str
     ENGINE: str
@@ -141,12 +120,15 @@ class STTConfigForm(BaseModel):
 
 
 class AudioConfigUpdateForm(BaseModel):
+    """Audio config update form."""
+
     tts: TTSConfigForm
     stt: STTConfigForm
 
 
 @router.get("/config")
 async def get_audio_config(request: Request, user=Depends(get_admin_user)):
+    """Get audio config."""
     return {
         "tts": {
             "OPENAI_API_BASE_URL": request.app.state.config.TTS_OPENAI_API_BASE_URL,
@@ -173,6 +155,7 @@ async def get_audio_config(request: Request, user=Depends(get_admin_user)):
 async def update_audio_config(
     request: Request, form_data: AudioConfigUpdateForm, user=Depends(get_admin_user)
 ):
+    """Update audio config."""
     request.app.state.config.TTS_OPENAI_API_BASE_URL = form_data.tts.OPENAI_API_BASE_URL
     request.app.state.config.TTS_OPENAI_API_KEY = form_data.tts.OPENAI_API_KEY
     request.app.state.config.TTS_API_KEY = form_data.tts.API_KEY
@@ -219,8 +202,9 @@ async def update_audio_config(
 
 
 def load_speech_pipeline(request):
-    from transformers import pipeline
+    """Load speech pipeline."""
     from datasets import load_dataset
+    from transformers import pipeline
 
     if request.app.state.speech_synthesiser is None:
         request.app.state.speech_synthesiser = pipeline(
@@ -235,6 +219,7 @@ def load_speech_pipeline(request):
 
 @router.post("/speech")
 async def speech(request: Request, user=Depends(get_verified_user)):
+    """Convert text to speech."""
     body = await request.body()
     name = hashlib.sha256(
         body
@@ -253,12 +238,12 @@ async def speech(request: Request, user=Depends(get_verified_user)):
     try:
         payload = json.loads(body.decode("utf-8"))
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
 
     if request.app.state.config.TTS_ENGINE == "openai":
         payload["model"] = request.app.state.config.TTS_MODEL
-
+        r: aiohttp.ClientResponse | None = None
         try:
             # print(payload)
             async with aiohttp.ClientSession() as session:
@@ -291,11 +276,11 @@ async def speech(request: Request, user=Depends(get_verified_user)):
             return FileResponse(file_path)
 
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             detail = None
 
             try:
-                if r.status != 200:
+                if r is not None and r.status != 200:
                     res = await r.json()
 
                     if "error" in res:
@@ -317,6 +302,7 @@ async def speech(request: Request, user=Depends(get_verified_user)):
                 detail="Invalid voice id",
             )
 
+        r: aiohttp.ClientResponse | None = None
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -343,11 +329,11 @@ async def speech(request: Request, user=Depends(get_verified_user)):
             return FileResponse(file_path)
 
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             detail = None
 
             try:
-                if r.status != 200:
+                if r is not None and r.status != 200:
                     res = await r.json()
                     if "error" in res:
                         detail = f"External: {res['error'].get('message', '')}"
@@ -363,7 +349,7 @@ async def speech(request: Request, user=Depends(get_verified_user)):
         try:
             payload = json.loads(body.decode("utf-8"))
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             raise HTTPException(status_code=400, detail="Invalid JSON payload")
 
         region = request.app.state.config.TTS_AZURE_SPEECH_REGION
@@ -371,6 +357,7 @@ async def speech(request: Request, user=Depends(get_verified_user)):
         locale = "-".join(request.app.state.config.TTS_VOICE.split("-")[:1])
         output_format = request.app.state.config.TTS_AZURE_SPEECH_OUTPUT_FORMAT
 
+        r: aiohttp.ClientResponse | None = None
         try:
             data = f"""<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="{locale}">
                 <voice name="{language}">{payload["input"]}</voice>
@@ -396,11 +383,11 @@ async def speech(request: Request, user=Depends(get_verified_user)):
                     return FileResponse(file_path)
 
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             detail = None
 
             try:
-                if r.status != 200:
+                if r is not None and r.status != 200:
                     res = await r.json()
                     if "error" in res:
                         detail = f"External: {res['error'].get('message', '')}"
@@ -417,11 +404,11 @@ async def speech(request: Request, user=Depends(get_verified_user)):
         try:
             payload = json.loads(body.decode("utf-8"))
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
             raise HTTPException(status_code=400, detail="Invalid JSON payload")
 
-        import torch
         import soundfile as sf
+        import torch
 
         load_speech_pipeline(request)
 
@@ -453,7 +440,8 @@ async def speech(request: Request, user=Depends(get_verified_user)):
 
 
 def transcribe(request: Request, file_path):
-    print("transcribe", file_path)
+    """Transcribe an audio file."""
+    logger.info("transcribe", file_path)
     filename = os.path.basename(file_path)
     file_dir = os.path.dirname(file_path)
     id = filename.split(".")[0]
@@ -465,8 +453,8 @@ def transcribe(request: Request, file_path):
             )
 
         model = request.app.state.faster_whisper_model
-        segments, info = model.transcribe(file_path, beam_size=5)
-        log.info(
+        segments, info = model.transcribe(file_path, beam_size=5)  # type: ignore
+        logger.info(
             "Detected language '%s' with probability %f"
             % (info.language, info.language_probability)
         )
@@ -479,7 +467,7 @@ def transcribe(request: Request, file_path):
         with open(transcript_file, "w") as f:
             json.dump(data, f)
 
-        log.debug(data)
+        logger.debug(data)
         return data
     elif request.app.state.config.STT_ENGINE == "openai":
         if is_mp4_audio(file_path):
@@ -508,7 +496,7 @@ def transcribe(request: Request, file_path):
 
             return data
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
 
             detail = None
             if r is not None:
@@ -523,13 +511,14 @@ def transcribe(request: Request, file_path):
 
 
 def compress_audio(file_path):
+    """Compress audio file if it exceeds MAX_FILE_SIZE."""
     if os.path.getsize(file_path) > MAX_FILE_SIZE:
         file_dir = os.path.dirname(file_path)
         audio = AudioSegment.from_file(file_path)
         audio = audio.set_frame_rate(16000).set_channels(1)  # Compress audio
         compressed_path = f"{file_dir}/{id}_compressed.opus"
         audio.export(compressed_path, format="opus", bitrate="32k")
-        log.debug(f"Compressed audio to {compressed_path}")
+        logger.debug(f"Compressed audio to {compressed_path}")
 
         if (
             os.path.getsize(compressed_path) > MAX_FILE_SIZE
@@ -546,7 +535,8 @@ def transcription(
     file: UploadFile = File(...),
     user=Depends(get_verified_user),
 ):
-    log.info(f"file.content_type: {file.content_type}")
+    """Transcribe an audio file."""
+    logger.info(f"file.content_type: {file.content_type}")
 
     if file.content_type not in ["audio/mpeg", "audio/wav", "audio/ogg", "audio/x-m4a"]:
         raise HTTPException(
@@ -555,7 +545,7 @@ def transcription(
         )
 
     try:
-        ext = file.filename.split(".")[-1]
+        ext = (file.filename or "").split(".")[-1]
         id = uuid.uuid4()
 
         filename = f"{id}.{ext}"
@@ -572,34 +562,36 @@ def transcription(
             try:
                 file_path = compress_audio(file_path)
             except Exception as e:
-                log.exception(e)
+                logger.exception(e)
 
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=ERROR_MESSAGES.DEFAULT(e),
+                    detail=str(e),
                 )
 
             data = transcribe(request, file_path)
+            assert isinstance(data, dict)
             file_path = file_path.split("/")[-1]
-            return {**data, "filename": file_path}
+            return data | {"filename": file_path}
         except Exception as e:
-            log.exception(e)
+            logger.exception(e)
 
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=ERROR_MESSAGES.DEFAULT(e),
+                detail=str(e),
             )
 
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT(e),
+            detail=str(e),
         )
 
 
 def get_available_models(request: Request) -> list[dict]:
+    """Return available models for the current TTS engine."""
     available_models = []
     if request.app.state.config.TTS_ENGINE == "openai":
         available_models = [{"id": "tts-1"}, {"id": "tts-1-hd"}]
@@ -620,17 +612,18 @@ def get_available_models(request: Request) -> list[dict]:
                 {"name": model["name"], "id": model["model_id"]} for model in models
             ]
         except requests.RequestException as e:
-            log.error(f"Error fetching voices: {str(e)}")
+            logger.error(f"Error fetching voices: {str(e)}")
     return available_models
 
 
 @router.get("/models")
 async def get_models(request: Request, user=Depends(get_verified_user)):
+    """Get available models for the current TTS engine."""
     return {"models": get_available_models(request)}
 
 
 def get_available_voices(request) -> dict:
-    """Returns {voice_id: voice_name} dict"""
+    """Return {voice_id: voice_name} dict."""
     available_voices = {}
     if request.app.state.config.TTS_ENGINE == "openai":
         available_voices = {
@@ -666,21 +659,21 @@ def get_available_voices(request) -> dict:
                     f"{voice['DisplayName']} ({voice['ShortName']})"
                 )
         except requests.RequestException as e:
-            log.error(f"Error fetching voices: {str(e)}")
+            logger.error(f"Error fetching voices: {str(e)}")
 
     return available_voices
 
 
 @lru_cache
 def get_elevenlabs_voices(api_key: str) -> dict:
-    """
+    """Get available voices from Elevenlabs API.
+
     Note, set the following in your .env file to use Elevenlabs:
     AUDIO_TTS_ENGINE=elevenlabs
     AUDIO_TTS_API_KEY=sk_...  # Your Elevenlabs API key
     AUDIO_TTS_VOICE=EXAVITQu4vr4xnSDxMaL  # From https://api.elevenlabs.io/v1/voices
     AUDIO_TTS_MODEL=eleven_multilingual_v2
     """
-
     try:
         # TODO: Add retries
         response = requests.get(
@@ -698,7 +691,7 @@ def get_elevenlabs_voices(api_key: str) -> dict:
             voices[voice["voice_id"]] = voice["name"]
     except requests.RequestException as e:
         # Avoid @lru_cache with exception
-        log.error(f"Error fetching voices: {str(e)}")
+        logger.error(f"Error fetching voices: {str(e)}")
         raise RuntimeError(f"Error fetching voices: {str(e)}")
 
     return voices
@@ -706,6 +699,7 @@ def get_elevenlabs_voices(api_key: str) -> dict:
 
 @router.get("/voices")
 async def get_voices(request: Request, user=Depends(get_verified_user)):
+    """Get available voices for the current TTS engine."""
     return {
         "voices": [
             {"id": k, "name": v} for k, v in get_available_voices(request).items()

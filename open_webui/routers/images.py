@@ -1,7 +1,8 @@
+"""Images Router."""
+
 import asyncio
 import base64
 import json
-import logging
 import mimetypes
 import re
 import uuid
@@ -9,27 +10,19 @@ from pathlib import Path
 from typing import Optional
 
 import requests
-
-
-from fastapi import Depends, FastAPI, HTTPException, Request, APIRouter
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, Depends, HTTPException, Request
+from loguru import logger
 from pydantic import BaseModel
-
 
 from open_webui.config import CACHE_DIR
 from open_webui.constants import ERROR_MESSAGES
-from open_webui.env import ENV, SRC_LOG_LEVELS, ENABLE_FORWARD_USER_INFO_HEADERS
-
+from open_webui.env import ENABLE_FORWARD_USER_INFO_HEADERS
 from open_webui.utils.auth import get_admin_user, get_verified_user
 from open_webui.utils.images.comfyui import (
     ComfyUIGenerateImageForm,
     ComfyUIWorkflow,
     comfyui_generate_image,
 )
-
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["IMAGES"])
 
 IMAGE_CACHE_DIR = Path(CACHE_DIR).joinpath("./image/generations/")
 IMAGE_CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -40,6 +33,7 @@ router = APIRouter()
 
 @router.get("/config")
 async def get_config(request: Request, user=Depends(get_admin_user)):
+    """Get config."""
     return {
         "enabled": request.app.state.config.ENABLE_IMAGE_GENERATION,
         "engine": request.app.state.config.IMAGE_GENERATION_ENGINE,
@@ -64,11 +58,15 @@ async def get_config(request: Request, user=Depends(get_admin_user)):
 
 
 class OpenAIConfigForm(BaseModel):
+    """OpenAI Config Form."""
+
     OPENAI_API_BASE_URL: str
     OPENAI_API_KEY: str
 
 
 class Automatic1111ConfigForm(BaseModel):
+    """Automatic1111 Config Form."""
+
     AUTOMATIC1111_BASE_URL: str
     AUTOMATIC1111_API_AUTH: str
     AUTOMATIC1111_CFG_SCALE: Optional[str | float | int]
@@ -77,6 +75,8 @@ class Automatic1111ConfigForm(BaseModel):
 
 
 class ComfyUIConfigForm(BaseModel):
+    """ComfyUI Config Form."""
+
     COMFYUI_BASE_URL: str
     COMFYUI_API_KEY: str
     COMFYUI_WORKFLOW: str
@@ -84,6 +84,8 @@ class ComfyUIConfigForm(BaseModel):
 
 
 class ConfigForm(BaseModel):
+    """Config Form."""
+
     enabled: bool
     engine: str
     openai: OpenAIConfigForm
@@ -95,6 +97,7 @@ class ConfigForm(BaseModel):
 async def update_config(
     request: Request, form_data: ConfigForm, user=Depends(get_admin_user)
 ):
+    """Update config."""
     request.app.state.config.IMAGE_GENERATION_ENGINE = form_data.engine
     request.app.state.config.ENABLE_IMAGE_GENERATION = form_data.enabled
 
@@ -158,6 +161,7 @@ async def update_config(
 
 
 def get_automatic1111_api_auth(request: Request):
+    """Get Automatic1111 API Auth."""
     if request.app.state.config.AUTOMATIC1111_API_AUTH is None:
         return ""
     else:
@@ -171,6 +175,7 @@ def get_automatic1111_api_auth(request: Request):
 
 @router.get("/config/url/verify")
 async def verify_url(request: Request, user=Depends(get_admin_user)):
+    """Verify URL."""
     if request.app.state.config.IMAGE_GENERATION_ENGINE == "automatic1111":
         try:
             r = requests.get(
@@ -197,7 +202,8 @@ async def verify_url(request: Request, user=Depends(get_admin_user)):
 
 
 def set_image_model(request: Request, model: str):
-    log.info(f"Setting image model to {model}")
+    """Set image model."""
+    logger.info(f"Setting image model to {model}")
     request.app.state.config.IMAGE_GENERATION_MODEL = model
     if request.app.state.config.IMAGE_GENERATION_ENGINE in ["", "automatic1111"]:
         api_auth = get_automatic1111_api_auth(request)
@@ -217,6 +223,7 @@ def set_image_model(request: Request, model: str):
 
 
 def get_image_model(request):
+    """Get image model."""
     if request.app.state.config.IMAGE_GENERATION_ENGINE == "openai":
         return (
             request.app.state.config.IMAGE_GENERATION_MODEL
@@ -242,10 +249,12 @@ def get_image_model(request):
             return options["sd_model_checkpoint"]
         except Exception as e:
             request.app.state.config.ENABLE_IMAGE_GENERATION = False
-            raise HTTPException(status_code=400, detail=ERROR_MESSAGES.DEFAULT(e))
+            raise HTTPException(status_code=400, detail=str(e))
 
 
 class ImageConfigForm(BaseModel):
+    """Image Config Form."""
+
     MODEL: str
     IMAGE_SIZE: str
     IMAGE_STEPS: int
@@ -253,6 +262,7 @@ class ImageConfigForm(BaseModel):
 
 @router.get("/image/config")
 async def get_image_config(request: Request, user=Depends(get_admin_user)):
+    """Get image config."""
     return {
         "MODEL": request.app.state.config.IMAGE_GENERATION_MODEL,
         "IMAGE_SIZE": request.app.state.config.IMAGE_SIZE,
@@ -264,7 +274,7 @@ async def get_image_config(request: Request, user=Depends(get_admin_user)):
 async def update_image_config(
     request: Request, form_data: ImageConfigForm, user=Depends(get_admin_user)
 ):
-
+    """Update image config."""
     set_image_model(request, form_data.MODEL)
 
     pattern = r"^\d+x\d+$"
@@ -293,6 +303,7 @@ async def update_image_config(
 
 @router.get("/models")
 def get_models(request: Request, user=Depends(get_verified_user)):
+    """Get models."""
     try:
         if request.app.state.config.IMAGE_GENERATION_ENGINE == "openai":
             return [
@@ -322,7 +333,7 @@ def get_models(request: Request, user=Depends(get_verified_user)):
             if model_node_id:
                 model_list_key = None
 
-                print(workflow[model_node_id]["class_type"])
+                logger.info(workflow[model_node_id]["class_type"])
                 for key in info[workflow[model_node_id]["class_type"]]["input"][
                     "required"
                 ]:
@@ -365,10 +376,12 @@ def get_models(request: Request, user=Depends(get_verified_user)):
             )
     except Exception as e:
         request.app.state.config.ENABLE_IMAGE_GENERATION = False
-        raise HTTPException(status_code=400, detail=ERROR_MESSAGES.DEFAULT(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 class GenerateImageForm(BaseModel):
+    """Generate Image Form."""
+
     model: Optional[str] = None
     prompt: str
     size: Optional[str] = None
@@ -377,6 +390,7 @@ class GenerateImageForm(BaseModel):
 
 
 def save_b64_image(b64_str):
+    """Save base64 image."""
     try:
         image_id = str(uuid.uuid4())
 
@@ -404,11 +418,12 @@ def save_b64_image(b64_str):
             return image_filename
 
     except Exception as e:
-        log.exception(f"Error saving image: {e}")
+        logger.exception(f"Error saving image: {e}")
         return None
 
 
 def save_url_image(url):
+    """Save image from URL."""
     image_id = str(uuid.uuid4())
     try:
         r = requests.get(url)
@@ -428,11 +443,11 @@ def save_url_image(url):
                     image_file.write(chunk)
             return image_filename
         else:
-            log.error("Url does not point to an image.")
+            logger.error("Url does not point to an image.")
             return None
 
     except Exception as e:
-        log.exception(f"Error saving image: {e}")
+        logger.exception(f"Error saving image: {e}")
         return None
 
 
@@ -442,6 +457,7 @@ async def image_generations(
     form_data: GenerateImageForm,
     user=Depends(get_verified_user),
 ):
+    """Generate images."""
     width, height = tuple(map(int, request.app.state.config.IMAGE_SIZE.split("x")))
 
     r = None
@@ -512,10 +528,10 @@ async def image_generations(
             if form_data.negative_prompt is not None:
                 data["negative_prompt"] = form_data.negative_prompt
 
-            form_data = ComfyUIGenerateImageForm(
-                **{
-                    "workflow": ComfyUIWorkflow(
-                        **{
+            form_data_ = ComfyUIGenerateImageForm.model_validate(
+                {
+                    "workflow": ComfyUIWorkflow.model_validate(
+                        {
                             "workflow": request.app.state.config.COMFYUI_WORKFLOW,
                             "nodes": request.app.state.config.COMFYUI_WORKFLOW_NODES,
                         }
@@ -525,15 +541,16 @@ async def image_generations(
             )
             res = await comfyui_generate_image(
                 request.app.state.config.IMAGE_GENERATION_MODEL,
-                form_data,
+                form_data_,
                 user.id,
                 request.app.state.config.COMFYUI_BASE_URL,
                 request.app.state.config.COMFYUI_API_KEY,
             )
-            log.debug(f"res: {res}")
+            logger.debug(f"res: {res}")
 
             images = []
 
+            assert res is not None and "data" in res
             for image in res["data"]:
                 image_filename = save_url_image(image["url"])
                 images.append({"url": f"/cache/image/generations/{image_filename}"})
@@ -542,14 +559,14 @@ async def image_generations(
                 with open(file_body_path, "w") as f:
                     json.dump(form_data.model_dump(exclude_none=True), f)
 
-            log.debug(f"images: {images}")
+            logger.debug(f"images: {images}")
             return images
         elif (
             request.app.state.config.IMAGE_GENERATION_ENGINE == "automatic1111"
             or request.app.state.config.IMAGE_GENERATION_ENGINE == ""
         ):
             if form_data.model:
-                set_image_model(form_data.model)
+                set_image_model(request, form_data.model)
 
             data = {
                 "prompt": form_data.prompt,
@@ -582,7 +599,7 @@ async def image_generations(
             )
 
             res = r.json()
-            log.debug(f"res: {res}")
+            logger.debug(f"res: {res}")
 
             images = []
 
@@ -597,8 +614,8 @@ async def image_generations(
             return images
     except Exception as e:
         error = e
-        if r != None:
+        if r is not None:
             data = r.json()
             if "error" in data:
                 error = data["error"]["message"]
-        raise HTTPException(status_code=400, detail=ERROR_MESSAGES.DEFAULT(error))
+        raise HTTPException(status_code=400, detail=str(error))

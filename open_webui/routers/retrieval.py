@@ -1,62 +1,38 @@
+"""Retrieval router."""
+
 import json
 import logging
-import mimetypes
 import os
 import shutil
-
 import uuid
 from datetime import datetime
-from pathlib import Path
-from typing import Iterator, List, Optional, Sequence, Union
+from typing import List, Optional
 
+import tiktoken
 from fastapi import (
+    APIRouter,
     Depends,
-    FastAPI,
-    File,
-    Form,
     HTTPException,
-    UploadFile,
     Request,
     status,
-    APIRouter,
 )
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import tiktoken
-
-
 from langchain.text_splitter import RecursiveCharacterTextSplitter, TokenTextSplitter
 from langchain_core.documents import Document
+from loguru import logger
+from pydantic import BaseModel
 
+from open_webui.config import (
+    DEFAULT_LOCALE,
+    RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE,
+    RAG_RERANKING_MODEL_TRUST_REMOTE_CODE,
+    UPLOAD_DIR,
+)
+from open_webui.constants import ERROR_MESSAGES
+from open_webui.env import DEVICE_TYPE, DOCKER, env
 from open_webui.models.files import FileModel, Files
 from open_webui.models.knowledge import Knowledges
-from open_webui.storage.provider import Storage
-
-
-from open_webui.retrieval.vector.connector import VECTOR_DB_CLIENT
-
-# Document loaders
 from open_webui.retrieval.loaders.main import Loader
 from open_webui.retrieval.loaders.youtube import YoutubeLoader
-
-# Web search engines
-from open_webui.retrieval.web.main import SearchResult
-from open_webui.retrieval.web.utils import get_web_loader
-from open_webui.retrieval.web.brave import search_brave
-from open_webui.retrieval.web.kagi import search_kagi
-from open_webui.retrieval.web.mojeek import search_mojeek
-from open_webui.retrieval.web.duckduckgo import search_duckduckgo
-from open_webui.retrieval.web.google_pse import search_google_pse
-from open_webui.retrieval.web.jina_search import search_jina
-from open_webui.retrieval.web.searchapi import search_searchapi
-from open_webui.retrieval.web.searxng import search_searxng
-from open_webui.retrieval.web.serper import search_serper
-from open_webui.retrieval.web.serply import search_serply
-from open_webui.retrieval.web.serpstack import search_serpstack
-from open_webui.retrieval.web.tavily import search_tavily
-from open_webui.retrieval.web.bing import search_bing
-
-
 from open_webui.retrieval.utils import (
     get_embedding_function,
     get_model_path,
@@ -65,36 +41,28 @@ from open_webui.retrieval.utils import (
     query_doc,
     query_doc_with_hybrid_search,
 )
+from open_webui.retrieval.vector.connector import VECTOR_DB_CLIENT
+from open_webui.retrieval.vector.main import VectorItem
+from open_webui.retrieval.web.bing import search_bing
+from open_webui.retrieval.web.brave import search_brave
+from open_webui.retrieval.web.duckduckgo import search_duckduckgo
+from open_webui.retrieval.web.google_pse import search_google_pse
+from open_webui.retrieval.web.jina_search import search_jina
+from open_webui.retrieval.web.kagi import search_kagi
+from open_webui.retrieval.web.main import SearchResult
+from open_webui.retrieval.web.mojeek import search_mojeek
+from open_webui.retrieval.web.searchapi import search_searchapi
+from open_webui.retrieval.web.searxng import search_searxng
+from open_webui.retrieval.web.serper import search_serper
+from open_webui.retrieval.web.serply import search_serply
+from open_webui.retrieval.web.serpstack import search_serpstack
+from open_webui.retrieval.web.tavily import search_tavily
+from open_webui.retrieval.web.utils import get_web_loader
+from open_webui.storage.provider import Storage
+from open_webui.utils.auth import get_admin_user, get_verified_user
 from open_webui.utils.misc import (
     calculate_sha256_string,
 )
-from open_webui.utils.auth import get_admin_user, get_verified_user
-
-
-from open_webui.config import (
-    ENV,
-    RAG_EMBEDDING_MODEL_AUTO_UPDATE,
-    RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE,
-    RAG_RERANKING_MODEL_AUTO_UPDATE,
-    RAG_RERANKING_MODEL_TRUST_REMOTE_CODE,
-    UPLOAD_DIR,
-    DEFAULT_LOCALE,
-)
-from open_webui.env import (
-    SRC_LOG_LEVELS,
-    DEVICE_TYPE,
-    DOCKER,
-)
-from open_webui.constants import ERROR_MESSAGES
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["RAG"])
-
-##########################################
-#
-# Utility functions
-#
-##########################################
 
 
 def get_ef(
@@ -102,6 +70,7 @@ def get_ef(
     embedding_model: str,
     auto_update: bool = False,
 ):
+    """Get the embedding function."""
     ef = None
     if embedding_model and engine == "":
         from sentence_transformers import SentenceTransformer
@@ -113,7 +82,7 @@ def get_ef(
                 trust_remote_code=RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE,
             )
         except Exception as e:
-            log.debug(f"Error loading SentenceTransformer: {e}")
+            logger.debug(f"Error loading SentenceTransformer: {e}")
 
     return ef
 
@@ -122,6 +91,7 @@ def get_rf(
     reranking_model: str,
     auto_update: bool = False,
 ):
+    """Get the reranking function."""
     rf = None
     if reranking_model:
         if any(model in reranking_model for model in ["jinaai/jina-colbert-v2"]):
@@ -134,8 +104,8 @@ def get_rf(
                 )
 
             except Exception as e:
-                log.error(f"ColBERT: {e}")
-                raise Exception(ERROR_MESSAGES.DEFAULT(e))
+                logger.error(f"ColBERT: {e}")
+                raise e
         else:
             import sentence_transformers
 
@@ -145,36 +115,36 @@ def get_rf(
                     device=DEVICE_TYPE,
                     trust_remote_code=RAG_RERANKING_MODEL_TRUST_REMOTE_CODE,
                 )
-            except:
-                log.error("CrossEncoder error")
-                raise Exception(ERROR_MESSAGES.DEFAULT("CrossEncoder error"))
+            except Exception as e:
+                logger.error("CrossEncoder error")
+                raise e
     return rf
-
-
-##########################################
-#
-# API routes
-#
-##########################################
 
 
 router = APIRouter()
 
 
 class CollectionNameForm(BaseModel):
-    collection_name: Optional[str] = None
+    """Collection name form."""
+
+    collection_name: str | None = None
 
 
 class ProcessUrlForm(CollectionNameForm):
+    """Process URL form."""
+
     url: str
 
 
 class SearchForm(CollectionNameForm):
+    """Search form."""
+
     query: str
 
 
 @router.get("/")
 async def get_status(request: Request):
+    """Get status."""
     return {
         "status": True,
         "chunk_size": request.app.state.config.CHUNK_SIZE,
@@ -189,6 +159,7 @@ async def get_status(request: Request):
 
 @router.get("/embedding")
 async def get_embedding_config(request: Request, user=Depends(get_admin_user)):
+    """Get embedding config."""
     return {
         "status": True,
         "embedding_engine": request.app.state.config.RAG_EMBEDDING_ENGINE,
@@ -207,6 +178,7 @@ async def get_embedding_config(request: Request, user=Depends(get_admin_user)):
 
 @router.get("/reranking")
 async def get_reraanking_config(request: Request, user=Depends(get_admin_user)):
+    """Get reranking config."""
     return {
         "status": True,
         "reranking_model": request.app.state.config.RAG_RERANKING_MODEL,
@@ -214,16 +186,22 @@ async def get_reraanking_config(request: Request, user=Depends(get_admin_user)):
 
 
 class OpenAIConfigForm(BaseModel):
+    """OpenAI Config Form."""
+
     url: str
     key: str
 
 
 class OllamaConfigForm(BaseModel):
+    """Ollama Config Form."""
+
     url: str
     key: str
 
 
 class EmbeddingModelUpdateForm(BaseModel):
+    """Embedding Model Update Form."""
+
     openai_config: Optional[OpenAIConfigForm] = None
     ollama_config: Optional[OllamaConfigForm] = None
     embedding_engine: str
@@ -235,7 +213,8 @@ class EmbeddingModelUpdateForm(BaseModel):
 async def update_embedding_config(
     request: Request, form_data: EmbeddingModelUpdateForm, user=Depends(get_admin_user)
 ):
-    log.info(
+    """Update embedding config."""
+    logger.info(
         f"Updating embedding model: {request.app.state.config.RAG_EMBEDDING_MODEL} to {form_data.embedding_model}"
     )
     try:
@@ -300,14 +279,16 @@ async def update_embedding_config(
             },
         }
     except Exception as e:
-        log.exception(f"Problem updating embedding model: {e}")
+        logger.exception(f"Problem updating embedding model: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=ERROR_MESSAGES.DEFAULT(e),
+            detail=str(e),
         )
 
 
 class RerankingModelUpdateForm(BaseModel):
+    """Reranking model update form."""
+
     reranking_model: str
 
 
@@ -315,7 +296,8 @@ class RerankingModelUpdateForm(BaseModel):
 async def update_reranking_config(
     request: Request, form_data: RerankingModelUpdateForm, user=Depends(get_admin_user)
 ):
-    log.info(
+    """Update reranking config."""
+    logger.info(
         f"Updating reranking model: {request.app.state.config.RAG_RERANKING_MODEL} to {form_data.reranking_model}"
     )
     try:
@@ -327,7 +309,7 @@ async def update_reranking_config(
                 True,
             )
         except Exception as e:
-            log.error(f"Error loading reranking model: {e}")
+            logger.error(f"Error loading reranking model: {e}")
             request.app.state.config.ENABLE_RAG_HYBRID_SEARCH = False
 
         return {
@@ -335,15 +317,16 @@ async def update_reranking_config(
             "reranking_model": request.app.state.config.RAG_RERANKING_MODEL,
         }
     except Exception as e:
-        log.exception(f"Problem updating reranking model: {e}")
+        logger.exception(f"Problem updating reranking model: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=ERROR_MESSAGES.DEFAULT(e),
+            detail=str(e),
         )
 
 
 @router.get("/config")
 async def get_rag_config(request: Request, user=Depends(get_admin_user)):
+    """Get RAG config."""
     return {
         "status": True,
         "pdf_extract_images": request.app.state.config.PDF_EXTRACT_IMAGES,
@@ -396,28 +379,38 @@ async def get_rag_config(request: Request, user=Depends(get_admin_user)):
 
 
 class FileConfig(BaseModel):
+    """File config form."""
+
     max_size: Optional[int] = None
     max_count: Optional[int] = None
 
 
 class ContentExtractionConfig(BaseModel):
+    """Content extraction config form."""
+
     engine: str = ""
     tika_server_url: Optional[str] = None
 
 
 class ChunkParamUpdateForm(BaseModel):
+    """Chunk param update form."""
+
     text_splitter: Optional[str] = None
     chunk_size: int
     chunk_overlap: int
 
 
 class YoutubeLoaderConfig(BaseModel):
+    """Youtube loader config form."""
+
     language: list[str]
     translation: Optional[str] = None
     proxy_url: str = ""
 
 
 class WebSearchConfig(BaseModel):
+    """Web search config form."""
+
     enabled: bool
     engine: Optional[str] = None
     searxng_query_url: Optional[str] = None
@@ -441,11 +434,15 @@ class WebSearchConfig(BaseModel):
 
 
 class WebConfig(BaseModel):
+    """Web config form."""
+
     search: WebSearchConfig
     web_loader_ssl_verification: Optional[bool] = None
 
 
 class ConfigUpdateForm(BaseModel):
+    """Config update form."""
+
     pdf_extract_images: Optional[bool] = None
     enable_google_drive_integration: Optional[bool] = None
     file: Optional[FileConfig] = None
@@ -459,6 +456,7 @@ class ConfigUpdateForm(BaseModel):
 async def update_rag_config(
     request: Request, form_data: ConfigUpdateForm, user=Depends(get_admin_user)
 ):
+    """Update RAG config."""
     request.app.state.config.PDF_EXTRACT_IMAGES = (
         form_data.pdf_extract_images
         if form_data.pdf_extract_images is not None
@@ -476,7 +474,7 @@ async def update_rag_config(
         request.app.state.config.FILE_MAX_COUNT = form_data.file.max_count
 
     if form_data.content_extraction is not None:
-        log.info(f"Updating text settings: {form_data.content_extraction}")
+        logger.info(f"Updating text settings: {form_data.content_extraction}")
         request.app.state.config.CONTENT_EXTRACTION_ENGINE = (
             form_data.content_extraction.engine
         )
@@ -600,6 +598,7 @@ async def update_rag_config(
 
 @router.get("/template")
 async def get_rag_template(request: Request, user=Depends(get_verified_user)):
+    """Get RAG template."""
     return {
         "status": True,
         "template": request.app.state.config.RAG_TEMPLATE,
@@ -608,6 +607,7 @@ async def get_rag_template(request: Request, user=Depends(get_verified_user)):
 
 @router.get("/query/settings")
 async def get_query_settings(request: Request, user=Depends(get_admin_user)):
+    """Get query settings."""
     return {
         "status": True,
         "template": request.app.state.config.RAG_TEMPLATE,
@@ -618,6 +618,8 @@ async def get_query_settings(request: Request, user=Depends(get_admin_user)):
 
 
 class QuerySettingsForm(BaseModel):
+    """Query settings form."""
+
     k: Optional[int] = None
     r: Optional[float] = None
     template: Optional[str] = None
@@ -628,6 +630,7 @@ class QuerySettingsForm(BaseModel):
 async def update_query_settings(
     request: Request, form_data: QuerySettingsForm, user=Depends(get_admin_user)
 ):
+    """Update query settings."""
     request.app.state.config.RAG_TEMPLATE = form_data.template
     request.app.state.config.TOP_K = form_data.k if form_data.k else 4
     request.app.state.config.RELEVANCE_THRESHOLD = form_data.r if form_data.r else 0.0
@@ -645,13 +648,6 @@ async def update_query_settings(
     }
 
 
-####################################
-#
-# Document process and retrieval
-#
-####################################
-
-
 def save_docs_to_vector_db(
     request: Request,
     docs,
@@ -661,6 +657,8 @@ def save_docs_to_vector_db(
     split: bool = True,
     add: bool = False,
 ) -> bool:
+    """Save documents to the vector database."""
+
     def _get_docs_info(docs: list[Document]) -> str:
         docs_info = set()
 
@@ -677,7 +675,7 @@ def save_docs_to_vector_db(
 
         return ", ".join(docs_info)
 
-    log.info(
+    logger.info(
         f"save_docs_to_vector_db: document {_get_docs_info(docs)} {collection_name}"
     )
 
@@ -688,10 +686,10 @@ def save_docs_to_vector_db(
             filter={"hash": metadata["hash"]},
         )
 
-        if result is not None:
+        if result is not None and result.ids is not None:
             existing_doc_ids = result.ids[0]
             if existing_doc_ids:
-                log.info(f"Document with hash {metadata['hash']} already exists")
+                logger.info(f"Document with hash {metadata['hash']} already exists")
                 raise ValueError(ERROR_MESSAGES.DUPLICATE_CONTENT)
 
     if split:
@@ -702,7 +700,7 @@ def save_docs_to_vector_db(
                 add_start_index=True,
             )
         elif request.app.state.config.TEXT_SPLITTER == "token":
-            log.info(
+            logger.info(
                 f"Using token text splitter: {request.app.state.config.TIKTOKEN_ENCODING_NAME}"
             )
 
@@ -714,7 +712,7 @@ def save_docs_to_vector_db(
                 add_start_index=True,
             )
         else:
-            raise ValueError(ERROR_MESSAGES.DEFAULT("Invalid text splitter"))
+            raise ValueError("Invalid text splitter")
 
         docs = text_splitter.split_documents(docs)
 
@@ -745,18 +743,18 @@ def save_docs_to_vector_db(
 
     try:
         if VECTOR_DB_CLIENT.has_collection(collection_name=collection_name):
-            log.info(f"collection {collection_name} already exists")
+            logger.info(f"collection {collection_name} already exists")
 
             if overwrite:
                 VECTOR_DB_CLIENT.delete_collection(collection_name=collection_name)
-                log.info(f"deleting existing collection {collection_name}")
+                logger.info(f"deleting existing collection {collection_name}")
             elif add is False:
-                log.info(
+                logger.info(
                     f"collection {collection_name} already exists, overwrite is False and add is False"
                 )
                 return True
 
-        log.info(f"adding to collection {collection_name}")
+        logger.info(f"adding to collection {collection_name}")
         embedding_function = get_embedding_function(
             request.app.state.config.RAG_EMBEDDING_ENGINE,
             request.app.state.config.RAG_EMBEDDING_MODEL,
@@ -773,18 +771,20 @@ def save_docs_to_vector_db(
             ),
             request.app.state.config.RAG_EMBEDDING_BATCH_SIZE,
         )
+        assert embedding_function is not None, "Embedding function is None"
 
-        embeddings = embedding_function(
-            list(map(lambda x: x.replace("\n", " "), texts))
-        )
+        embeddings = embedding_function([text.replace("\n", " ") for text in texts])
+        assert embeddings is not None, "Embeddings is None"
 
         items = [
-            {
-                "id": str(uuid.uuid4()),
-                "text": text,
-                "vector": embeddings[idx],
-                "metadata": metadatas[idx],
-            }
+            VectorItem.model_validate(
+                {
+                    "id": str(uuid.uuid4()),
+                    "text": text,
+                    "vector": embeddings[idx],
+                    "metadata": metadatas[idx],
+                }
+            )
             for idx, text in enumerate(texts)
         ]
 
@@ -795,11 +795,13 @@ def save_docs_to_vector_db(
 
         return True
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise e
 
 
 class ProcessFileForm(BaseModel):
+    """Process file form."""
+
     file_id: str
     content: Optional[str] = None
     collection_name: Optional[str] = None
@@ -811,8 +813,10 @@ def process_file(
     form_data: ProcessFileForm,
     user=Depends(get_verified_user),
 ):
+    """Process file and save the content to the database."""
     try:
         file = Files.get_file_by_id(form_data.file_id)
+        assert file is not None, "File not found"
 
         collection_name = form_data.collection_name
 
@@ -829,7 +833,7 @@ def process_file(
                 Document(
                     page_content=form_data.content.replace("<br/>", "\n"),
                     metadata={
-                        **file.meta,
+                        **(file.meta or {}),
                         "name": file.filename,
                         "created_by": file.user_id,
                         "file_id": file.id,
@@ -847,7 +851,13 @@ def process_file(
                 collection_name=f"file-{file.id}", filter={"file_id": file.id}
             )
 
-            if result is not None and len(result.ids[0]) > 0:
+            if (
+                result is not None
+                and result.ids is not None
+                and len(result.ids[0]) > 0
+                and result.documents is not None
+                and result.metadatas is not None
+            ):
                 docs = [
                     Document(
                         page_content=result.documents[0][idx],
@@ -858,9 +868,9 @@ def process_file(
             else:
                 docs = [
                     Document(
-                        page_content=file.data.get("content", ""),
+                        page_content=(file.data or {}).get("content", ""),
                         metadata={
-                            **file.meta,
+                            **(file.meta or {}),
                             "name": file.filename,
                             "created_by": file.user_id,
                             "file_id": file.id,
@@ -869,7 +879,7 @@ def process_file(
                     )
                 ]
 
-            text_content = file.data.get("content", "")
+            text_content = (file.data or {}).get("content", "")
         else:
             # Process the file and save the content
             # Usage: /files/
@@ -882,7 +892,7 @@ def process_file(
                     PDF_EXTRACT_IMAGES=request.app.state.config.PDF_EXTRACT_IMAGES,
                 )
                 docs = loader.load(
-                    file.filename, file.meta.get("content_type"), file_path
+                    file.filename, (file.meta or {}).get("content_type", ""), file_path
                 )
 
                 docs = [
@@ -901,9 +911,9 @@ def process_file(
             else:
                 docs = [
                     Document(
-                        page_content=file.data.get("content", ""),
+                        page_content=(file.data or {}).get("content", ""),
                         metadata={
-                            **file.meta,
+                            **(file.meta or {}),
                             "name": file.filename,
                             "created_by": file.user_id,
                             "file_id": file.id,
@@ -913,7 +923,7 @@ def process_file(
                 ]
             text_content = " ".join([doc.page_content for doc in docs])
 
-        log.debug(f"text_content: {text_content}")
+        logger.debug(f"text_content: {text_content}")
         Files.update_file_data_by_id(
             file.id,
             {"content": text_content},
@@ -952,20 +962,18 @@ def process_file(
         except Exception as e:
             raise e
     except Exception as e:
-        log.exception(e)
-        if "No pandoc was found" in str(e):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=ERROR_MESSAGES.PANDOC_NOT_INSTALLED,
-            )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=str(e),
-            )
+        logger.exception(e)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Pandoc is not installed on the server. Please contact your administrator for assistance."
+            if "No pandoc was found" in str(e)
+            else str(e),
+        )
 
 
 class ProcessTextForm(BaseModel):
+    """Process text form."""
+
     name: str
     content: str
     collection_name: Optional[str] = None
@@ -977,9 +985,10 @@ def process_text(
     form_data: ProcessTextForm,
     user=Depends(get_verified_user),
 ):
-    collection_name = form_data.collection_name
-    if collection_name is None:
-        collection_name = calculate_sha256_string(form_data.content)
+    """Process text and save the content to the database."""
+    collection_name = form_data.collection_name or calculate_sha256_string(
+        form_data.content
+    )
 
     docs = [
         Document(
@@ -988,10 +997,9 @@ def process_text(
         )
     ]
     text_content = form_data.content
-    log.debug(f"text_content: {text_content}")
+    logger.debug(f"text_content: {text_content}")
 
-    result = save_docs_to_vector_db(request, docs, collection_name)
-    if result:
+    if save_docs_to_vector_db(request, docs, collection_name):
         return {
             "status": True,
             "collection_name": collection_name,
@@ -1000,7 +1008,7 @@ def process_text(
     else:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=ERROR_MESSAGES.DEFAULT(),
+            detail="Error saving document to database",
         )
 
 
@@ -1008,6 +1016,7 @@ def process_text(
 def process_youtube_video(
     request: Request, form_data: ProcessUrlForm, user=Depends(get_verified_user)
 ):
+    """Process a YouTube video URL and save the content to the database."""
     try:
         collection_name = form_data.collection_name
         if not collection_name:
@@ -1021,7 +1030,7 @@ def process_youtube_video(
 
         docs = loader.load()
         content = " ".join([doc.page_content for doc in docs])
-        log.debug(f"text_content: {content}")
+        logger.debug(f"text_content: {content}")
 
         save_docs_to_vector_db(request, docs, collection_name, overwrite=True)
 
@@ -1039,10 +1048,10 @@ def process_youtube_video(
             },
         }
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT(e),
+            detail=str(e),
         )
 
 
@@ -1050,6 +1059,7 @@ def process_youtube_video(
 def process_web(
     request: Request, form_data: ProcessUrlForm, user=Depends(get_verified_user)
 ):
+    """Process a web URL and save the content to the database."""
     try:
         collection_name = form_data.collection_name
         if not collection_name:
@@ -1063,7 +1073,7 @@ def process_web(
         docs = loader.load()
         content = " ".join([doc.page_content for doc in docs])
 
-        log.debug(f"text_content: {content}")
+        logger.debug(f"text_content: {content}")
         save_docs_to_vector_db(request, docs, collection_name, overwrite=True)
 
         return {
@@ -1080,15 +1090,16 @@ def process_web(
             },
         }
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT(e),
+            detail=str(e),
         )
 
 
 def search_web(request: Request, engine: str, query: str) -> list[SearchResult]:
     """Search the web using a search engine and return the results as a list of SearchResult objects.
+
     Will look for a search engine API key in environment variables in the following order:
     - SEARXNG_QUERY_URL
     - GOOGLE_PSE_API_KEY + GOOGLE_PSE_ENGINE_ID
@@ -1100,10 +1111,13 @@ def search_web(request: Request, engine: str, query: str) -> list[SearchResult]:
     - SERPLY_API_KEY
     - TAVILY_API_KEY
     - SEARCHAPI_API_KEY + SEARCHAPI_ENGINE (by default `google`)
-    Args:
-        query (str): The query to search for
-    """
 
+    Args:
+        request (Request): The request object
+        engine (str): The search engine to use
+        query (str): The query to search for
+
+    """
     # TODO: add playwright to search the web
     if engine == "searxng":
         if request.app.state.config.SEARXNG_QUERY_URL:
@@ -1241,6 +1255,7 @@ def search_web(request: Request, engine: str, query: str) -> list[SearchResult]:
 def process_web_search(
     request: Request, form_data: SearchForm, user=Depends(get_verified_user)
 ):
+    """Process a web search query and save the results to the vector database."""
     try:
         logging.info(
             f"trying to web search with {request.app.state.config.RAG_WEB_SEARCH_ENGINE, form_data.query}"
@@ -1249,14 +1264,14 @@ def process_web_search(
             request, request.app.state.config.RAG_WEB_SEARCH_ENGINE, form_data.query
         )
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.WEB_SEARCH_ERROR(e),
+            detail=str(e),
         )
 
-    log.debug(f"web_results: {web_results}")
+    logger.debug(f"web_results: {web_results}")
 
     try:
         collection_name = form_data.collection_name
@@ -1280,14 +1295,16 @@ def process_web_search(
             "filenames": urls,
         }
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT(e),
+            detail=str(e),
         )
 
 
 class QueryDocForm(BaseModel):
+    """Form model for querying a collection in the vector database."""
+
     collection_name: str
     query: str
     k: Optional[int] = None
@@ -1301,6 +1318,7 @@ def query_doc_handler(
     form_data: QueryDocForm,
     user=Depends(get_verified_user),
 ):
+    """Query a collection in the vector database."""
     try:
         if request.app.state.config.ENABLE_RAG_HYBRID_SEARCH:
             return query_doc_with_hybrid_search(
@@ -1322,14 +1340,16 @@ def query_doc_handler(
                 k=form_data.k if form_data.k else request.app.state.config.TOP_K,
             )
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT(e),
+            detail=str(e),
         )
 
 
 class QueryCollectionsForm(BaseModel):
+    """Form model for querying collections in the vector database."""
+
     collection_names: list[str]
     query: str
     k: Optional[int] = None
@@ -1343,6 +1363,7 @@ def query_collection_handler(
     form_data: QueryCollectionsForm,
     user=Depends(get_verified_user),
 ):
+    """Query collections in the vector database."""
     try:
         if request.app.state.config.ENABLE_RAG_HYBRID_SEARCH:
             return query_collection_with_hybrid_search(
@@ -1366,52 +1387,51 @@ def query_collection_handler(
             )
 
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=ERROR_MESSAGES.DEFAULT(e),
+            detail=str(e),
         )
 
 
-####################################
-#
-# Vector DB operations
-#
-####################################
-
-
 class DeleteForm(BaseModel):
+    """Form model for deleting entries from a collection in the vector database."""
+
     collection_name: str
     file_id: str
 
 
 @router.post("/delete")
 def delete_entries_from_collection(form_data: DeleteForm, user=Depends(get_admin_user)):
+    """Delete entries from a collection in the vector database."""
     try:
         if VECTOR_DB_CLIENT.has_collection(collection_name=form_data.collection_name):
             file = Files.get_file_by_id(form_data.file_id)
+            assert file is not None, "File not found"
             hash = file.hash
 
             VECTOR_DB_CLIENT.delete(
                 collection_name=form_data.collection_name,
-                metadata={"hash": hash},
+                filter={"hash": hash},
             )
             return {"status": True}
         else:
             return {"status": False}
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         return {"status": False}
 
 
 @router.post("/reset/db")
 def reset_vector_db(user=Depends(get_admin_user)):
+    """Reset the vector database."""
     VECTOR_DB_CLIENT.reset()
     Knowledges.delete_all_knowledge()
 
 
 @router.post("/reset/uploads")
 def reset_upload_dir(user=Depends(get_admin_user)) -> bool:
+    """Reset the upload directory."""
     folder = f"{UPLOAD_DIR}"
     try:
         # Check if the directory exists
@@ -1425,35 +1445,42 @@ def reset_upload_dir(user=Depends(get_admin_user)) -> bool:
                     elif os.path.isdir(file_path):
                         shutil.rmtree(file_path)  # Remove the directory
                 except Exception as e:
-                    print(f"Failed to delete {file_path}. Reason: {e}")
+                    logger.exception(f"Failed to delete {file_path}. Reason: {e}")
         else:
-            print(f"The directory {folder} does not exist")
+            logger.exception(f"The directory {folder} does not exist")
     except Exception as e:
-        print(f"Failed to process the directory {folder}. Reason: {e}")
+        logger.exception(f"Failed to process the directory {folder}. Reason: {e}")
     return True
 
 
-if ENV == "dev":
+if env.WEBUI_ENV == "dev":
 
     @router.get("/ef/{text}")
     async def get_embeddings(request: Request, text: Optional[str] = "Hello World!"):
+        """Get the embeddings for a given text."""
         return {"result": request.app.state.EMBEDDING_FUNCTION(text)}
 
 
 class BatchProcessFilesForm(BaseModel):
+    """Form model for batch processing files."""
+
     files: List[FileModel]
     collection_name: str
 
 
 class BatchProcessFilesResult(BaseModel):
+    """Result model for batch processing files."""
+
     file_id: str
     status: str
     error: Optional[str] = None
 
 
 class BatchProcessFilesResponse(BaseModel):
-    results: List[BatchProcessFilesResult]
-    errors: List[BatchProcessFilesResult]
+    """Response model for batch processing files."""
+
+    results: list[BatchProcessFilesResult]
+    errors: list[BatchProcessFilesResult]
 
 
 @router.post("/process/files/batch")
@@ -1462,24 +1489,22 @@ def process_files_batch(
     form_data: BatchProcessFilesForm,
     user=Depends(get_verified_user),
 ) -> BatchProcessFilesResponse:
-    """
-    Process a batch of files and save them to the vector database.
-    """
-    results: List[BatchProcessFilesResult] = []
-    errors: List[BatchProcessFilesResult] = []
+    """Process a batch of files and save them to the vector database."""
+    results: list[BatchProcessFilesResult] = []
+    errors: list[BatchProcessFilesResult] = []
     collection_name = form_data.collection_name
 
     # Prepare all documents first
-    all_docs: List[Document] = []
+    all_docs: list[Document] = []
     for file in form_data.files:
         try:
-            text_content = file.data.get("content", "")
+            text_content = (file.data or {}).get("content", "")
 
-            docs: List[Document] = [
+            docs: list[Document] = [
                 Document(
                     page_content=text_content.replace("<br/>", "\n"),
                     metadata={
-                        **file.meta,
+                        **(file.meta or {}),
                         "name": file.filename,
                         "created_by": file.user_id,
                         "file_id": file.id,
@@ -1496,7 +1521,9 @@ def process_files_batch(
             results.append(BatchProcessFilesResult(file_id=file.id, status="prepared"))
 
         except Exception as e:
-            log.error(f"process_files_batch: Error processing file {file.id}: {str(e)}")
+            logger.error(
+                f"process_files_batch: Error processing file {file.id}: {str(e)}"
+            )
             errors.append(
                 BatchProcessFilesResult(file_id=file.id, status="failed", error=str(e))
             )
@@ -1519,13 +1546,15 @@ def process_files_batch(
                 result.status = "completed"
 
         except Exception as e:
-            log.error(
+            logger.error(
                 f"process_files_batch: Error saving documents to vector DB: {str(e)}"
             )
             for result in results:
                 result.status = "failed"
                 errors.append(
-                    BatchProcessFilesResult(file_id=result.file_id, error=str(e))
+                    BatchProcessFilesResult(
+                        file_id=result.file_id, status="failed", error=str(e)
+                    )
                 )
 
     return BatchProcessFilesResponse(results=results, errors=errors)

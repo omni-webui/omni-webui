@@ -18,12 +18,10 @@ from sqlmodel import JSON, Field, SQLModel, col
 from open_webui.env import (
     DATA_DIR,
     DATABASE_URL,
-    ENV,
     FRONTEND_BUILD_DIR,
     OFFLINE_MODE,
     OPEN_WEBUI_DIR,
     OPENAI_BASE_URL,
-    WEBUI_AUTH,
     env,
 )
 from open_webui.env import WEBUI_FAVICON_URL as WEBUI_FAVICON_URL
@@ -584,7 +582,7 @@ if OLLAMA_BASE_URL == "" and OLLAMA_API_BASE_URL != "":
         else OLLAMA_API_BASE_URL
     )
 
-if ENV == "prod":
+if env.WEBUI_ENV == "prod":
     if OLLAMA_BASE_URL == "/ollama" and not K8S_FLAG:
         if USE_OLLAMA_DOCKER.lower() == "true":
             # if you use all-in-one docker container (Open WebUI + Ollama)
@@ -664,7 +662,7 @@ ENABLE_SIGNUP = PersistentConfig(
     "ui.enable_signup",
     (
         False
-        if not WEBUI_AUTH
+        if not env.WEBUI_AUTH
         else os.environ.get("ENABLE_SIGNUP", "True").lower() == "true"
     ),
 )

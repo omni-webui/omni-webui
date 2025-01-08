@@ -98,8 +98,6 @@ from open_webui.config import (
     ENABLE_SEARCH_QUERY_GENERATION,
     ENABLE_SIGNUP,
     ENABLE_TAGS_GENERATION,
-    # Misc
-    ENV,
     EVALUATION_ARENA_MODELS,
     FRONTEND_BUILD_DIR,
     GOOGLE_DRIVE_API_KEY,
@@ -184,8 +182,8 @@ from open_webui.config import (
     USER_PERMISSIONS,
     WEBHOOK_URL,
     # WebUI
-    WEBUI_AUTH,
     WEBUI_BANNERS,
+    # Misc
     WEBUI_NAME,
     WEBUI_URL,
     WHISPER_MODEL,
@@ -204,7 +202,6 @@ from open_webui.env import (
     VERSION,
     WEBUI_AUTH_TRUSTED_EMAIL_HEADER,
     WEBUI_AUTH_TRUSTED_NAME_HEADER,
-    WEBUI_SECRET_KEY,
     env,
 )
 from open_webui.internal.db import Session
@@ -302,8 +299,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    docs_url="/docs" if ENV == "dev" else None,
-    openapi_url="/openapi.json" if ENV == "dev" else None,
+    docs_url="/docs" if env.WEBUI_ENV == "dev" else None,
+    openapi_url="/openapi.json" if env.WEBUI_ENV == "dev" else None,
     redoc_url=None,
     lifespan=lifespan,
 )
@@ -801,7 +798,7 @@ async def get_app_config(token: Annotated[str | None, Cookie()] = None):
             }
         },
         "features": {
-            "auth": WEBUI_AUTH,
+            "auth": env.WEBUI_AUTH,
             "auth_trusted_header": bool(app.state.AUTH_TRUSTED_EMAIL_HEADER),
             "enable_ldap": app.state.config.ENABLE_LDAP,
             "enable_api_key": app.state.config.ENABLE_API_KEY,
@@ -919,7 +916,7 @@ async def get_app_changelog():
 if len(OAUTH_PROVIDERS) > 0:
     app.add_middleware(
         SessionMiddleware,
-        secret_key=WEBUI_SECRET_KEY,
+        secret_key=env.WEBUI_SECRET_KEY,
         session_cookie="oui-session",
         same_site=env.WEBUI_SESSION_COOKIE_SAME_SITE,
         https_only=env.WEBUI_SESSION_COOKIE_SECURE,

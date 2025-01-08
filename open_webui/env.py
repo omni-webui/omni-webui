@@ -12,8 +12,6 @@ from loguru import logger
 from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode
 
-from open_webui.constants import ERROR_MESSAGES
-
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 
 
@@ -27,8 +25,16 @@ class Environments(BaseSettings, case_sensitive=True):
         Field(validation_alias=AliasChoices("OPENAI_BASE_URL", "OPENAI_API_BASE_URL")),
     ] = OPENAI_BASE_URL
     USE_CUDA_DOCKER: bool = False
+    WEBUI_AUTH: bool = True
+    WEBUI_SECRET_KEY: Annotated[
+        str,
+        Field(
+            validation_alias=AliasChoices("WEBUI_SECRET_KEY", "WEBUI_JWT_SECRET_KEY")
+        ),
+    ] = "t0p-s3cr3t"
     WEBUI_SESSION_COOKIE_SAME_SITE: Literal["lax", "strict", "none"] = "lax"
     WEBUI_SESSION_COOKIE_SECURE: bool = False
+    WEBUI_ENV: Literal["dev", "prod"] = "dev"
 
     @field_validator("OPENAI_API_KEYS")
     @classmethod
@@ -115,7 +121,7 @@ if WEBUI_NAME != "Open WebUI":
 
 WEBUI_FAVICON_URL = "https://openwebui.com/favicon.png"
 
-ENV = os.environ.get("ENV", "dev")
+WEBUI_ENV = os.environ.get("ENV", "dev")
 
 FROM_INIT_PY = os.environ.get("FROM_INIT_PY", "False").lower() == "true"
 
@@ -289,7 +295,6 @@ ENABLE_REALTIME_CHAT_SAVE = (
 
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
-WEBUI_AUTH = os.environ.get("WEBUI_AUTH", "True").lower() == "true"
 WEBUI_AUTH_TRUSTED_EMAIL_HEADER = os.environ.get(
     "WEBUI_AUTH_TRUSTED_EMAIL_HEADER", None
 )
@@ -299,15 +304,8 @@ BYPASS_MODEL_ACCESS_CONTROL = (
     os.environ.get("BYPASS_MODEL_ACCESS_CONTROL", "False").lower() == "true"
 )
 
-WEBUI_SECRET_KEY = os.environ.get(
-    "WEBUI_SECRET_KEY",
-    os.environ.get(
-        "WEBUI_JWT_SECRET_KEY", "t0p-s3cr3t"
-    ),  # DEPRECATED: remove at next major version
-)
-
-if WEBUI_AUTH and WEBUI_SECRET_KEY == "":
-    raise ValueError(ERROR_MESSAGES.ENV_VAR_NOT_FOUND)
+if env.WEBUI_AUTH and not env.WEBUI_SECRET_KEY:
+    raise ValueError("Required environment variable not found. Terminating now.")
 
 ENABLE_WEBSOCKET_SUPPORT = (
     os.environ.get("ENABLE_WEBSOCKET_SUPPORT", "True").lower() == "true"
