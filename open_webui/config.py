@@ -43,7 +43,7 @@ from pydantic_settings import (
     NoDecode,
 )
 from sqlmodel import Field as SQLModelField
-from sqlmodel import SQLModel, col, func
+from sqlmodel import SQLModel, col, func, select
 from typing_extensions import deprecated
 
 from open_webui.env import (
@@ -56,6 +56,7 @@ from open_webui.env import (
 )
 from open_webui.env import WEBUI_FAVICON_URL as WEBUI_FAVICON_URL
 from open_webui.internal.db import get_db
+from open_webui.models import SessionDepends
 
 from ._types import MutableBaseModel as BaseModel
 
@@ -664,9 +665,14 @@ def get_config():
         return config_entry.data.model_dump() if config_entry else DEFAULT_CONFIG
 
 
+async def _get_config(session: SessionDepends):
+    return (await session.exec(select(Config).order_by(col(Config.id).desc()))).first()
+
+
 ConfigDepends = Annotated[
     ConfigData, Depends(lambda: ConfigData.model_validate(get_config()))
 ]
+ConfigDBDepends = Annotated[Config | None, Depends(_get_config)]
 
 
 CONFIG_DATA = get_config()
@@ -780,12 +786,6 @@ class AppConfig:
     def __getattr__(self, key):
         return self._state[key].value
 
-
-ENABLE_API_KEY = PersistentConfig(
-    "ENABLE_API_KEY",
-    "auth.api_key.enable",
-    os.environ.get("ENABLE_API_KEY", "True").lower() == "true",
-)
 
 ENABLE_API_KEY_ENDPOINT_RESTRICTIONS = PersistentConfig(
     "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS",

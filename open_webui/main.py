@@ -78,7 +78,6 @@ from open_webui.config import (
     # Admin
     ENABLE_ADMIN_CHAT_ACCESS,
     ENABLE_ADMIN_EXPORT,
-    ENABLE_API_KEY,
     ENABLE_API_KEY_ENDPOINT_RESTRICTIONS,
     ENABLE_AUTOCOMPLETE_GENERATION,
     ENABLE_CHANNELS,
@@ -321,7 +320,6 @@ app.state.OPENAI_MODELS = {}
 app.state.config.WEBUI_URL = WEBUI_URL
 app.state.config.ENABLE_SIGNUP = ENABLE_SIGNUP
 app.state.config.ENABLE_LOGIN_FORM = ENABLE_LOGIN_FORM
-app.state.config.ENABLE_API_KEY = ENABLE_API_KEY
 app.state.config.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS = (
     ENABLE_API_KEY_ENDPOINT_RESTRICTIONS
 )
@@ -542,7 +540,6 @@ async def commit_session_after_request(request: Request, call_next):
 async def check_url(request: Request, call_next):
     """Check if the URL is valid."""
     start_time = int(time.time())
-    request.state.enable_api_key = app.state.config.ENABLE_API_KEY
     response = await call_next(request)
     process_time = int(time.time()) - start_time
     response.headers["X-Process-Time"] = str(process_time)
@@ -767,7 +764,9 @@ async def list_tasks_endpoint(user=Depends(get_verified_user)):
 
 
 @app.get("/api/config")
-async def get_app_config(token: Annotated[str | None, Cookie()] = None):
+async def get_app_config(
+    config: ConfigDepends, token: Annotated[str | None, Cookie()] = None
+):
     """Get the app configuration."""
     user = None
     if token is not None:
@@ -803,7 +802,7 @@ async def get_app_config(token: Annotated[str | None, Cookie()] = None):
             "auth": env.WEBUI_AUTH,
             "auth_trusted_header": bool(app.state.AUTH_TRUSTED_EMAIL_HEADER),
             "enable_ldap": app.state.config.ENABLE_LDAP,
-            "enable_api_key": app.state.config.ENABLE_API_KEY,
+            "enable_api_key": config.auth.api_key.enable,
             "enable_signup": app.state.config.ENABLE_SIGNUP,
             "enable_login_form": app.state.config.ENABLE_LOGIN_FORM,
             "enable_websocket": ENABLE_WEBSOCKET_SUPPORT,

@@ -18,6 +18,8 @@ from pydantic import BaseModel
 from open_webui.config import (
     ENABLE_OAUTH_SIGNUP,
     OPENID_PROVIDER_URL,
+    Config,
+    ConfigDBDepends,
     ConfigDepends,
     parse_duration,
 )
@@ -28,6 +30,7 @@ from open_webui.env import (
     WEBUI_AUTH_TRUSTED_NAME_HEADER,
     env,
 )
+from open_webui.models import SessionDepends
 from open_webui.models.auths import (
     AddUserForm,
     ApiKey,
@@ -592,7 +595,7 @@ async def get_admin_config(
         "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
         "WEBUI_URL": request.app.state.config.WEBUI_URL,
         "ENABLE_SIGNUP": request.app.state.config.ENABLE_SIGNUP,
-        "ENABLE_API_KEY": request.app.state.config.ENABLE_API_KEY,
+        "ENABLE_API_KEY": config.auth.api_key.enable,
         "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS": request.app.state.config.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS,
         "API_KEY_ALLOWED_ENDPOINTS": request.app.state.config.API_KEY_ALLOWED_ENDPOINTS,
         "ENABLE_CHANNELS": request.app.state.config.ENABLE_CHANNELS,
@@ -624,6 +627,8 @@ async def update_admin_config(
     request: Request,
     form_data: AdminConfig,
     config: ConfigDepends,
+    config_db: ConfigDBDepends,
+    session: SessionDepends,
     user=Depends(get_admin_user),
 ):
     """Update admin configuration."""
@@ -631,7 +636,7 @@ async def update_admin_config(
     request.app.state.config.WEBUI_URL = form_data.WEBUI_URL
     request.app.state.config.ENABLE_SIGNUP = form_data.ENABLE_SIGNUP
 
-    request.app.state.config.ENABLE_API_KEY = form_data.ENABLE_API_KEY
+    config.auth.api_key.enable = form_data.ENABLE_API_KEY
     request.app.state.config.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS = (
         form_data.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS
     )
@@ -654,12 +659,18 @@ async def update_admin_config(
         form_data.ENABLE_COMMUNITY_SHARING
     )
     request.app.state.config.ENABLE_MESSAGE_RATING = form_data.ENABLE_MESSAGE_RATING
+    if config_db is not None:
+        config_db.data = config
+    else:
+        config_db = Config(data=config)
+    session.add(config_db)
+    await session.commit()
 
     return {
         "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
         "WEBUI_URL": request.app.state.config.WEBUI_URL,
         "ENABLE_SIGNUP": request.app.state.config.ENABLE_SIGNUP,
-        "ENABLE_API_KEY": request.app.state.config.ENABLE_API_KEY,
+        "ENABLE_API_KEY": config.auth.api_key.enable,
         "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS": request.app.state.config.ENABLE_API_KEY_ENDPOINT_RESTRICTIONS,
         "API_KEY_ALLOWED_ENDPOINTS": request.app.state.config.API_KEY_ALLOWED_ENDPOINTS,
         "ENABLE_CHANNELS": request.app.state.config.ENABLE_CHANNELS,
@@ -778,9 +789,11 @@ async def update_ldap_config(
 
 
 @router.post("/api_key", response_model=ApiKey)
-async def generate_api_key(request: Request, user=Depends(get_current_user)):
+async def generate_api_key(
+    request: Request, config: ConfigDepends, user=Depends(get_current_user)
+):
     """Create api key."""
-    if not request.app.state.config.ENABLE_API_KEY:
+    if not config.auth.api_key.enable:
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,
             detail=ERROR_MESSAGES.API_KEY_CREATION_NOT_ALLOWED,
