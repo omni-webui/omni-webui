@@ -1,15 +1,19 @@
 """Open WebUI main application."""
 
 import asyncio
+import importlib.resources
 import json
 import mimetypes
 import os
 import time
 from contextlib import asynccontextmanager
+from datetime import date
+from pathlib import Path
 from typing import Annotated
 from urllib.parse import parse_qs, urlencode, urlparse
 
 import aiohttp
+import keepachangelog
 from fastapi import (
     Cookie,
     Depends,
@@ -23,6 +27,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from loguru import logger
 from pydantic import BaseModel
+from pydantic_extra_types.semantic_version import SemanticVersion
 from sqlalchemy import text
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -193,7 +198,6 @@ from open_webui.config import (
 )
 from open_webui.env import (
     BYPASS_MODEL_ACCESS_CONTROL,
-    CHANGELOG,
     ENABLE_WEBSOCKET_SUPPORT,
     OFFLINE_MODE,
     RESET_CONFIG_ON_START,
@@ -858,9 +862,7 @@ class UrlForm(BaseModel):
 @app.get("/api/webhook")
 async def get_webhook_url(user=Depends(get_admin_user)):
     """Get the webhook URL."""
-    return {
-        "url": app.state.config.WEBHOOK_URL,
-    }
+    return {"url": app.state.config.WEBHOOK_URL}
 
 
 @app.post("/api/webhook")
@@ -901,15 +903,56 @@ async def get_app_latest_release_version():
         return {"current": VERSION, "latest": VERSION}
 
 
-@app.get("/api/changelog")
+class ChangelogEntry(BaseModel):
+    """Changelog entry."""
+
+    title: str
+    content: str
+
+
+class ChangelogItem(BaseModel):
+    """Changelog item."""
+
+    class Metadata(BaseModel):
+        """Metadata."""
+
+        release_date: date
+
+    added: list[ChangelogEntry] | None = None
+    changed: list[ChangelogEntry] | None = None
+    deprecated: list[ChangelogEntry] | None = None
+    removed: list[ChangelogEntry] | None = None
+    fixed: list[ChangelogEntry] | None = None
+    security: list[ChangelogEntry] | None = None
+    metadata: Metadata
+
+
+@app.get(
+    "/api/changelog",
+    response_model=dict[SemanticVersion, ChangelogItem],
+    response_model_exclude_none=True,
+)
 async def get_app_changelog():
-    """Get the latest 5 entries from the changelog."""
-    return {key: CHANGELOG[key] for idx, key in enumerate(CHANGELOG) if idx < 5}
+    """Get the app changelog."""
+    changelog_path = Path(str(importlib.resources.files("omni_webui") / "CHANGELOG.md"))
+    if not changelog_path.exists():
+        return {}
+    changelog = keepachangelog.to_dict(str(changelog_path))
+    for item in changelog.values():
+        for key in ("added", "changed", "deprecated", "removed", "fixed", "security"):
+            if key in item:
+                texts = []
+                for text in item[key]:
+                    try:
+                        title, content = text.split(":", 1)
+                    except ValueError:
+                        title, content = "", text
+                    texts.append(
+                        {"title": title.strip("**"), "content": content.strip()}
+                    )
+                item[key] = texts
+    return {k: v for i, (k, v) in enumerate(changelog.items()) if i < 5}
 
-
-############################
-# OAuth Login & Callback
-############################
 
 # SessionMiddleware is used by authlib for oauth
 if len(OAUTH_PROVIDERS) > 0:

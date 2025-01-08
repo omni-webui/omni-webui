@@ -28,7 +28,7 @@ from open_webui.config import (
     UPLOAD_DIR,
 )
 from open_webui.constants import ERROR_MESSAGES
-from open_webui.env import DEVICE_TYPE, DOCKER, env
+from open_webui.env import DEVICE_TYPE, env
 from open_webui.models.files import FileModel, Files
 from open_webui.models.knowledge import Knowledges
 from open_webui.retrieval.loaders.main import Loader
@@ -100,7 +100,7 @@ def get_rf(
 
                 rf = ColBERT(
                     get_model_path(reranking_model, auto_update),
-                    env="docker" if DOCKER else None,
+                    env="docker" if env.DOCKER else None,
                 )
 
             except Exception as e:

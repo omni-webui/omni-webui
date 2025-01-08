@@ -1,13 +1,11 @@
 """Environment variables and settings for Open WebUI."""
 
+import importlib.util
 import os
-import pkgutil
-import shutil
+from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
 
-import markdown
-from bs4 import BeautifulSoup
 from loguru import logger
 from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, NoDecode
@@ -15,9 +13,21 @@ from pydantic_settings import BaseSettings, NoDecode
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 
 
+@lru_cache
+def get_package_dir(name: str) -> Path:
+    """Get the directory of a package."""
+    spec = importlib.util.find_spec(name)
+    if spec is None:
+        raise ImportError(f"{name} module not found")
+    if spec.submodule_search_locations is None:
+        raise ValueError(f"{name} module not installed correctly")
+    return Path(spec.submodule_search_locations[0])
+
+
 class Environments(BaseSettings, case_sensitive=True):
     """Environment variables."""
 
+    DATA_DIR: Path = get_package_dir("open_webui") / "data"
     DOCKER: bool = False
     OPENAI_API_KEY: str = ""
     OPENAI_API_KEYS: Annotated[list[str], NoDecode] = Field(default_factory=list)
@@ -123,62 +133,6 @@ FROM_INIT_PY = os.environ.get("FROM_INIT_PY", "False").lower() == "true"
 
 VERSION = "0.5.4"
 
-
-def parse_section(section):
-    """Parse each section of the changelog."""
-    items = []
-    for li in section.find_all("li"):
-        # Extract raw HTML string
-        raw_html = str(li)
-
-        # Extract text without HTML tags
-        text = li.get_text(separator=" ", strip=True)
-
-        # Split into title and content
-        parts = text.split(": ", 1)
-        title = parts[0].strip() if len(parts) > 1 else ""
-        content = parts[1].strip() if len(parts) > 1 else text
-
-        items.append({"title": title, "content": content, "raw": raw_html})
-    return items
-
-
-changelog_content = (pkgutil.get_data("open_webui", "CHANGELOG.md") or b"").decode()
-
-
-# Convert markdown content to HTML
-html_content = markdown.markdown(changelog_content)
-
-# Parse the HTML content
-soup = BeautifulSoup(html_content, "html.parser")
-
-# Initialize JSON structure
-changelog_json = {}
-
-# Iterate over each version
-for version in soup.find_all("h2"):
-    version_number = version.get_text().strip().split(" - ")[0][1:-1]  # Remove brackets
-    date = version.get_text().strip().split(" - ")[1]
-
-    version_data = {"date": date}
-
-    # Find the next sibling that is a h3 tag (section title)
-    current = version.find_next_sibling()
-
-    while current and current.name != "h2":
-        if current.name == "h3":
-            section_title = current.get_text().lower()  # e.g., "added", "fixed"
-            section_items = parse_section(current.find_next_sibling("ul"))
-            version_data[section_title] = section_items
-
-        # Move to the next element
-        current = current.find_next_sibling()
-
-    changelog_json[version_number] = version_data
-
-
-CHANGELOG = changelog_json
-
 SAFE_MODE = os.environ.get("SAFE_MODE", "false").lower() == "true"
 
 ENABLE_FORWARD_USER_INFO_HEADERS = (
@@ -186,31 +140,6 @@ ENABLE_FORWARD_USER_INFO_HEADERS = (
 )
 
 WEBUI_BUILD_HASH = os.environ.get("WEBUI_BUILD_HASH", "dev-build")
-
-DATA_DIR = Path(os.getenv("DATA_DIR", BACKEND_DIR / "data")).resolve()
-
-if FROM_INIT_PY:
-    NEW_DATA_DIR = Path(os.getenv("DATA_DIR", OPEN_WEBUI_DIR / "data")).resolve()
-    NEW_DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-    # Check if the data directory exists in the package directory
-    if DATA_DIR.exists() and DATA_DIR != NEW_DATA_DIR:
-        logger.info(f"Moving {DATA_DIR} to {NEW_DATA_DIR}")
-        for item in DATA_DIR.iterdir():
-            dest = NEW_DATA_DIR / item.name
-            if item.is_dir():
-                shutil.copytree(item, dest, dirs_exist_ok=True)
-            else:
-                shutil.copy2(item, dest)
-
-        # Zip the data directory
-        shutil.make_archive(str(DATA_DIR.parent / "open_webui_data"), "zip", DATA_DIR)
-
-        # Remove the old data directory
-        shutil.rmtree(DATA_DIR)
-
-    DATA_DIR = Path(os.getenv("DATA_DIR", OPEN_WEBUI_DIR / "data"))
-
 
 STATIC_DIR = Path(os.getenv("STATIC_DIR", OPEN_WEBUI_DIR / "static"))
 
@@ -227,14 +156,14 @@ if FROM_INIT_PY:
 
 
 # Check if the file exists
-if os.path.exists(f"{DATA_DIR}/ollama.db"):
+if os.path.exists(env.DATA_DIR / "ollama.db"):
     # Rename the file
-    os.rename(f"{DATA_DIR}/ollama.db", f"{DATA_DIR}/webui.db")
+    os.rename(env.DATA_DIR / "ollama.db", env.DATA_DIR / "webui.db")
     logger.info("Database migrated from Ollama-WebUI successfully.")
 else:
     pass
 
-DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{DATA_DIR}/webui.db")
+DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{env.DATA_DIR / 'webui.db'}")
 
 # Replace the postgres:// with postgresql://
 if "postgres://" in DATABASE_URL:

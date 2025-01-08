@@ -16,7 +16,6 @@ from sqlalchemy import func
 from sqlmodel import JSON, Field, SQLModel, col
 
 from open_webui.env import (
-    DATA_DIR,
     DATABASE_URL,
     FRONTEND_BUILD_DIR,
     OFFLINE_MODE,
@@ -74,8 +73,7 @@ class Config(SQLModel, table=True):
 
 def load_json_config():
     """Load the JSON config."""
-    with open(f"{DATA_DIR}/config.json", "r") as file:
-        return json.load(file)
+    return json.loads((env.DATA_DIR / "config.json").read_text())
 
 
 def save_to_db(data):
@@ -99,10 +97,10 @@ def reset_config():
         db.commit()
 
 
-if os.path.exists(f"{DATA_DIR}/config.json"):
+if (env.DATA_DIR / "config.json").exists():
     data = load_json_config()
     save_to_db(data)
-    os.rename(f"{DATA_DIR}/config.json", f"{DATA_DIR}/old_config.json")
+    os.rename(env.DATA_DIR / "config.json", env.DATA_DIR / "old_config.json")
 
 DEFAULT_CONFIG = {
     "version": 0,
@@ -546,11 +544,11 @@ S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME", None)
 S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL", None)
 
 
-UPLOAD_DIR = f"{DATA_DIR}/uploads"
-Path(UPLOAD_DIR).mkdir(parents=True, exist_ok=True)
+UPLOAD_DIR = env.DATA_DIR / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-CACHE_DIR = f"{DATA_DIR}/cache"
-Path(CACHE_DIR).mkdir(parents=True, exist_ok=True)
+CACHE_DIR = env.DATA_DIR / "cache"
+CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 ENABLE_OLLAMA_API = PersistentConfig(
@@ -1099,7 +1097,7 @@ Responses from models: {{responses}}"""
 VECTOR_DB = os.environ.get("VECTOR_DB", "chroma")
 
 # Chroma
-CHROMA_DATA_PATH = f"{DATA_DIR}/vector_db"
+CHROMA_DATA_PATH = str(env.DATA_DIR / "vector_db")
 CHROMA_TENANT = os.environ.get("CHROMA_TENANT", chromadb.config.DEFAULT_TENANT)
 CHROMA_DATABASE = os.environ.get("CHROMA_DATABASE", chromadb.config.DEFAULT_DATABASE)
 CHROMA_HTTP_HOST = os.environ.get("CHROMA_HTTP_HOST", "")
@@ -1119,7 +1117,7 @@ CHROMA_HTTP_SSL = os.environ.get("CHROMA_HTTP_SSL", "false").lower() == "true"
 
 # Milvus
 
-MILVUS_URI = os.environ.get("MILVUS_URI", f"{DATA_DIR}/vector_db/milvus.db")
+MILVUS_URI = os.environ.get("MILVUS_URI", str(env.DATA_DIR / "vector_db" / "milvus.db"))
 
 # Qdrant
 QDRANT_URI = os.environ.get("QDRANT_URI", None)

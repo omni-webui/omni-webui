@@ -1556,6 +1556,15 @@ wheels = [
 ]
 
 [[package]]
+name = "keepachangelog"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fa/2e/951923e56c149b6772dbffee0dcac00738405d7d7a0fdd30537047cf6727/keepachangelog-2.0.0.tar.gz", hash = "sha256:6839f0646690ae514aca6dedbc7b8aa652c56db3be43081a1940c55c1c807709", size = 24488 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/23/06/b4f06ca7afb5d9e942c642980c308ffcfa1fa0e8b0a3ddbec78483ef1614/keepachangelog-2.0.0-py3-none-any.whl", hash = "sha256:0b2259fd73b55f2b99e61035ff83f3d86d0f2764841a7e2de86e31e675e42fee", size = 13349 },
+]
+
+[[package]]
 name = "kubernetes"
 version = "31.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2232,7 +2241,6 @@ dependencies = [
     { name = "asyncpg" },
     { name = "authlib" },
     { name = "bcrypt" },
-    { name = "beautifulsoup4" },
     { name = "black" },
     { name = "boto3" },
     { name = "chromadb" },
@@ -2245,6 +2253,7 @@ dependencies = [
     { name = "fsspec", extra = ["s3"] },
     { name = "ftfy" },
     { name = "jinja2" },
+    { name = "keepachangelog" },
     { name = "langchain" },
     { name = "langchain-community" },
     { name = "ldap3" },
@@ -2257,6 +2266,7 @@ dependencies = [
     { name = "pgvector" },
     { name = "platformdirs" },
     { name = "pydantic", extra = ["email"] },
+    { name = "pydantic-extra-types", extra = ["semver"] },
     { name = "pydantic-settings" },
     { name = "pydub" },
     { name = "pyjwt" },
@@ -2298,7 +2308,6 @@ requires-dist = [
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "authlib", specifier = ">=1.4.0" },
     { name = "bcrypt", specifier = ">=4.2.1" },
-    { name = "beautifulsoup4", specifier = ">=4.12.3" },
     { name = "black", specifier = ">=24.10.0" },
     { name = "boto3", specifier = ">=1.35.93" },
     { name = "chromadb", specifier = ">=0.6.1" },
@@ -2311,6 +2320,7 @@ requires-dist = [
     { name = "fsspec", extras = ["s3"], specifier = ">=2024.12.0" },
     { name = "ftfy", specifier = ">=6.3.1" },
     { name = "jinja2", specifier = ">=3.1.5" },
+    { name = "keepachangelog", specifier = ">=2.0.0" },
     { name = "langchain", specifier = ">=0.3.14" },
     { name = "langchain-community", specifier = ">=0.3.14" },
     { name = "ldap3", specifier = ">=2.9.1" },
@@ -2323,6 +2333,7 @@ requires-dist = [
     { name = "pgvector", specifier = ">=0.3.6" },
     { name = "platformdirs", specifier = ">=4.3.6" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.10.4" },
+    { name = "pydantic-extra-types", extras = ["semver"], specifier = ">=2.10.1" },
     { name = "pydantic-settings", specifier = ">=2.7.1" },
     { name = "pydub", specifier = ">=0.25.1" },
     { name = "pyjwt", specifier = ">=2.10.1" },
@@ -2994,6 +3005,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/a8/f1/92f7b4711d3d0d08981c2677ec9cdde6cb114205a69814bf803e0be5ae9b/pydantic_extra_types-2.10.1-py3-none-any.whl", hash = "sha256:db2c86c04a837bbac0d2d79bbd6f5d46c4c9253db11ca3fdd36a2b282575f1e2", size = 35155 },
 ]
 
+[package.optional-dependencies]
+semver = [
+    { name = "semver" },
+]
+
 [[package]]
 name = "pydantic-settings"
 version = "2.7.1"
@@ -3557,6 +3573,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/fb/77/74a1ceecb205f5d46fe2cd10071383748ee8891a96b7824a372391a6291c/scipy-1.15.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:fe00169cf875bed0b3c40e4da45b57037dc21d7c7bf0c85ed75f210c281488f1", size = 40250011 },
     { url = "https://files.pythonhosted.org/packages/8c/9f/f1544110a3d31183034e05422836505beb438aa56183f2ccef6dcd3b4e3f/scipy-1.15.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:161f80a98047c219c257bf5ce1777c574bde36b9d962a46b20d0d7e531f86863", size = 42625471 },
     { url = "https://files.pythonhosted.org/packages/3f/39/a29b75f9c30084cbafd416bfa00933311a5b7a96be6e88750c98521d2ccb/scipy-1.15.0-cp312-cp312-win_amd64.whl", hash = "sha256:327163ad73e54541a675240708244644294cb0a65cca420c9c79baeb9648e479", size = 43622832 },
+]
+
+[[package]]
+name = "semver"
+version = "3.0.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/41/6c/a536cc008f38fd83b3c1b98ce19ead13b746b5588c9a0cb9dd9f6ea434bc/semver-3.0.2.tar.gz", hash = "sha256:6253adb39c70f6e51afed2fa7152bcd414c411286088fb4b9effb133885ab4cc", size = 214988 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9a/77/0cc7a8a3bc7e53d07e8f47f147b92b0960e902b8254859f4aee5c4d7866b/semver-3.0.2-py3-none-any.whl", hash = "sha256:b1ea4686fe70b981f85359eda33199d60c53964284e0cfb4977d243e37cf4bf4", size = 17099 },
 ]
 
 [[package]]
