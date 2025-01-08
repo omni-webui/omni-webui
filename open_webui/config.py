@@ -25,7 +25,6 @@ from open_webui.env import (
     env,
 )
 from open_webui.env import WEBUI_FAVICON_URL as WEBUI_FAVICON_URL
-from open_webui.env import WEBUI_NAME as WEBUI_NAME
 from open_webui.internal.db import get_db
 
 

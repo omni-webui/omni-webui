@@ -1,17 +1,33 @@
+"""ColBERT model for document retrieval."""
+
 import os
-import torch
+from typing import Literal
+
 import numpy as np
+import numpy.typing as npt
+import torch
 from colbert.infra import ColBERTConfig
 from colbert.modeling.checkpoint import Checkpoint
+from loguru import logger
+
+from open_webui.env import DEVICE_TYPE
 
 
 class ColBERT:
-    def __init__(self, name, **kwargs) -> None:
-        print("ColBERT: Loading model", name)
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+    """ColBERT model for document retrieval."""
 
-        DOCKER = kwargs.get("env") == "docker"
-        if DOCKER:
+    def __init__(self, name: str, env: Literal["docker"] | None = None):
+        """Initialize the ColBERT model.
+
+        Args:
+            name (str): Name of the model to load.
+            env (Literal["docker"], optional): Environment to load the model in. Defaults to None.
+
+        """
+        logger.debug("ColBERT: Loading model", name)
+        self.device = DEVICE_TYPE
+
+        if env == "docker":
             # This is a workaround for the issue with the docker container
             # where the torch extension is not loaded properly
             # and the following error is thrown:
@@ -27,10 +43,9 @@ class ColBERT:
             name,
             colbert_config=ColBERTConfig(model_name=name),
         ).to(self.device)
-        pass
 
     def calculate_similarity_scores(self, query_embeddings, document_embeddings):
-
+        """Calculate similarity scores between the query and document embeddings."""
         query_embeddings = query_embeddings.to(self.device)
         document_embeddings = document_embeddings.to(self.device)
 
@@ -62,8 +77,16 @@ class ColBERT:
 
         return normalized_scores.detach().cpu().numpy().astype(np.float32)
 
-    def predict(self, sentences):
+    def predict(self, sentences: list[tuple[str, str]]) -> npt.NDArray[np.float32]:
+        """Predict the similarity scores for the given sentences.
 
+        Args:
+            sentences (List[Tuple[str, str]]): List of tuples containing the query and document.
+
+        Returns:
+            np.ndarray: Array of similarity scores.
+
+        """
         query = sentences[0][0]
         docs = [i[1] for i in sentences]
 

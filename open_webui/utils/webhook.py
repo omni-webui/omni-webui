@@ -1,17 +1,18 @@
+"""Webhook utilities for Open Web UI."""
+
 import json
-import logging
 
 import requests
-from open_webui.config import WEBUI_FAVICON_URL, WEBUI_NAME
-from open_webui.env import SRC_LOG_LEVELS, VERSION
+from loguru import logger
 
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["WEBHOOK"])
+from open_webui.config import WEBUI_FAVICON_URL
+from open_webui.env import VERSION, env
 
 
 def post_webhook(url: str, message: str, event_data: dict) -> bool:
+    """Post Webhook."""
     try:
-        log.debug(f"post_webhook: {url}, {message}, {event_data}")
+        logger.debug(f"post_webhook: {url}, {message}, {event_data}")
         payload = {}
 
         # Slack and Google Chat Webhooks
@@ -39,7 +40,7 @@ def post_webhook(url: str, message: str, event_data: dict) -> bool:
                 "sections": [
                     {
                         "activityTitle": message,
-                        "activitySubtitle": f"{WEBUI_NAME} ({VERSION}) - {action}",
+                        "activitySubtitle": f"{env.WEBUI_NAME} ({VERSION}) - {action}",
                         "activityImage": WEBUI_FAVICON_URL,
                         "facts": facts,
                         "markdown": True,
@@ -50,11 +51,11 @@ def post_webhook(url: str, message: str, event_data: dict) -> bool:
         else:
             payload = {**event_data}
 
-        log.debug(f"payload: {payload}")
+        logger.debug(f"payload: {payload}")
         r = requests.post(url, json=payload)
         r.raise_for_status()
-        log.debug(f"r.text: {r.text}")
+        logger.debug(f"r.text: {r.text}")
         return True
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         return False

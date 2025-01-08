@@ -184,7 +184,6 @@ from open_webui.config import (
     # WebUI
     WEBUI_BANNERS,
     # Misc
-    WEBUI_NAME,
     WEBUI_URL,
     WHISPER_MODEL,
     YOUTUBE_LOADER_LANGUAGE,
@@ -788,7 +787,7 @@ async def get_app_config(token: Annotated[str | None, Cookie()] = None):
     return {
         **({"onboarding": True} if onboarding else {}),
         "status": True,
-        "name": WEBUI_NAME,
+        "name": env.WEBUI_NAME,
         "version": VERSION,
         "default_locale": str(DEFAULT_LOCALE),
         "oauth": {
@@ -942,8 +941,8 @@ async def oauth_callback(provider: str, request: Request, response: Response):  
 @app.get("/manifest.json")
 async def get_manifest_json():  # noqa: D103
     return {
-        "name": WEBUI_NAME,
-        "short_name": WEBUI_NAME,
+        "name": env.WEBUI_NAME,
+        "short_name": env.WEBUI_NAME,
         "description": "Open WebUI is an open, extensible, user-friendly interface for AI that adapts to your workflow.",
         "start_url": "/",
         "display": "standalone",
@@ -970,8 +969,8 @@ async def get_manifest_json():  # noqa: D103
 async def get_opensearch_xml():  # noqa: D103
     xml_content = rf"""
     <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
-    <ShortName>{WEBUI_NAME}</ShortName>
-    <Description>Search {WEBUI_NAME}</Description>
+    <ShortName>{env.WEBUI_NAME}</ShortName>
+    <Description>Search {env.WEBUI_NAME}</Description>
     <InputEncoding>UTF-8</InputEncoding>
     <Image width="16" height="16" type="image/x-icon">{app.state.config.WEBUI_URL}/static/favicon.png</Image>
     <Url type="text/html" method="get" template="{app.state.config.WEBUI_URL}/?q={"{searchTerms}"}"/>

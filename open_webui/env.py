@@ -18,6 +18,7 @@ OPENAI_BASE_URL = "https://api.openai.com/v1"
 class Environments(BaseSettings, case_sensitive=True):
     """Environment variables."""
 
+    DOCKER: bool = False
     OPENAI_API_KEY: str = ""
     OPENAI_API_KEYS: Annotated[list[str], NoDecode] = Field(default_factory=list)
     OPENAI_BASE_URL: Annotated[
@@ -35,6 +36,7 @@ class Environments(BaseSettings, case_sensitive=True):
     WEBUI_SESSION_COOKIE_SAME_SITE: Literal["lax", "strict", "none"] = "lax"
     WEBUI_SESSION_COOKIE_SECURE: bool = False
     WEBUI_ENV: Literal["dev", "prod"] = "dev"
+    WEBUI_NAME: str = "Omni WebUI"
 
     @field_validator("OPENAI_API_KEYS")
     @classmethod
@@ -115,13 +117,7 @@ for source in log_sources:
     logger.info(f"{log_env_var}: {SRC_LOG_LEVELS[source]}")
 
 
-WEBUI_NAME = os.environ.get("WEBUI_NAME", "Open WebUI")
-if WEBUI_NAME != "Open WebUI":
-    WEBUI_NAME += " (Open WebUI)"
-
 WEBUI_FAVICON_URL = "https://openwebui.com/favicon.png"
-
-WEBUI_ENV = os.environ.get("ENV", "dev")
 
 FROM_INIT_PY = os.environ.get("FROM_INIT_PY", "False").lower() == "true"
 
