@@ -1,9 +1,12 @@
+"""Alembic environment configuration."""
+
 from logging.config import fileConfig
 
 from alembic import context
-from open_webui.models.auths import Auth
-from open_webui.env import DATABASE_URL
 from sqlalchemy import engine_from_config, pool
+
+from open_webui.env import env
+from open_webui.models.auths import Auth
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -25,7 +28,7 @@ target_metadata = Auth.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-DB_URL = DATABASE_URL
+DB_URL = env.DATABASE_URL
 
 if DB_URL:
     config.set_main_option("sqlalchemy.url", DB_URL.replace("%", "%%"))

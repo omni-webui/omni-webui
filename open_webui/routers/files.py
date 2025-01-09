@@ -5,19 +5,21 @@ from pathlib import Path
 from typing import Optional
 from urllib.parse import quote
 
+import fsspec
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.responses import FileResponse
 from loguru import logger
 from pydantic import BaseModel
 from sqlmodel import select
 
+from open_webui.config import ConfigDep
 from open_webui.constants import ERROR_MESSAGES
+from open_webui.env import env
 from open_webui.models import SessionDep
 from open_webui.models.file import File as FileModel
 from open_webui.models.files import FileModelResponse
 from open_webui.routers.retrieval import ProcessFileForm, process_file
-from open_webui.storage.provider import Storage
-from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.auth import get_verified_user
 from open_webui.utils.crypto import get_random_string
 
 router = APIRouter()
@@ -30,6 +32,7 @@ async def upload_file(
     *,
     request: Request,
     file: UploadFile = File(...),
+    config: ConfigDep,
     user=Depends(get_verified_user),
     session: SessionDep,
 ):
@@ -40,7 +43,11 @@ async def upload_file(
     filename = os.path.basename(unsanitized_filename)
 
     file_id = f"file-{get_random_string(24)}"
-    contents, file_path = Storage.upload_file(file.file, f"{file_id}_{filename}")
+    file_path = f"{env.UPLOAD_DIR}/{file_id}_{filename}"
+    with fsspec.open(file_path, "wb") as f:
+        b = file.file.read()
+        size = len(b)
+        f.write(b)  # type: ignore
     file_item = FileModel(
         id=file_id,
         user_id=user.id,
@@ -49,7 +56,7 @@ async def upload_file(
         meta={
             "name": filename,
             "content_type": file.content_type,
-            "size": len(contents),
+            "size": size,
         },
     )
     session.add(file_item)
@@ -79,25 +86,6 @@ async def list_files(
     return files
 
 
-@router.delete("/all")
-async def delete_all_files(session: SessionDep, user=Depends(get_admin_user)):
-    """Delete all files."""
-    for file in (await session.exec(select(FileModel))).all():
-        await session.delete(file)
-    await session.flush()
-
-    try:
-        Storage.delete_all_files()
-    except Exception as e:
-        logger.exception(e)
-        logger.error("Error deleting files")
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Error deleting files",
-        )
-    return {"message": "All files deleted successfully"}
-
-
 @router.get("/{id}", response_model=Optional[FileModel])
 async def get_file_by_id(
     id: str,
@@ -109,24 +97,6 @@ async def get_file_by_id(
 
     if file and (file.user_id == user.id or user.role == "admin"):
         return file
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
-        )
-
-
-@router.get("/{id}/data/content")
-async def get_file_data_content_by_id(
-    id: str,
-    session: SessionDep,
-    user=Depends(get_verified_user),
-):
-    """Get file data content by id."""
-    file = await session.get_one(FileModel, id)
-
-    if file and (file.user_id == user.id or user.role == "admin"):
-        return {"content": (file.data or {}).get("content", "")}
     else:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -179,121 +149,29 @@ async def get_file_content_by_id(
     file = await session.get_one(FileModel, id)
     if file and (file.user_id == user.id or user.role == "admin"):
         try:
-            file_path = Storage.get_file(file.path or "")
-            file_path = Path(file_path)
+            file_path = Path(file.path or "")
+            # Handle Unicode filenames
+            filename = (file.meta or {}).get("name", file.filename)
+            encoded_filename = quote(filename)  # RFC5987 encoding
 
-            # Check if the file already exists in the cache
-            if file_path.is_file():
-                # Handle Unicode filenames
-                filename = (file.meta or {}).get("name", file.filename)
-                encoded_filename = quote(filename)  # RFC5987 encoding
+            headers = {}
+            if (file.meta or {}).get("content_type") not in [
+                "application/pdf",
+                "text/plain",
+            ]:
+                headers = {
+                    **headers,
+                    "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+                }
 
-                headers = {}
-                if (file.meta or {}).get("content_type") not in [
-                    "application/pdf",
-                    "text/plain",
-                ]:
-                    headers = {
-                        **headers,
-                        "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
-                    }
+            return FileResponse(file_path, headers=headers)
 
-                return FileResponse(file_path, headers=headers)
-
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=ERROR_MESSAGES.NOT_FOUND,
-                )
         except Exception as e:
             logger.exception(e)
             logger.error("Error getting file content")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Error getting file content",
-            )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
-        )
-
-
-@router.get("/{id}/content/html")
-async def get_html_file_content_by_id(
-    id: str, session: SessionDep, user=Depends(get_verified_user)
-):
-    """Get HTML file content by id."""
-    file = await session.get_one(FileModel, id)
-    if file and (file.user_id == user.id or user.role == "admin"):
-        try:
-            file_path = Storage.get_file(file.path or "")
-            file_path = Path(file_path)
-
-            # Check if the file already exists in the cache
-            if file_path.is_file():
-                logger.info(f"{file_path=}")
-                return FileResponse(file_path)
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=ERROR_MESSAGES.NOT_FOUND,
-                )
-        except Exception as e:
-            logger.exception(e)
-            logger.error("Error getting file content")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Error getting file content",
-            )
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=ERROR_MESSAGES.NOT_FOUND,
-        )
-
-
-@router.get("/{id}/content/{file_name}")
-async def get_file_content_by_id_and_name(
-    id: str, session: SessionDep, user=Depends(get_verified_user)
-):
-    """Get file content by id and file name."""
-    file = await session.get_one(FileModel, id)
-
-    if file and (file.user_id == user.id or user.role == "admin"):
-        file_path = file.path
-
-        # Handle Unicode filenames
-        filename = (file.meta or {}).get("name", file.filename)
-        encoded_filename = quote(filename)  # RFC5987 encoding
-        headers = {
-            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}"
-        }
-
-        if file_path:
-            file_path = Storage.get_file(file_path)
-            file_path = Path(file_path)
-
-            # Check if the file already exists in the cache
-            if file_path.is_file():
-                return FileResponse(file_path, headers=headers)
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=ERROR_MESSAGES.NOT_FOUND,
-                )
-        else:
-            # File path doesn’t exist, return the content as .txt if possible
-            file_content = file.content.get("content", "")  # type: ignore
-
-            # Create a generator that encodes the file content
-            def generator():
-                yield file_content.encode("utf-8")
-
-            return StreamingResponse(
-                generator(),
-                media_type="text/plain",
-                headers=headers,
             )
     else:
         raise HTTPException(
@@ -311,15 +189,6 @@ async def delete_file_by_id(
     if file and (file.user_id == user.id or user.role == "admin"):
         await session.delete(file)
         await session.flush()
-        try:
-            Storage.delete_file(file.path or "")
-        except Exception as e:
-            logger.exception(e)
-            logger.error("Error deleting files")
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Error deleting files",
-            )
         return {"message": "File deleted successfully"}
     else:
         raise HTTPException(

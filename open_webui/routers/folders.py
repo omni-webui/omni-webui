@@ -1,45 +1,26 @@
-import logging
-import os
-import shutil
-import uuid
-from pathlib import Path
+"""Folder routes."""
+
 from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from loguru import logger
 from pydantic import BaseModel
-import mimetypes
 
-
+from open_webui.constants import ERROR_MESSAGES
+from open_webui.models.chats import Chats
 from open_webui.models.folders import (
     FolderForm,
     FolderModel,
     Folders,
 )
-from open_webui.models.chats import Chats
-
-from open_webui.config import UPLOAD_DIR
-from open_webui.env import SRC_LOG_LEVELS
-from open_webui.constants import ERROR_MESSAGES
-
-
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
-from fastapi.responses import FileResponse, StreamingResponse
-
-
-from open_webui.utils.auth import get_admin_user, get_verified_user
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MODELS"])
-
+from open_webui.utils.auth import get_verified_user
 
 router = APIRouter()
 
 
-############################
-# Get Folders
-############################
-
-
 @router.get("/", response_model=list[FolderModel])
 async def get_folders(user=Depends(get_verified_user)):
+    """Get folders."""
     folders = Folders.get_folders_by_user_id(user.id)
 
     return [
@@ -58,13 +39,9 @@ async def get_folders(user=Depends(get_verified_user)):
     ]
 
 
-############################
-# Create Folder
-############################
-
-
 @router.post("/")
 def create_folder(form_data: FolderForm, user=Depends(get_verified_user)):
+    """Create folder."""
     folder = Folders.get_folder_by_parent_id_and_user_id_and_name(
         None, user.id, form_data.name
     )
@@ -79,21 +56,17 @@ def create_folder(form_data: FolderForm, user=Depends(get_verified_user)):
         folder = Folders.insert_new_folder(user.id, form_data.name)
         return folder
     except Exception as e:
-        log.exception(e)
-        log.error("Error creating folder")
+        logger.exception(e)
+        logger.error("Error creating folder")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=ERROR_MESSAGES.DEFAULT("Error creating folder"),
         )
 
 
-############################
-# Get Folders By Id
-############################
-
-
 @router.get("/{id}", response_model=Optional[FolderModel])
 async def get_folder_by_id(id: str, user=Depends(get_verified_user)):
+    """Get folder by id."""
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
         return folder
@@ -104,15 +77,11 @@ async def get_folder_by_id(id: str, user=Depends(get_verified_user)):
         )
 
 
-############################
-# Update Folder Name By Id
-############################
-
-
 @router.post("/{id}/update")
 async def update_folder_name_by_id(
     id: str, form_data: FolderForm, user=Depends(get_verified_user)
 ):
+    """Update folder name by id."""
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
         existing_folder = Folders.get_folder_by_parent_id_and_user_id_and_name(
@@ -131,8 +100,8 @@ async def update_folder_name_by_id(
 
             return folder
         except Exception as e:
-            log.exception(e)
-            log.error(f"Error updating folder: {id}")
+            logger.exception(e)
+            logger.error(f"Error updating folder: {id}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_MESSAGES.DEFAULT("Error updating folder"),
@@ -144,12 +113,9 @@ async def update_folder_name_by_id(
         )
 
 
-############################
-# Update Folder Parent Id By Id
-############################
-
-
 class FolderParentIdForm(BaseModel):
+    """Request model for updating folder parent id."""
+
     parent_id: Optional[str] = None
 
 
@@ -157,6 +123,7 @@ class FolderParentIdForm(BaseModel):
 async def update_folder_parent_id_by_id(
     id: str, form_data: FolderParentIdForm, user=Depends(get_verified_user)
 ):
+    """Update folder parent id by id."""
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
         existing_folder = Folders.get_folder_by_parent_id_and_user_id_and_name(
@@ -171,12 +138,14 @@ async def update_folder_parent_id_by_id(
 
         try:
             folder = Folders.update_folder_parent_id_by_id_and_user_id(
-                id, user.id, form_data.parent_id
+                id,
+                user.id,
+                form_data.parent_id,  # type: ignore
             )
             return folder
         except Exception as e:
-            log.exception(e)
-            log.error(f"Error updating folder: {id}")
+            logger.exception(e)
+            logger.error(f"Error updating folder: {id}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_MESSAGES.DEFAULT("Error updating folder"),
@@ -194,6 +163,8 @@ async def update_folder_parent_id_by_id(
 
 
 class FolderIsExpandedForm(BaseModel):
+    """Request model for updating folder is expanded."""
+
     is_expanded: bool
 
 
@@ -201,6 +172,7 @@ class FolderIsExpandedForm(BaseModel):
 async def update_folder_is_expanded_by_id(
     id: str, form_data: FolderIsExpandedForm, user=Depends(get_verified_user)
 ):
+    """Update folder is expanded by id."""
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
         try:
@@ -209,8 +181,8 @@ async def update_folder_is_expanded_by_id(
             )
             return folder
         except Exception as e:
-            log.exception(e)
-            log.error(f"Error updating folder: {id}")
+            logger.exception(e)
+            logger.error(f"Error updating folder: {id}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_MESSAGES.DEFAULT("Error updating folder"),
@@ -229,6 +201,7 @@ async def update_folder_is_expanded_by_id(
 
 @router.delete("/{id}")
 async def delete_folder_by_id(id: str, user=Depends(get_verified_user)):
+    """Delete folder by id."""
     folder = Folders.get_folder_by_id_and_user_id(id, user.id)
     if folder:
         try:
@@ -238,8 +211,8 @@ async def delete_folder_by_id(id: str, user=Depends(get_verified_user)):
             else:
                 raise Exception("Error deleting folder")
         except Exception as e:
-            log.exception(e)
-            log.error(f"Error deleting folder: {id}")
+            logger.exception(e)
+            logger.error(f"Error deleting folder: {id}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=ERROR_MESSAGES.DEFAULT("Error deleting folder"),

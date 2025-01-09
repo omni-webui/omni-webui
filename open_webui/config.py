@@ -50,9 +50,7 @@ from sqlmodel import SQLModel, col, func, select
 from typing_extensions import deprecated
 
 from open_webui.env import (
-    DATABASE_URL,
     OFFLINE_MODE,
-    OPEN_WEBUI_DIR,
     OPENAI_BASE_URL,
     env,
 )
@@ -802,13 +800,11 @@ class AppConfig:
         return self._state[key].value
 
 
-STATIC_DIR = Path(os.getenv("STATIC_DIR", OPEN_WEBUI_DIR / "static")).resolve()
-
 frontend_favicon = env.FRONTEND_BUILD_DIR / "static" / "favicon.png"
 
 if frontend_favicon.exists():
     try:
-        shutil.copyfile(frontend_favicon, STATIC_DIR / "favicon.png")
+        shutil.copyfile(frontend_favicon, env.STATIC_DIR / "favicon.png")
     except Exception as e:
         logger.error(f"An error occurred: {e}")
 else:
@@ -818,7 +814,7 @@ frontend_splash = env.FRONTEND_BUILD_DIR / "static" / "splash.png"
 
 if frontend_splash.exists():
     try:
-        shutil.copyfile(frontend_splash, STATIC_DIR / "splash.png")
+        shutil.copyfile(frontend_splash, env.STATIC_DIR / "splash.png")
     except Exception as e:
         logger.error(f"An error occurred: {e}")
 else:
@@ -831,10 +827,6 @@ S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY", None)
 S3_REGION_NAME = os.environ.get("S3_REGION_NAME", None)
 S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME", None)
 S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL", None)
-
-
-UPLOAD_DIR = env.DATA_DIR / "uploads"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 CACHE_DIR = env.DATA_DIR / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -1303,8 +1295,7 @@ OPENSEARCH_USERNAME = os.environ.get("OPENSEARCH_USERNAME", None)
 OPENSEARCH_PASSWORD = os.environ.get("OPENSEARCH_PASSWORD", None)
 
 # Pgvector
-PGVECTOR_DB_URL = os.environ.get("PGVECTOR_DB_URL", DATABASE_URL)
-if VECTOR_DB == "pgvector" and not PGVECTOR_DB_URL.startswith("postgres"):
+if VECTOR_DB == "pgvector" and not env.PGVECTOR_DB_URL.startswith("postgres"):
     raise ValueError(
         "Pgvector requires setting PGVECTOR_DB_URL or using Postgres with vector extension as the primary database."
     )

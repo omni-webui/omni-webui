@@ -17,8 +17,8 @@ from open_webui.env import (
     DATABASE_POOL_RECYCLE,
     DATABASE_POOL_SIZE,
     DATABASE_POOL_TIMEOUT,
-    DATABASE_URL,
     SRC_LOG_LEVELS,
+    env,
 )
 
 log = logging.getLogger(__name__)
@@ -54,7 +54,7 @@ class JSONField(types.TypeDecorator):
             return json.loads(value)
 
 
-SQLALCHEMY_DATABASE_URL = DATABASE_URL
+SQLALCHEMY_DATABASE_URL = env.DATABASE_URL
 if "sqlite" in SQLALCHEMY_DATABASE_URL:
     engine = create_engine(
         SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}

@@ -5,7 +5,7 @@ import time
 from fastapi import Request
 from loguru import logger
 
-from open_webui.config import DEFAULT_ARENA_MODEL
+from open_webui.config import DEFAULT_ARENA_MODEL, ConfigDep
 from open_webui.functions import get_function_models
 from open_webui.models.functions import Functions
 from open_webui.models.models import Models
@@ -14,18 +14,18 @@ from open_webui.utils.access_control import has_access
 from open_webui.utils.plugin import load_function_module_by_id
 
 
-async def get_all_base_models(request: Request):
+async def get_all_base_models(request: Request, config: ConfigDep):
     """Get all base models."""
     function_models = []
     openai_models = []
     ollama_models = []
 
-    if request.app.state.config.ENABLE_OPENAI_API:
-        openai_models = await openai.get_all_models(request)
+    if config.openai.enable:
+        openai_models = await openai.get_all_models(request, config)
         openai_models = openai_models["data"]
 
-    if request.app.state.config.ENABLE_OLLAMA_API:
-        ollama_models = await ollama.get_all_models(request)
+    if config.ollama.enable:
+        ollama_models = await ollama.get_all_models(request, config)
         ollama_models = [
             {
                 "id": model["model"],
@@ -44,9 +44,9 @@ async def get_all_base_models(request: Request):
     return models
 
 
-async def get_all_models(request):
+async def get_all_models(request, config: ConfigDep):
     """Get all models."""
-    models = await get_all_base_models(request)
+    models = await get_all_base_models(request, config)
 
     # If there are no models, return an empty list
     if len(models) == 0:

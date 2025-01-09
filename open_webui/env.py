@@ -29,7 +29,10 @@ class Environments(BaseSettings, case_sensitive=True):
     """Environment variables."""
 
     DATA_DIR: Path = get_package_dir("open_webui") / "data"
+    UPLOAD_DIR: str = ""
+    STATIC_DIR: Path = get_package_dir("open_webui") / "static"
     DATABASE_URL: str = ""
+    PGVECTOR_DB_URL: str = ""
     DOCKER: bool = False
     FRONTEND_BUILD_DIR: Path = get_package_dir("open_webui") / "frontend"
     OPENAI_API_KEY: str = ""
@@ -65,6 +68,10 @@ class Environments(BaseSettings, case_sensitive=True):
             self.OPENAI_API_KEYS = [self.OPENAI_API_KEY]
         if self.DATABASE_URL == "":
             self.DATABASE_URL = f"sqlite:///{self.DATA_DIR / 'webui.db'}"
+        if self.PGVECTOR_DB_URL == "":
+            self.PGVECTOR_DB_URL = self.DATABASE_URL
+        if self.UPLOAD_DIR == "":
+            self.UPLOAD_DIR = f"{self.DATA_DIR}/uploads"
 
 
 env = Environments()
@@ -154,12 +161,6 @@ if os.path.exists(env.DATA_DIR / "ollama.db"):
     logger.info("Database migrated from Ollama-WebUI successfully.")
 else:
     pass
-
-DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{env.DATA_DIR / 'webui.db'}")
-
-# Replace the postgres:// with postgresql://
-if "postgres://" in DATABASE_URL:
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
 
 DATABASE_POOL_SIZE = os.environ.get("DATABASE_POOL_SIZE", 0)
 

@@ -1,52 +1,59 @@
-from typing import Optional, List, Dict, Any
+"""Pgvector database client."""
+
+from typing import Any, Dict, List, Optional
+
+from loguru import logger
+from pgvector.sqlalchemy import Vector
 from sqlalchemy import (
-    cast,
-    column,
-    create_engine,
     Column,
     Integer,
     MetaData,
+    Text,
+    cast,
+    column,
+    create_engine,
     select,
     text,
-    Text,
     values,
 )
-from sqlalchemy.sql import true
-from sqlalchemy.pool import NullPool
-
-from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
 from sqlalchemy.dialects.postgresql import JSONB, array
-from pgvector.sqlalchemy import Vector
 from sqlalchemy.ext.mutable import MutableDict
+from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
+from sqlalchemy.pool import NullPool
+from sqlalchemy.sql import true
 
-from open_webui.retrieval.vector.main import VectorItem, SearchResult, GetResult
-from open_webui.config import PGVECTOR_DB_URL, PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH
+from open_webui.config import PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH
+from open_webui.env import env
+from open_webui.retrieval.vector.main import GetResult, SearchResult, VectorItem
 
 VECTOR_LENGTH = PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH
 Base = declarative_base()
 
 
 class DocumentChunk(Base):
+    """Document chunk model."""
+
     __tablename__ = "document_chunk"
 
     id = Column(Text, primary_key=True)
     vector = Column(Vector(dim=VECTOR_LENGTH), nullable=True)
     collection_name = Column(Text, nullable=False)
     text = Column(Text, nullable=True)
-    vmetadata = Column(MutableDict.as_mutable(JSONB), nullable=True)
+    vmetadata = Column(MutableDict.as_mutable(JSONB), nullable=True)  # type: ignore
 
 
 class PgvectorClient:
-    def __init__(self) -> None:
+    """Pgvector client."""
 
+    def __init__(self) -> None:  # noqa: D107
         # if no pgvector uri, use the existing database connection
-        if not PGVECTOR_DB_URL:
+        if not env.PGVECTOR_DB_URL:
             from open_webui.internal.db import Session
 
             self.session = Session
         else:
             engine = create_engine(
-                PGVECTOR_DB_URL, pool_pre_ping=True, poolclass=NullPool
+                env.PGVECTOR_DB_URL, pool_pre_ping=True, poolclass=NullPool
             )
             SessionLocal = sessionmaker(
                 autocommit=False, autoflush=False, bind=engine, expire_on_commit=False
@@ -80,19 +87,21 @@ class PgvectorClient:
                 )
             )
             self.session.commit()
-            print("Initialization complete.")
+            logger.info("Initialization complete.")
         except Exception as e:
             self.session.rollback()
-            print(f"Error during initialization: {e}")
+            logger.exception(f"Error during initialization: {e}")
             raise
 
     def check_vector_length(self) -> None:
-        """
-        Check if the VECTOR_LENGTH matches the existing vector column dimension in the database.
-        Raises an exception if there is a mismatch.
+        """Check if the VECTOR_LENGTH matches the existing vector column dimension in the database.
+
+        Raises:
+            Exception: If the VECTOR_LENGTH does not match the existing vector column dimension.
+
         """
         metadata = MetaData()
-        metadata.reflect(bind=self.session.bind, only=["document_chunk"])
+        metadata.reflect(bind=self.session.bind, only=["document_chunk"])  # type: ignore
 
         if "document_chunk" in metadata.tables:
             document_chunk_table = metadata.tables["document_chunk"]
@@ -119,7 +128,7 @@ class PgvectorClient:
             pass
 
     def adjust_vector_length(self, vector: List[float]) -> List[float]:
-        # Adjust vector to have length VECTOR_LENGTH
+        """Adjust the vector length to match the VECTOR_LENGTH."""
         current_length = len(vector)
         if current_length < VECTOR_LENGTH:
             # Pad the vector with zeros
@@ -130,59 +139,61 @@ class PgvectorClient:
             )
         return vector
 
-    def insert(self, collection_name: str, items: List[VectorItem]) -> None:
+    def insert(self, collection_name: str, items: list[VectorItem]) -> None:
+        """Insert items into the collection."""
         try:
             new_items = []
             for item in items:
-                vector = self.adjust_vector_length(item["vector"])
+                vector = self.adjust_vector_length(item["vector"])  # type: ignore
                 new_chunk = DocumentChunk(
-                    id=item["id"],
+                    id=item["id"],  # type: ignore
                     vector=vector,
                     collection_name=collection_name,
-                    text=item["text"],
-                    vmetadata=item["metadata"],
+                    text=item["text"],  # type: ignore
+                    vmetadata=item["metadata"],  # type: ignore
                 )
                 new_items.append(new_chunk)
             self.session.bulk_save_objects(new_items)
             self.session.commit()
-            print(
+            logger.info(
                 f"Inserted {len(new_items)} items into collection '{collection_name}'."
             )
         except Exception as e:
             self.session.rollback()
-            print(f"Error during insert: {e}")
+            logger.exception(f"Error during insert: {e}")
             raise
 
-    def upsert(self, collection_name: str, items: List[VectorItem]) -> None:
+    def upsert(self, collection_name: str, items: list[VectorItem]) -> None:
+        """Upsert items into the collection."""
         try:
             for item in items:
-                vector = self.adjust_vector_length(item["vector"])
+                vector = self.adjust_vector_length(item["vector"])  # type: ignore
                 existing = (
                     self.session.query(DocumentChunk)
-                    .filter(DocumentChunk.id == item["id"])
+                    .filter(DocumentChunk.id == item["id"])  # type: ignore
                     .first()
                 )
                 if existing:
-                    existing.vector = vector
-                    existing.text = item["text"]
-                    existing.vmetadata = item["metadata"]
-                    existing.collection_name = (
-                        collection_name  # Update collection_name if necessary
-                    )
+                    existing.vector = vector  # type: ignore
+                    existing.text = item["text"]  # type: ignore
+                    existing.vmetadata = item["metadata"]  # type: ignore
+                    existing.collection_name = collection_name  # type: ignore
                 else:
                     new_chunk = DocumentChunk(
-                        id=item["id"],
+                        id=item["id"],  # type: ignore
                         vector=vector,
                         collection_name=collection_name,
-                        text=item["text"],
-                        vmetadata=item["metadata"],
+                        text=item["text"],  # type: ignore
+                        vmetadata=item["metadata"],  # type: ignore
                     )
                     self.session.add(new_chunk)
             self.session.commit()
-            print(f"Upserted {len(items)} items into collection '{collection_name}'.")
+            logger.info(
+                f"Upserted {len(items)} items into collection '{collection_name}'."
+            )
         except Exception as e:
             self.session.rollback()
-            print(f"Error during upsert: {e}")
+            logger.exception(f"Error during upsert: {e}")
             raise
 
     def search(
@@ -191,6 +202,7 @@ class PgvectorClient:
         vectors: List[List[float]],
         limit: Optional[int] = None,
     ) -> Optional[SearchResult]:
+        """Search for the nearest vectors in the collection."""
         try:
             if not vectors:
                 return None
@@ -273,12 +285,13 @@ class PgvectorClient:
                 ids=ids, distances=distances, documents=documents, metadatas=metadatas
             )
         except Exception as e:
-            print(f"Error during search: {e}")
+            logger.exception(f"Error during search: {e}")
             return None
 
     def query(
         self, collection_name: str, filter: Dict[str, Any], limit: Optional[int] = None
     ) -> Optional[GetResult]:
+        """Query items in the collection."""
         try:
             query = self.session.query(DocumentChunk).filter(
                 DocumentChunk.collection_name == collection_name
@@ -300,17 +313,18 @@ class PgvectorClient:
             metadatas = [[result.vmetadata for result in results]]
 
             return GetResult(
-                ids=ids,
-                documents=documents,
+                ids=ids,  # type: ignore
+                documents=documents,  # type: ignore
                 metadatas=metadatas,
             )
         except Exception as e:
-            print(f"Error during query: {e}")
+            logger.exception(f"Error during query: {e}")
             return None
 
     def get(
         self, collection_name: str, limit: Optional[int] = None
     ) -> Optional[GetResult]:
+        """Get all items in the collection."""
         try:
             query = self.session.query(DocumentChunk).filter(
                 DocumentChunk.collection_name == collection_name
@@ -327,9 +341,9 @@ class PgvectorClient:
             documents = [[result.text for result in results]]
             metadatas = [[result.vmetadata for result in results]]
 
-            return GetResult(ids=ids, documents=documents, metadatas=metadatas)
+            return GetResult(ids=ids, documents=documents, metadatas=metadatas)  # type: ignore
         except Exception as e:
-            print(f"Error during get: {e}")
+            logger.exception(f"Error during get: {e}")
             return None
 
     def delete(
@@ -338,6 +352,7 @@ class PgvectorClient:
         ids: Optional[List[str]] = None,
         filter: Optional[Dict[str, Any]] = None,
     ) -> None:
+        """Delete items from the collection."""
         try:
             query = self.session.query(DocumentChunk).filter(
                 DocumentChunk.collection_name == collection_name
@@ -351,28 +366,31 @@ class PgvectorClient:
                     )
             deleted = query.delete(synchronize_session=False)
             self.session.commit()
-            print(f"Deleted {deleted} items from collection '{collection_name}'.")
+            logger.info(f"Deleted {deleted} items from collection '{collection_name}'.")
         except Exception as e:
             self.session.rollback()
-            print(f"Error during delete: {e}")
+            logger.exception(f"{e}")
             raise
 
+    def close(self) -> None:
+        """Close the session."""
+        self.session.close()
+
     def reset(self) -> None:
+        """Reset the database."""
         try:
             deleted = self.session.query(DocumentChunk).delete()
             self.session.commit()
-            print(
+            logger.info(
                 f"Reset complete. Deleted {deleted} items from 'document_chunk' table."
             )
         except Exception as e:
             self.session.rollback()
-            print(f"Error during reset: {e}")
+            logger.exception(f"{e}")
             raise
 
-    def close(self) -> None:
-        pass
-
     def has_collection(self, collection_name: str) -> bool:
+        """Check if the collection exists."""
         try:
             exists = (
                 self.session.query(DocumentChunk)
@@ -382,9 +400,10 @@ class PgvectorClient:
             )
             return exists
         except Exception as e:
-            print(f"Error checking collection existence: {e}")
+            logger.exception(f"{e}")
             return False
 
     def delete_collection(self, collection_name: str) -> None:
+        """Delete all items in the collection."""
         self.delete(collection_name)
-        print(f"Collection '{collection_name}' deleted.")
+        logger.info(f"Collection '{collection_name}' deleted.")

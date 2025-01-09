@@ -241,9 +241,9 @@ async def speech(request: Request, user=Depends(get_verified_user)):
         raise HTTPException(status_code=401, detail=ERROR_MESSAGES.OPENAI_NOT_FOUND)
 
 
-async def get_all_models_responses(request: Request) -> list:
+async def get_all_models_responses(request: Request, config: ConfigData) -> list:
     """Get all models from OpenAI API."""
-    if not request.app.state.config.ENABLE_OPENAI_API:
+    if not config.openai.enable:
         return []
 
     # Check if API KEYS length is same than API URLS length
@@ -335,14 +335,14 @@ async def get_filtered_models(models, user):
 
 
 @cached(ttl=3)
-async def get_all_models(request: Request) -> dict[str, list]:
+async def get_all_models(request: Request, config: ConfigDep) -> dict[str, list]:
     """Get all models from OpenAI API."""
     logger.info("get_all_models()")
 
-    if not request.app.state.config.ENABLE_OPENAI_API:
+    if not config.openai.enable:
         return {"data": []}
 
-    responses = await get_all_models_responses(request)
+    responses = await get_all_models_responses(request, config)
 
     def extract_data(response):
         if response and "data" in response:
@@ -395,7 +395,11 @@ async def get_all_models(request: Request) -> dict[str, list]:
 @router.get("/models")
 @router.get("/models/{url_idx}")
 async def get_models(
-    request: Request, url_idx: Optional[int] = None, user=Depends(get_verified_user)
+    *,
+    request: Request,
+    url_idx: Optional[int] = None,
+    config: ConfigDep,
+    user=Depends(get_verified_user),
 ):
     """Get all models from OpenAI API."""
     models = {
@@ -403,7 +407,7 @@ async def get_models(
     }
 
     if url_idx is None:
-        models = await get_all_models(request)
+        models = await get_all_models(request, config)
     else:
         url = request.app.state.config.OPENAI_API_BASE_URLS[url_idx]
         key = request.app.state.config.OPENAI_API_KEYS[url_idx]

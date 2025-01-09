@@ -25,7 +25,6 @@ from open_webui.config import (
     DEFAULT_LOCALE,
     RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE,
     RAG_RERANKING_MODEL_TRUST_REMOTE_CODE,
-    UPLOAD_DIR,
 )
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import DEVICE_TYPE, env
@@ -59,7 +58,6 @@ from open_webui.retrieval.web.serply import search_serply
 from open_webui.retrieval.web.serpstack import search_serpstack
 from open_webui.retrieval.web.tavily import search_tavily
 from open_webui.retrieval.web.utils import get_web_loader
-from open_webui.storage.provider import Storage
 from open_webui.utils.auth import get_admin_user, get_verified_user
 from open_webui.utils.misc import (
     calculate_sha256_string,
@@ -887,7 +885,6 @@ async def process_file(
             # Usage: /files/
             file_path = file.path
             if file_path:
-                file_path = Storage.get_file(file_path)
                 loader = Loader(
                     engine=request.app.state.config.CONTENT_EXTRACTION_ENGINE,
                     TIKA_SERVER_URL=request.app.state.config.TIKA_SERVER_URL,
@@ -1430,7 +1427,7 @@ def reset_vector_db(user=Depends(get_admin_user)):
 @router.post("/reset/uploads")
 def reset_upload_dir(user=Depends(get_admin_user)) -> bool:
     """Reset the upload directory."""
-    folder = f"{UPLOAD_DIR}"
+    folder = env.UPLOAD_DIR
     try:
         # Check if the directory exists
         if os.path.exists(folder):

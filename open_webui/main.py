@@ -82,8 +82,6 @@ from open_webui.config import (
     ENABLE_LDAP,
     ENABLE_LOGIN_FORM,
     ENABLE_MESSAGE_RATING,
-    # Ollama
-    ENABLE_OLLAMA_API,
     # OpenAI
     ENABLE_RAG_HYBRID_SEARCH,
     ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION,
@@ -152,7 +150,6 @@ from open_webui.config import (
     SERPSTACK_API_KEY,
     SERPSTACK_HTTPS,
     SHOW_ADMIN_DETAILS,
-    STATIC_DIR,
     TAGS_GENERATION_PROMPT_TEMPLATE,
     # Tasks
     TASK_MODEL,
@@ -278,7 +275,6 @@ app = FastAPI(
 )
 
 app.state.config = AppConfig()
-app.state.config.ENABLE_OLLAMA_API = ENABLE_OLLAMA_API
 app.state.config.OLLAMA_BASE_URLS = OLLAMA_BASE_URLS
 app.state.config.OLLAMA_API_CONFIGS = OLLAMA_API_CONFIGS
 app.state.OLLAMA_MODELS = {}
@@ -576,7 +572,7 @@ async def get_models(
 
         return filtered_models
 
-    models = await get_all_models(request)
+    models = await get_all_models(request, config)
 
     # Filter out filter pipelines
     models = [
@@ -604,9 +600,11 @@ async def get_models(
 
 
 @app.get("/api/models/base")
-async def get_base_models(request: Request, user=Depends(get_admin_user)):
+async def get_base_models(
+    request: Request, config: ConfigDep, user=Depends(get_admin_user)
+):
     """Get all base models."""
-    models = await get_all_base_models(request)
+    models = await get_all_base_models(request, config)
     return {"data": models}
 
 
@@ -614,11 +612,12 @@ async def get_base_models(request: Request, user=Depends(get_admin_user)):
 async def chat_completion(
     request: Request,
     form_data: dict,
+    config: ConfigDep,
     user=Depends(get_verified_user),
 ):
     """Handle chat completions."""
     if not request.app.state.MODELS:
-        await get_all_models(request)
+        await get_all_models(request, config)
 
     tasks = form_data.pop("background_tasks", None)
     try:
@@ -990,7 +989,7 @@ async def healthcheck_with_db():  # noqa: D103
     return {"status": True}
 
 
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/static", StaticFiles(directory=env.STATIC_DIR), name="static")
 app.mount("/cache", StaticFiles(directory=CACHE_DIR), name="cache")
 
 
