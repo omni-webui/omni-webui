@@ -1,65 +1,48 @@
+"""SocketIO server for handling real-time communication between clients."""
+
 import asyncio
-import socketio
-import logging
-import sys
 import time
 
-from open_webui.models.users import Users, UserNameResponse
-from open_webui.models.channels import Channels
-from open_webui.models.chats import Chats
+import socketio
+from loguru import logger
 
 from open_webui.env import (
     ENABLE_WEBSOCKET_SUPPORT,
     WEBSOCKET_MANAGER,
-    WEBSOCKET_REDIS_URL,
+    env,
 )
-from open_webui.utils.auth import decode_token
+from open_webui.models.channels import Channels
+from open_webui.models.chats import Chats
+from open_webui.models.users import UserNameResponse, Users
 from open_webui.socket.utils import RedisDict, RedisLock
-
-from open_webui.env import (
-    GLOBAL_LOG_LEVEL,
-    SRC_LOG_LEVELS,
-)
-
-
-logging.basicConfig(stream=sys.stdout, level=GLOBAL_LOG_LEVEL)
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["SOCKET"])
-
+from open_webui.utils.auth import decode_token
 
 if WEBSOCKET_MANAGER == "redis":
-    mgr = socketio.AsyncRedisManager(WEBSOCKET_REDIS_URL)
-    sio = socketio.AsyncServer(
-        cors_allowed_origins=[],
-        async_mode="asgi",
-        transports=(["websocket"] if ENABLE_WEBSOCKET_SUPPORT else ["polling"]),
-        allow_upgrades=ENABLE_WEBSOCKET_SUPPORT,
-        always_connect=True,
-        client_manager=mgr,
-    )
+    client_manager = socketio.AsyncRedisManager(env.REDIS_URL)
 else:
-    sio = socketio.AsyncServer(
-        cors_allowed_origins=[],
-        async_mode="asgi",
-        transports=(["websocket"] if ENABLE_WEBSOCKET_SUPPORT else ["polling"]),
-        allow_upgrades=ENABLE_WEBSOCKET_SUPPORT,
-        always_connect=True,
-    )
+    client_manager = None
 
-
+sio = socketio.AsyncServer(
+    client_manager=client_manager,
+    cors_allowed_origins=[],
+    async_mode="asgi",
+    transports=(["websocket"] if ENABLE_WEBSOCKET_SUPPORT else ["polling"]),
+    allow_upgrades=ENABLE_WEBSOCKET_SUPPORT,
+    always_connect=True,
+)
 # Timeout duration in seconds
 TIMEOUT_DURATION = 3
 
 # Dictionary to maintain the user pool
 
 if WEBSOCKET_MANAGER == "redis":
-    log.debug("Using Redis to manage websockets.")
-    SESSION_POOL = RedisDict("open-webui:session_pool", redis_url=WEBSOCKET_REDIS_URL)
-    USER_POOL = RedisDict("open-webui:user_pool", redis_url=WEBSOCKET_REDIS_URL)
-    USAGE_POOL = RedisDict("open-webui:usage_pool", redis_url=WEBSOCKET_REDIS_URL)
+    logger.debug("Using Redis to manage websockets.")
+    SESSION_POOL = RedisDict("open-webui:session_pool", redis_url=env.REDIS_URL)
+    USER_POOL = RedisDict("open-webui:user_pool", redis_url=env.REDIS_URL)
+    USAGE_POOL = RedisDict("open-webui:usage_pool", redis_url=env.REDIS_URL)
 
     clean_up_lock = RedisLock(
-        redis_url=WEBSOCKET_REDIS_URL,
+        redis_url=env.REDIS_URL,
         lock_name="usage_cleanup_lock",
         timeout_secs=TIMEOUT_DURATION * 2,
     )
@@ -74,14 +57,17 @@ else:
 
 
 async def periodic_usage_pool_cleanup():
+    """Periodically clean up the usage pool."""
     if not aquire_func():
-        log.debug("Usage pool cleanup lock already exists. Not running it.")
+        logger.debug("Usage pool cleanup lock already exists. Not running it.")
         return
-    log.debug("Running periodic_usage_pool_cleanup")
+    logger.debug("Running periodic_usage_pool_cleanup")
     try:
         while True:
             if not renew_func():
-                log.error(f"Unable to renew cleanup lock. Exiting usage pool cleanup.")
+                logger.error(
+                    "Unable to renew cleanup lock. Exiting usage pool cleanup."
+                )
                 raise Exception("Unable to renew usage pool cleanup lock.")
 
             now = int(time.time())
@@ -98,7 +84,7 @@ async def periodic_usage_pool_cleanup():
                     del connections[sid]
 
                 if not connections:
-                    log.debug(f"Cleaning up model {model_id} from usage pool")
+                    logger.debug(f"Cleaning up model {model_id} from usage pool")
                     del USAGE_POOL[model_id]
                 else:
                     USAGE_POOL[model_id] = connections
@@ -121,13 +107,14 @@ app = socketio.ASGIApp(
 
 
 def get_models_in_use():
+    """Get the list of models that are currently in use."""
     # List models that are currently in use
-    models_in_use = list(USAGE_POOL.keys())
-    return models_in_use
+    return list(USAGE_POOL.keys())  # type: ignore
 
 
-@sio.on("usage")
+@sio.on("usage")  # type: ignore
 async def usage(sid, data):
+    """Usage event."""
     model_id = data["model"]
     # Record the timestamp for the last update
     current_time = int(time.time())
@@ -144,6 +131,7 @@ async def usage(sid, data):
 
 @sio.event
 async def connect(sid, environ, auth):
+    """Connect event."""
     user = None
     if auth and "token" in auth:
         data = decode_token(auth["token"])
@@ -159,13 +147,13 @@ async def connect(sid, environ, auth):
                 USER_POOL[user.id] = [sid]
 
             # print(f"user {user.name}({user.id}) connected with session ID {sid}")
-            await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
+            await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})  # type: ignore
             await sio.emit("usage", {"models": get_models_in_use()})
 
 
-@sio.on("user-join")
+@sio.on("user-join")  # type: ignore
 async def user_join(sid, data):
-
+    """User join event."""
     auth = data["auth"] if "auth" in data else None
     if not auth or "token" not in auth:
         return
@@ -186,18 +174,19 @@ async def user_join(sid, data):
 
     # Join all the channels
     channels = Channels.get_channels_by_user_id(user.id)
-    log.debug(f"{channels=}")
+    logger.debug(f"{channels=}")
     for channel in channels:
         await sio.enter_room(sid, f"channel:{channel.id}")
 
     # print(f"user {user.name}({user.id}) connected with session ID {sid}")
 
-    await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
+    await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})  # type: ignore
     return {"id": user.id, "name": user.name}
 
 
-@sio.on("join-channels")
+@sio.on("join-channels")  # type: ignore
 async def join_channel(sid, data):
+    """Join the channels."""
     auth = data["auth"] if "auth" in data else None
     if not auth or "token" not in auth:
         return
@@ -212,13 +201,14 @@ async def join_channel(sid, data):
 
     # Join all the channels
     channels = Channels.get_channels_by_user_id(user.id)
-    log.debug(f"{channels=}")
+    logger.debug(f"{channels=}")
     for channel in channels:
         await sio.enter_room(sid, f"channel:{channel.id}")
 
 
-@sio.on("channel-events")
+@sio.on("channel-events")  # type: ignore
 async def channel_events(sid, data):
+    """Channel events."""
     room = f"channel:{data['channel_id']}"
     participants = sio.manager.get_participants(
         namespace="/",
@@ -245,13 +235,15 @@ async def channel_events(sid, data):
         )
 
 
-@sio.on("user-list")
+@sio.on("user-list")  # type: ignore
 async def user_list(sid):
-    await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
+    """User list event."""
+    await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})  # type: ignore
 
 
 @sio.event
 async def disconnect(sid):
+    """Disconnect event."""
     if sid in SESSION_POOL:
         user = SESSION_POOL[sid]
         del SESSION_POOL[sid]
@@ -262,17 +254,16 @@ async def disconnect(sid):
         if len(USER_POOL[user_id]) == 0:
             del USER_POOL[user_id]
 
-        await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})
-    else:
-        pass
-        # print(f"Unknown session ID {sid} disconnected")
+        await sio.emit("user-list", {"user_ids": list(USER_POOL.keys())})  # type: ignore
 
 
 def get_event_emitter(request_info):
+    """Get the event emitter function."""
+
     async def __event_emitter__(event_data):
         user_id = request_info["user_id"]
         session_ids = list(
-            set(USER_POOL.get(user_id, []) + [request_info["session_id"]])
+            set(USER_POOL.get(user_id, []) + [request_info["session_id"]])  # type: ignore
         )
 
         for session_id in session_ids:
@@ -299,7 +290,7 @@ def get_event_emitter(request_info):
                 request_info["message_id"],
             )
 
-            content = message.get("content", "")
+            content = message.get("content", "")  # type: ignore
             content += event_data.get("data", {}).get("content", "")
 
             Chats.upsert_message_to_chat_by_id_and_message_id(
@@ -325,6 +316,8 @@ def get_event_emitter(request_info):
 
 
 def get_event_call(request_info):
+    """Get the event call function."""
+
     async def __event_call__(event_data):
         response = await sio.call(
             "chat-events",
@@ -341,6 +334,7 @@ def get_event_call(request_info):
 
 
 def get_user_id_from_session_pool(sid):
+    """Get the user id from the session pool."""
     user = SESSION_POOL.get(sid)
     if user:
         return user["id"]
@@ -348,6 +342,7 @@ def get_user_id_from_session_pool(sid):
 
 
 def get_user_ids_from_room(room):
+    """Get the user ids from the room."""
     active_session_ids = sio.manager.get_participants(
         namespace="/",
         room=room,
@@ -355,13 +350,12 @@ def get_user_ids_from_room(room):
 
     active_user_ids = list(
         set(
-            [SESSION_POOL.get(session_id[0])["id"] for session_id in active_session_ids]
+            [SESSION_POOL.get(session_id[0])["id"] for session_id in active_session_ids]  # type: ignore
         )
     )
     return active_user_ids
 
 
 def get_active_status_by_user_id(user_id):
-    if user_id in USER_POOL:
-        return True
-    return False
+    """Get the active status by user id."""
+    return user_id in USER_POOL

@@ -1,91 +1,57 @@
-import time
-import logging
-import sys
+"""Middleware functions for the FastAPI application."""
 
 import asyncio
-from aiocache import cached
-from typing import Any, Optional
-import random
-import json
 import inspect
-from uuid import uuid4
+import json
 from concurrent.futures import ThreadPoolExecutor
+from typing import Optional, cast
+from uuid import uuid4
 
-
+import jinja2
 from fastapi import Request
-from fastapi import BackgroundTasks
+from loguru import logger
+from starlette.responses import StreamingResponse
 
-from starlette.responses import Response, StreamingResponse
-
-
+from open_webui.config import DEFAULT_TOOLS_FUNCTION_CALLING_PROMPT_TEMPLATE, ConfigData
+from open_webui.constants import TASKS
+from open_webui.env import ENABLE_REALTIME_CHAT_SAVE
 from open_webui.models.chats import Chats
-from open_webui.models.users import Users
-from open_webui.socket.main import (
-    get_event_call,
-    get_event_emitter,
-    get_active_status_by_user_id,
-)
+from open_webui.models.functions import Functions
+from open_webui.models.users import UserModel, Users
+from open_webui.retrieval.utils import get_sources_from_files
+from open_webui.routers.retrieval import SearchForm, process_web_search
 from open_webui.routers.tasks import (
+    generate_chat_tags,
     generate_queries,
     generate_title,
-    generate_chat_tags,
 )
-from open_webui.routers.retrieval import process_web_search, SearchForm
+from open_webui.socket.main import (
+    get_active_status_by_user_id,
+    get_event_call,
+    get_event_emitter,
+)
+from open_webui.tasks import create_task
+from open_webui.utils.chat import generate_chat_completion
+from open_webui.utils.misc import (
+    add_or_update_system_message,
+    get_last_user_message,
+    get_message_list,
+    prepend_to_first_user_message_content,
+)
+from open_webui.utils.plugin import load_function_module_by_id
+from open_webui.utils.task import (
+    get_task_model_id,
+    tools_function_calling_generation_template,
+)
+from open_webui.utils.tools import get_tools
 from open_webui.utils.webhook import post_webhook
 
 
-from open_webui.models.users import UserModel
-from open_webui.models.functions import Functions
-from open_webui.models.models import Models
-
-from open_webui.retrieval.utils import get_sources_from_files
-
-
-from open_webui.utils.chat import generate_chat_completion
-from open_webui.utils.task import (
-    get_task_model_id,
-    rag_template,
-    tools_function_calling_generation_template,
-)
-from open_webui.utils.misc import (
-    get_message_list,
-    add_or_update_system_message,
-    get_last_user_message,
-    get_last_assistant_message,
-    prepend_to_first_user_message_content,
-)
-from open_webui.utils.tools import get_tools
-from open_webui.utils.plugin import load_function_module_by_id
-
-
-from open_webui.tasks import create_task
-
-from open_webui.config import DEFAULT_TOOLS_FUNCTION_CALLING_PROMPT_TEMPLATE
-from open_webui.env import (
-    SRC_LOG_LEVELS,
-    GLOBAL_LOG_LEVEL,
-    BYPASS_MODEL_ACCESS_CONTROL,
-    ENABLE_REALTIME_CHAT_SAVE,
-)
-from open_webui.constants import TASKS
-
-
-logging.basicConfig(stream=sys.stdout, level=GLOBAL_LOG_LEVEL)
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MAIN"])
-
-
 async def chat_completion_filter_functions_handler(request, body, model, extra_params):
+    """Apply filter functions to the chat completion response."""
     skip_files = None
 
     def get_filter_function_ids(model):
-        def get_priority(function_id):
-            function = Functions.get_function_by_id(function_id)
-            if function is not None and hasattr(function, "valves"):
-                # TODO: Fix FunctionModel
-                return (function.valves if function.valves else {}).get("priority", 0)
-            return 0
-
         filter_ids = [
             function.id for function in Functions.get_global_filter_functions()
         ]
@@ -102,7 +68,6 @@ async def chat_completion_filter_functions_handler(request, body, model, extra_p
             filter_id for filter_id in filter_ids if filter_id in enabled_filter_ids
         ]
 
-        filter_ids.sort(key=get_priority)
         return filter_ids
 
     filter_ids = get_filter_function_ids(model)
@@ -129,38 +94,33 @@ async def chat_completion_filter_functions_handler(request, body, model, extra_p
             )
 
         if hasattr(function_module, "inlet"):
-            try:
-                inlet = function_module.inlet
+            inlet = function_module.inlet
 
-                # Create a dictionary of parameters to be passed to the function
-                params = {"body": body} | {
-                    k: v
-                    for k, v in {
-                        **extra_params,
-                        "__model__": model,
-                        "__id__": filter_id,
-                    }.items()
-                    if k in inspect.signature(inlet).parameters
-                }
+            # Create a dictionary of parameters to be passed to the function
+            params = {"body": body} | {
+                k: v
+                for k, v in {
+                    **extra_params,
+                    "__model__": model,
+                    "__id__": filter_id,
+                }.items()
+                if k in inspect.signature(inlet).parameters
+            }
 
-                if "__user__" in params and hasattr(function_module, "UserValves"):
-                    try:
-                        params["__user__"]["valves"] = function_module.UserValves(
-                            **Functions.get_user_valves_by_id_and_user_id(
-                                filter_id, params["__user__"]["id"]
-                            )
+            if "__user__" in params and hasattr(function_module, "UserValves"):
+                try:
+                    params["__user__"]["valves"] = function_module.UserValves(
+                        **Functions.get_user_valves_by_id_and_user_id(
+                            filter_id, params["__user__"]["id"]
                         )
-                    except Exception as e:
-                        print(e)
+                    )
+                except Exception as e:
+                    logger.exception(str(e))
 
-                if inspect.iscoroutinefunction(inlet):
-                    body = await inlet(**params)
-                else:
-                    body = inlet(**params)
-
-            except Exception as e:
-                print(f"Error: {e}")
-                raise e
+            if inspect.iscoroutinefunction(inlet):
+                body = await inlet(**params)
+            else:
+                body = inlet(**params)
 
     if skip_files and "files" in body.get("metadata", {}):
         del body["metadata"]["files"]
@@ -171,6 +131,8 @@ async def chat_completion_filter_functions_handler(request, body, model, extra_p
 async def chat_completion_tools_handler(
     request: Request, body: dict, user: UserModel, models, extra_params: dict
 ) -> tuple[dict, dict]:
+    """Apply tools to the chat completion response."""
+
     async def get_content_from_response(response) -> Optional[str]:
         content = None
         if hasattr(response, "body_iterator"):
@@ -208,7 +170,7 @@ async def chat_completion_tools_handler(
     metadata = body.get("metadata", {})
 
     tool_ids = metadata.get("tool_ids", None)
-    log.debug(f"{tool_ids=}")
+    logger.debug(f"{tool_ids=}")
     if not tool_ids:
         return body, {}
 
@@ -232,7 +194,7 @@ async def chat_completion_tools_handler(
             "__files__": metadata.get("files", []),
         },
     )
-    log.info(f"{tools=}")
+    logger.info(f"{tools=}")
 
     specs = [tool["spec"] for tool in tools.values()]
     tools_specs = json.dumps(specs)
@@ -245,16 +207,16 @@ async def chat_completion_tools_handler(
     tools_function_calling_prompt = tools_function_calling_generation_template(
         template, tools_specs
     )
-    log.info(f"{tools_function_calling_prompt=}")
+    logger.info(f"{tools_function_calling_prompt=}")
     payload = get_tools_function_calling_payload(
         body["messages"], task_model_id, tools_function_calling_prompt
     )
 
     try:
         response = await generate_chat_completion(request, form_data=payload, user=user)
-        log.debug(f"{response=}")
+        logger.debug(f"{response=}")
         content = await get_content_from_response(response)
-        log.debug(f"{content=}")
+        logger.debug(f"{content=}")
 
         if not content:
             return body, {}
@@ -322,13 +284,13 @@ async def chat_completion_tools_handler(
                     skip_files = True
 
         except Exception as e:
-            log.exception(f"Error: {e}")
+            logger.exception(f"Error: {e}")
             content = None
     except Exception as e:
-        log.exception(f"Error: {e}")
+        logger.exception(f"Error: {e}")
         content = None
 
-    log.debug(f"tool_contexts: {sources}")
+    logger.debug(f"tool_contexts: {sources}")
 
     if skip_files and "files" in body.get("metadata", {}):
         del body["metadata"]["files"]
@@ -339,6 +301,7 @@ async def chat_completion_tools_handler(
 async def chat_web_search_handler(
     request: Request, form_data: dict, extra_params: dict, user
 ):
+    """Handle web search for chat completion."""
     event_emitter = extra_params["__event_emitter__"]
     await event_emitter(
         {
@@ -356,15 +319,18 @@ async def chat_web_search_handler(
 
     queries = []
     try:
-        res = await generate_queries(
-            request,
-            {
-                "model": form_data["model"],
-                "messages": messages,
-                "prompt": user_message,
-                "type": "web_search",
-            },
-            user,
+        res = cast(
+            dict,
+            await generate_queries(
+                request,
+                {
+                    "model": form_data["model"],
+                    "messages": messages,
+                    "prompt": user_message,
+                    "type": "web_search",
+                },
+                user,
+            ),
         )
 
         response = res["choices"][0]["message"]["content"]
@@ -379,11 +345,11 @@ async def chat_web_search_handler(
             response = response[bracket_start:bracket_end]
             queries = json.loads(response)
             queries = queries.get("queries", [])
-        except Exception as e:
+        except Exception:
             queries = [response]
 
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         queries = [user_message]
 
     if len(queries) == 0:
@@ -414,7 +380,6 @@ async def chat_web_search_handler(
     )
 
     try:
-
         # Offload process_web_search to a separate thread
         loop = asyncio.get_running_loop()
         with ThreadPoolExecutor() as executor:
@@ -422,11 +387,7 @@ async def chat_web_search_handler(
                 executor,
                 lambda: process_web_search(
                     request,
-                    SearchForm(
-                        **{
-                            "query": searchQuery,
-                        }
-                    ),
+                    SearchForm(query=searchQuery),  # type: ignore
                     user,
                 ),
             )
@@ -469,7 +430,7 @@ async def chat_web_search_handler(
                 }
             )
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
         await event_emitter(
             {
                 "type": "status",
@@ -489,18 +450,22 @@ async def chat_web_search_handler(
 async def chat_completion_files_handler(
     request: Request, body: dict, user: UserModel
 ) -> tuple[dict, dict[str, list]]:
+    """Apply files to the chat completion response."""
     sources = []
 
     if files := body.get("metadata", {}).get("files", None):
         try:
-            queries_response = await generate_queries(
-                request,
-                {
-                    "model": body["model"],
-                    "messages": body["messages"],
-                    "type": "retrieval",
-                },
-                user,
+            queries_response = cast(
+                dict,
+                await generate_queries(
+                    request,
+                    {
+                        "model": body["model"],
+                        "messages": body["messages"],
+                        "type": "retrieval",
+                    },
+                    user,
+                ),
             )
             queries_response = queries_response["choices"][0]["message"]["content"]
 
@@ -513,11 +478,11 @@ async def chat_completion_files_handler(
 
                 queries_response = queries_response[bracket_start:bracket_end]
                 queries_response = json.loads(queries_response)
-            except Exception as e:
+            except Exception:
                 queries_response = {"queries": [queries_response]}
 
             queries = queries_response.get("queries", [])
-        except Exception as e:
+        except Exception:
             queries = []
 
         if len(queries) == 0:
@@ -533,11 +498,12 @@ async def chat_completion_files_handler(
             hybrid_search=request.app.state.config.ENABLE_RAG_HYBRID_SEARCH,
         )
 
-        log.debug(f"rag_contexts:sources: {sources}")
+        logger.debug(f"rag_contexts:sources: {sources}")
     return body, {"sources": sources}
 
 
 def apply_params_to_form_data(form_data, model):
+    """Apply parameters to the form data."""
     params = form_data.pop("params", {})
     if model.get("ollama"):
         form_data["options"] = params
@@ -565,9 +531,12 @@ def apply_params_to_form_data(form_data, model):
     return form_data
 
 
-async def process_chat_payload(request, form_data, metadata, user, model):
+async def process_chat_payload(
+    request, form_data, metadata, user, model, config: ConfigData
+):
+    """Process the chat payload."""
     form_data = apply_params_to_form_data(form_data, model)
-    log.debug(f"form_data: {form_data}")
+    logger.debug(f"form_data: {form_data}")
 
     event_emitter = get_event_emitter(metadata)
     event_call = get_event_call(metadata)
@@ -666,13 +635,13 @@ async def process_chat_payload(request, form_data, metadata, user, model):
         )
         sources.extend(flags.get("sources", []))
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
 
     try:
         form_data, flags = await chat_completion_files_handler(request, form_data, user)
         sources.extend(flags.get("sources", []))
     except Exception as e:
-        log.exception(e)
+        logger.exception(e)
 
     # If context is not empty, insert it into the messages
     if len(sources) > 0:
@@ -703,23 +672,23 @@ async def process_chat_payload(request, form_data, metadata, user, model):
             request.app.state.config.RELEVANCE_THRESHOLD == 0
             and context_string.strip() == ""
         ):
-            log.debug(
-                f"With a 0 relevancy threshold for RAG, the context cannot be empty"
+            logger.debug(
+                "With a 0 relevancy threshold for RAG, the context cannot be empty"
             )
 
         # Workaround for Ollama 2.0+ system prompt issue
         # TODO: replace with add_or_update_system_message
         if model["owned_by"] == "ollama":
             form_data["messages"] = prepend_to_first_user_message_content(
-                rag_template(
-                    request.app.state.config.RAG_TEMPLATE, context_string, prompt
+                jinja2.Template(config.rag.template).render(
+                    context=context_string, query=prompt
                 ),
                 form_data["messages"],
             )
         else:
             form_data["messages"] = add_or_update_system_message(
-                rag_template(
-                    request.app.state.config.RAG_TEMPLATE, context_string, prompt
+                jinja2.Template(config.rag.template).render(
+                    context=context_string, query=prompt
                 ),
                 form_data["messages"],
             )
@@ -749,7 +718,10 @@ async def process_chat_payload(request, form_data, metadata, user, model):
 async def process_chat_response(
     request, response, form_data, user, events, metadata, tasks
 ):
+    """Process the chat response."""
+
     async def background_tasks_handler():
+        assert event_emitter is not None
         message_map = Chats.get_messages_by_chat_id(metadata["chat_id"])
         message = message_map.get(metadata["message_id"]) if message_map else None
 
@@ -780,7 +752,7 @@ async def process_chat_response(
                             ).strip()
 
                             if not title:
-                                title = messages[0].get("content", "New Chat")
+                                title = messages[0].get("content", "New Chat")  # type: ignore
 
                             Chats.update_chat_title_by_id(metadata["chat_id"], title)
 
@@ -791,7 +763,7 @@ async def process_chat_response(
                                 }
                             )
                     elif len(messages) == 2:
-                        title = messages[0].get("content", "New Chat")
+                        title = messages[0].get("content", "New Chat")  # type: ignore
 
                         Chats.update_chat_title_by_id(metadata["chat_id"], title)
 
@@ -837,7 +809,7 @@ async def process_chat_response(
                                 }
                             )
                         except Exception as e:
-                            print(f"Error: {e}")
+                            logger.exception(f"{e}")
 
     event_emitter = None
     if (
@@ -852,7 +824,6 @@ async def process_chat_response(
 
     if not isinstance(response, StreamingResponse):
         if event_emitter:
-
             if "selected_model_id" in response:
                 Chats.upsert_message_to_chat_by_id_and_message_id(
                     metadata["chat_id"],
@@ -866,7 +837,6 @@ async def process_chat_response(
                 content = response["choices"][0]["message"]["content"]
 
                 if content:
-
                     await event_emitter(
                         {
                             "type": "chat:completion",
@@ -924,7 +894,6 @@ async def process_chat_response(
         return response
 
     if event_emitter:
-
         task_id = str(uuid4())  # Create a unique task ID.
 
         # Handle as a background task
@@ -1010,7 +979,7 @@ async def process_chat_response(
                             }
                         )
 
-                    except Exception as e:
+                    except Exception:
                         done = "data: [DONE]" in line
 
                         if done:
@@ -1055,7 +1024,7 @@ async def process_chat_response(
 
                 await background_tasks_handler()
             except asyncio.CancelledError:
-                print("Task was cancelled!")
+                logger.error("Task was cancelled!")
                 await event_emitter({"type": "task-cancelled"})
 
                 if not ENABLE_REALTIME_CHAT_SAVE:
@@ -1076,7 +1045,6 @@ async def process_chat_response(
         return {"status": True, "task_id": task_id}
 
     else:
-
         # Fallback to the original response
         async def stream_wrapper(original_generator, events):
             def wrap_item(item):

@@ -1,7 +1,6 @@
 """Internal database module for the Open Web UI."""
 
 import json
-import logging
 from contextlib import contextmanager
 from typing import Any, Optional
 
@@ -12,17 +11,7 @@ from sqlalchemy.pool import NullPool, QueuePool
 from sqlalchemy.sql.type_api import _T
 from typing_extensions import Self
 
-from open_webui.env import (
-    DATABASE_POOL_MAX_OVERFLOW,
-    DATABASE_POOL_RECYCLE,
-    DATABASE_POOL_SIZE,
-    DATABASE_POOL_TIMEOUT,
-    SRC_LOG_LEVELS,
-    env,
-)
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["DB"])
+from open_webui.env import env
 
 
 class JSONField(types.TypeDecorator):
@@ -54,26 +43,20 @@ class JSONField(types.TypeDecorator):
             return json.loads(value)
 
 
-SQLALCHEMY_DATABASE_URL = env.DATABASE_URL
-if "sqlite" in SQLALCHEMY_DATABASE_URL:
+if "sqlite" in env.DATABASE_URL:
+    engine = create_engine(env.DATABASE_URL, connect_args={"check_same_thread": False})
+elif env.DATABASE_POOL_SIZE > 0:
     engine = create_engine(
-        SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+        env.DATABASE_URL,
+        pool_size=env.DATABASE_POOL_SIZE,
+        max_overflow=env.DATABASE_POOL_MAX_OVERFLOW,
+        pool_timeout=env.DATABASE_POOL_TIMEOUT,
+        pool_recycle=env.DATABASE_POOL_RECYCLE,
+        pool_pre_ping=True,
+        poolclass=QueuePool,
     )
 else:
-    if DATABASE_POOL_SIZE > 0:
-        engine = create_engine(
-            SQLALCHEMY_DATABASE_URL,
-            pool_size=DATABASE_POOL_SIZE,
-            max_overflow=DATABASE_POOL_MAX_OVERFLOW,
-            pool_timeout=DATABASE_POOL_TIMEOUT,
-            pool_recycle=DATABASE_POOL_RECYCLE,
-            pool_pre_ping=True,
-            poolclass=QueuePool,
-        )
-    else:
-        engine = create_engine(
-            SQLALCHEMY_DATABASE_URL, pool_pre_ping=True, poolclass=NullPool
-        )
+    engine = create_engine(env.DATABASE_URL, pool_pre_ping=True, poolclass=NullPool)
 
 
 SessionLocal = sessionmaker(

@@ -2,13 +2,9 @@
 
 import math
 import re
-import uuid
 from datetime import datetime
 from typing import Optional
 
-from loguru import logger
-
-from open_webui.config import DEFAULT_RAG_TEMPLATE
 from open_webui.utils.misc import get_last_user_message, get_messages_content
 
 
@@ -137,45 +133,6 @@ def replace_messages_variable(
         replacement_function,
         template,
     )
-
-    return template
-
-
-def rag_template(template: str, context: str, query: str):
-    """Replace the context and query placeholders in the RAG template."""
-    if template.strip() == "":
-        template = DEFAULT_RAG_TEMPLATE
-
-    if "[context]" not in template and "{{CONTEXT}}" not in template:
-        logger.debug(
-            "WARNING: The RAG template does not contain the '[context]' or '{{CONTEXT}}' placeholder."
-        )
-
-    if "<context>" in context and "</context>" in context:
-        logger.debug(
-            "WARNING: Potential prompt injection attack: the RAG "
-            "context contains '<context>' and '</context>'. This might be "
-            "nothing, or the user might be trying to hack something."
-        )
-
-    query_placeholders = []
-    if "[query]" in context:
-        query_placeholder = "{{QUERY" + str(uuid.uuid4()) + "}}"
-        template = template.replace("[query]", query_placeholder)
-        query_placeholders.append(query_placeholder)
-
-    if "{{QUERY}}" in context:
-        query_placeholder = "{{QUERY" + str(uuid.uuid4()) + "}}"
-        template = template.replace("{{QUERY}}", query_placeholder)
-        query_placeholders.append(query_placeholder)
-
-    template = template.replace("[context]", context)
-    template = template.replace("{{CONTEXT}}", context)
-    template = template.replace("[query]", query)
-    template = template.replace("{{QUERY}}", query)
-
-    for query_placeholder in query_placeholders:
-        template = template.replace(query_placeholder, query)
 
     return template
 

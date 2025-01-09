@@ -31,7 +31,12 @@ class Environments(BaseSettings, case_sensitive=True):
     DATA_DIR: Path = get_package_dir("open_webui") / "data"
     UPLOAD_DIR: str = ""
     STATIC_DIR: Path = get_package_dir("open_webui") / "static"
+    FONTS_DIR: Path = get_package_dir("open_webui") / "static" / "fonts"
     DATABASE_URL: str = ""
+    DATABASE_POOL_SIZE: int = 0
+    DATABASE_POOL_TIMEOUT: int = 30
+    DATABASE_POOL_RECYCLE: int = 3600
+    DATABASE_POOL_MAX_OVERFLOW: int = 0
     PGVECTOR_DB_URL: str = ""
     DOCKER: bool = False
     FRONTEND_BUILD_DIR: Path = get_package_dir("open_webui") / "frontend"
@@ -53,6 +58,9 @@ class Environments(BaseSettings, case_sensitive=True):
     WEBUI_SESSION_COOKIE_SECURE: bool = False
     WEBUI_ENV: Literal["dev", "prod"] = "dev"
     WEBUI_NAME: str = "Omni WebUI"
+    REDIS_URL: Annotated[
+        str, Field(validation_alias=AliasChoices("WEBSOCKET_REDIS_URL", "REDIS_URL"))
+    ] = "redis://localhost:6379/0"
 
     @field_validator("OPENAI_API_KEYS")
     @classmethod
@@ -138,21 +146,11 @@ for source in log_sources:
 
 WEBUI_FAVICON_URL = "https://openwebui.com/favicon.png"
 
-FROM_INIT_PY = os.environ.get("FROM_INIT_PY", "False").lower() == "true"
-
 VERSION = "0.5.4"
-
-SAFE_MODE = os.environ.get("SAFE_MODE", "false").lower() == "true"
 
 ENABLE_FORWARD_USER_INFO_HEADERS = (
     os.environ.get("ENABLE_FORWARD_USER_INFO_HEADERS", "False").lower() == "true"
 )
-
-WEBUI_BUILD_HASH = os.environ.get("WEBUI_BUILD_HASH", "dev-build")
-
-STATIC_DIR = Path(os.getenv("STATIC_DIR", OPEN_WEBUI_DIR / "static"))
-
-FONTS_DIR = Path(os.getenv("FONTS_DIR", OPEN_WEBUI_DIR / "static" / "fonts"))
 
 # Check if the file exists
 if os.path.exists(env.DATA_DIR / "ollama.db"):
@@ -182,36 +180,13 @@ else:
     except Exception:
         DATABASE_POOL_MAX_OVERFLOW = 0
 
-DATABASE_POOL_TIMEOUT = os.environ.get("DATABASE_POOL_TIMEOUT", 30)
-
-if DATABASE_POOL_TIMEOUT == "":
-    DATABASE_POOL_TIMEOUT = 30
-else:
-    try:
-        DATABASE_POOL_TIMEOUT = int(DATABASE_POOL_TIMEOUT)
-    except Exception:
-        DATABASE_POOL_TIMEOUT = 30
-
-DATABASE_POOL_RECYCLE = os.environ.get("DATABASE_POOL_RECYCLE", 3600)
-
-if DATABASE_POOL_RECYCLE == "":
-    DATABASE_POOL_RECYCLE = 3600
-else:
-    try:
-        DATABASE_POOL_RECYCLE = int(DATABASE_POOL_RECYCLE)
-    except Exception:
-        DATABASE_POOL_RECYCLE = 3600
-
 RESET_CONFIG_ON_START = (
     os.environ.get("RESET_CONFIG_ON_START", "False").lower() == "true"
 )
 
-
 ENABLE_REALTIME_CHAT_SAVE = (
     os.environ.get("ENABLE_REALTIME_CHAT_SAVE", "False").lower() == "true"
 )
-
-REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 
 WEBUI_AUTH_TRUSTED_EMAIL_HEADER = os.environ.get(
     "WEBUI_AUTH_TRUSTED_EMAIL_HEADER", None
@@ -230,8 +205,6 @@ ENABLE_WEBSOCKET_SUPPORT = (
 )
 
 WEBSOCKET_MANAGER = os.environ.get("WEBSOCKET_MANAGER", "")
-
-WEBSOCKET_REDIS_URL = os.environ.get("WEBSOCKET_REDIS_URL", REDIS_URL)
 
 AIOHTTP_CLIENT_TIMEOUT = os.environ.get("AIOHTTP_CLIENT_TIMEOUT", "")
 

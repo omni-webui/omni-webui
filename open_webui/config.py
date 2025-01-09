@@ -490,6 +490,11 @@ class RAGConfig(BaseModel):
         """Max file size in MB"""
 
     file: File = Field(default_factory=File)
+    template: str = Field(
+        default_factory=lambda: (
+            Path(__file__).parent / "templates" / "rag.j2"
+        ).read_text()
+    )
 
 
 class TaskConfig(BaseModel):
@@ -830,13 +835,6 @@ S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL", None)
 
 CACHE_DIR = env.DATA_DIR / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
-
-
-ENABLE_OLLAMA_API = PersistentConfig(
-    "ENABLE_OLLAMA_API",
-    "ollama.enable",
-    os.environ.get("ENABLE_OLLAMA_API", "True").lower() == "true",
-)
 
 OLLAMA_API_BASE_URL = os.environ.get(
     "OLLAMA_API_BASE_URL", "http://localhost:11434/api"
@@ -1542,11 +1540,7 @@ RAG_WEB_SEARCH_ENGINE = PersistentConfig(
 RAG_WEB_SEARCH_DOMAIN_FILTER_LIST = PersistentConfig(
     "RAG_WEB_SEARCH_DOMAIN_FILTER_LIST",
     "rag.rag.web.search.domain.filter_list",
-    [
-        # "wikipedia.com",
-        # "wikimedia.org",
-        # "wikidata.org",
-    ],
+    [],
 )
 
 
@@ -1660,11 +1654,6 @@ RAG_WEB_SEARCH_CONCURRENT_REQUESTS = PersistentConfig(
     "rag.web.search.concurrent_requests",
     int(os.getenv("RAG_WEB_SEARCH_CONCURRENT_REQUESTS", "10")),
 )
-
-
-####################################
-# Images
-####################################
 
 IMAGE_GENERATION_ENGINE = PersistentConfig(
     "IMAGE_GENERATION_ENGINE",

@@ -1,20 +1,17 @@
+"""PDF Generator."""
+
 from datetime import datetime
-from io import BytesIO
-from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any
 
-from markdown import markdown
-
-import site
 from fpdf import FPDF
 
-from open_webui.env import STATIC_DIR, FONTS_DIR
+from open_webui.env import env
 from open_webui.models.chats import ChatTitleMessagesForm
 
 
 class PDFGenerator:
-    """
-    Description:
+    """PDF Generator.
+
     The `PDFGenerator` class is designed to create PDF documents from chat messages.
     The process involves transforming markdown content into HTML and then into a PDF format
 
@@ -23,23 +20,23 @@ class PDFGenerator:
 
     """
 
-    def __init__(self, form_data: ChatTitleMessagesForm):
+    def __init__(self, form_data: ChatTitleMessagesForm):  # noqa: D107
         self.html_body = None
         self.messages_html = None
         self.form_data = form_data
 
-        self.css = Path(STATIC_DIR / "assets" / "pdf-style.css").read_text()
+        self.css = (env.STATIC_DIR / "assets" / "pdf-style.css").read_text()
 
     def format_timestamp(self, timestamp: float) -> str:
         """Convert a UNIX timestamp to a formatted date string."""
         try:
             date_time = datetime.fromtimestamp(timestamp)
             return date_time.strftime("%Y-%m-%d, %H:%M:%S")
-        except (ValueError, TypeError) as e:
+        except (ValueError, TypeError):
             # Log the error if necessary
             return ""
 
-    def _build_html_message(self, message: Dict[str, Any]) -> str:
+    def _build_html_message(self, message: dict[str, Any]) -> str:
         """Build HTML for a single message."""
         role = message.get("role", "user")
         content = message.get("content", "")
@@ -92,52 +89,34 @@ class PDFGenerator:
         """
 
     def generate_chat_pdf(self) -> bytes:
-        """
-        Generate a PDF from chat messages.
-        """
-        try:
-            global FONTS_DIR
+        """Generate a PDF from chat messages."""
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.add_font("NotoSans", "", f"{env.FONTS_DIR}/NotoSans-Regular.ttf")
+        pdf.add_font("NotoSans", "B", f"{env.FONTS_DIR}/NotoSans-Bold.ttf")
+        pdf.add_font("NotoSans", "I", f"{env.FONTS_DIR}/NotoSans-Italic.ttf")
+        pdf.add_font("NotoSansKR", "", f"{env.FONTS_DIR}/NotoSansKR-Regular.ttf")
+        pdf.add_font("NotoSansJP", "", f"{env.FONTS_DIR}/NotoSansJP-Regular.ttf")
+        pdf.add_font("NotoSansSC", "", f"{env.FONTS_DIR}/NotoSansSC-Regular.ttf")
+        pdf.add_font("Twemoji", "", f"{env.FONTS_DIR}/Twemoji.ttf")
 
-            pdf = FPDF()
-            pdf.add_page()
+        pdf.set_font("NotoSans", size=12)
+        pdf.set_fallback_fonts(["NotoSansKR", "NotoSansJP", "NotoSansSC", "Twemoji"])
 
-            # When running using `pip install` the static directory is in the site packages.
-            if not FONTS_DIR.exists():
-                FONTS_DIR = Path(site.getsitepackages()[0]) / "static/fonts"
-            # When running using `pip install -e .` the static directory is in the site packages.
-            # This path only works if `open-webui serve` is run from the root of this project.
-            if not FONTS_DIR.exists():
-                FONTS_DIR = Path("./backend/static/fonts")
+        pdf.set_auto_page_break(auto=True, margin=15)
 
-            pdf.add_font("NotoSans", "", f"{FONTS_DIR}/NotoSans-Regular.ttf")
-            pdf.add_font("NotoSans", "b", f"{FONTS_DIR}/NotoSans-Bold.ttf")
-            pdf.add_font("NotoSans", "i", f"{FONTS_DIR}/NotoSans-Italic.ttf")
-            pdf.add_font("NotoSansKR", "", f"{FONTS_DIR}/NotoSansKR-Regular.ttf")
-            pdf.add_font("NotoSansJP", "", f"{FONTS_DIR}/NotoSansJP-Regular.ttf")
-            pdf.add_font("NotoSansSC", "", f"{FONTS_DIR}/NotoSansSC-Regular.ttf")
-            pdf.add_font("Twemoji", "", f"{FONTS_DIR}/Twemoji.ttf")
+        # Build HTML messages
+        messages_html_list: list[str] = [
+            self._build_html_message(msg) for msg in self.form_data.messages
+        ]
+        self.messages_html = "<div>" + "".join(messages_html_list) + "</div>"
 
-            pdf.set_font("NotoSans", size=12)
-            pdf.set_fallback_fonts(
-                ["NotoSansKR", "NotoSansJP", "NotoSansSC", "Twemoji"]
-            )
+        # Generate full HTML body
+        self.html_body = self._generate_html_body()
 
-            pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.write_html(self.html_body)
 
-            # Build HTML messages
-            messages_html_list: List[str] = [
-                self._build_html_message(msg) for msg in self.form_data.messages
-            ]
-            self.messages_html = "<div>" + "".join(messages_html_list) + "</div>"
+        # Save the pdf with name .pdf
+        pdf_bytes = pdf.output()
 
-            # Generate full HTML body
-            self.html_body = self._generate_html_body()
-
-            pdf.write_html(self.html_body)
-
-            # Save the pdf with name .pdf
-            pdf_bytes = pdf.output()
-
-            return bytes(pdf_bytes)
-        except Exception as e:
-            raise e
+        return bytes(pdf_bytes)

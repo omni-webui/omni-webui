@@ -177,7 +177,6 @@ from open_webui.env import (
     ENABLE_WEBSOCKET_SUPPORT,
     OFFLINE_MODE,
     RESET_CONFIG_ON_START,
-    SAFE_MODE,
     VERSION,
     WEBUI_AUTH_TRUSTED_EMAIL_HEADER,
     WEBUI_AUTH_TRUSTED_NAME_HEADER,
@@ -185,7 +184,6 @@ from open_webui.env import (
 )
 from open_webui.internal.db import Session
 from open_webui.models import SessionDep
-from open_webui.models.functions import Functions
 from open_webui.models.models import Models
 from open_webui.models.users import Users
 from open_webui.routers import (
@@ -237,10 +235,6 @@ from open_webui.utils.models import (
 )
 from open_webui.utils.oauth import OAuthManagerDep
 from open_webui.utils.security_headers import SecurityHeadersMiddleware
-
-if SAFE_MODE:
-    logger.debug("SAFE MODE ENABLED")
-    Functions.deactivate_all_functions()
 
 
 class SPAStaticFiles(StaticFiles):
@@ -645,7 +639,7 @@ async def chat_completion(
         form_data["metadata"] = metadata
 
         form_data, events = await process_chat_payload(
-            request, form_data, metadata, user, model
+            request, form_data, metadata, user, model, config
         )
     except Exception as e:
         raise HTTPException(
