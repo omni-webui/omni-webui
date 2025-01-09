@@ -7,11 +7,11 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from open_webui.env import EnvDepends
+from open_webui.env import EnvDep
 
 
 @lru_cache
-def get_engine(env: EnvDepends) -> AsyncEngine:
+def get_engine(env: EnvDep) -> AsyncEngine:
     """Get the database engine."""
     if "sqlite" in env.DATABASE_URL and not env.DATABASE_URL.startswith("sqlite+"):
         env.DATABASE_URL = env.DATABASE_URL.replace("sqlite", "sqlite+aiosqlite")
@@ -22,13 +22,13 @@ def get_engine(env: EnvDepends) -> AsyncEngine:
     return create_async_engine(env.DATABASE_URL)
 
 
-EngineDepends = Annotated[AsyncEngine, Depends(get_engine)]
+EngineDep = Annotated[AsyncEngine, Depends(get_engine)]
 
 
-async def get_session(engine: EngineDepends):
+async def get_session(engine: EngineDep):
     """Get the database session."""
     async with AsyncSession(engine) as session:
         yield session
 
 
-SessionDepends = Annotated[AsyncSession, Depends(get_session)]
+SessionDep = Annotated[AsyncSession, Depends(get_session)]

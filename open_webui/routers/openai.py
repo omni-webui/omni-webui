@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from starlette.background import BackgroundTask
 from typing_extensions import deprecated
 
-from open_webui.config import CACHE_DIR
+from open_webui.config import CACHE_DIR, Config, ConfigData, ConfigDBDep, ConfigDep
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import (
     AIOHTTP_CLIENT_TIMEOUT,
@@ -24,6 +24,7 @@ from open_webui.env import (
     BYPASS_MODEL_ACCESS_CONTROL,
     ENABLE_FORWARD_USER_INFO_HEADERS,
 )
+from open_webui.models import SessionDep
 from open_webui.models.models import Models
 from open_webui.utils.access_control import has_access
 from open_webui.utils.auth import get_admin_user, get_verified_user
@@ -73,20 +74,14 @@ def openai_o1_handler(payload):
     return payload
 
 
-##########################################
-#
-# API routes
-#
-##########################################
-
 router = APIRouter()
 
 
 @router.get("/config")
-async def get_config(request: Request, user=Depends(get_admin_user)):
+async def get_config(request: Request, config: ConfigDep, user=Depends(get_admin_user)):
     """Get OpenAI API configuration."""
     return {
-        "ENABLE_OPENAI_API": request.app.state.config.ENABLE_OPENAI_API,
+        "ENABLE_OPENAI_API": config.openai.enable,
         "OPENAI_API_BASE_URLS": request.app.state.config.OPENAI_API_BASE_URLS,
         "OPENAI_API_KEYS": request.app.state.config.OPENAI_API_KEYS,
         "OPENAI_API_CONFIGS": request.app.state.config.OPENAI_API_CONFIGS,
@@ -104,10 +99,19 @@ class OpenAIConfigForm(BaseModel):
 
 @router.post("/config/update")
 async def update_config(
-    request: Request, form_data: OpenAIConfigForm, user=Depends(get_admin_user)
+    request: Request,
+    form_data: OpenAIConfigForm,
+    session: SessionDep,
+    config_db: ConfigDBDep,
+    user=Depends(get_admin_user),
 ):
     """Update OpenAI API configuration."""
-    request.app.state.config.ENABLE_OPENAI_API = form_data.ENABLE_OPENAI_API
+    if config_db is None:
+        config = ConfigData()
+        config_db = Config(data=config)
+    else:
+        config = config_db.data
+    config.openai.enable = form_data.ENABLE_OPENAI_API or config.openai.enable
     request.app.state.config.OPENAI_API_BASE_URLS = form_data.OPENAI_API_BASE_URLS
     request.app.state.config.OPENAI_API_KEYS = form_data.OPENAI_API_KEYS
 
@@ -137,8 +141,13 @@ async def update_config(
         if url not in config_urls:
             request.app.state.config.OPENAI_API_CONFIGS.pop(url, None)
 
+    config_db.data = config
+    session.add(config_db)
+    await session.commit()
+    await session.refresh(config_db)
+    config = config_db.data
     return {
-        "ENABLE_OPENAI_API": request.app.state.config.ENABLE_OPENAI_API,
+        "ENABLE_OPENAI_API": config.openai.enable,
         "OPENAI_API_BASE_URLS": request.app.state.config.OPENAI_API_BASE_URLS,
         "OPENAI_API_KEYS": request.app.state.config.OPENAI_API_KEYS,
         "OPENAI_API_CONFIGS": request.app.state.config.OPENAI_API_CONFIGS,

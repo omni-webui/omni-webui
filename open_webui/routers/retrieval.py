@@ -29,7 +29,7 @@ from open_webui.config import (
 )
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import DEVICE_TYPE, env
-from open_webui.models import SessionDepends
+from open_webui.models import SessionDep
 from open_webui.models.file import File as FileModel
 from open_webui.models.knowledge import Knowledges
 from open_webui.retrieval.loaders.main import Loader
@@ -812,7 +812,7 @@ class ProcessFileForm(BaseModel):
 async def process_file(
     request: Request,
     form_data: ProcessFileForm,
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ):
     """Process file and save the content to the database."""
@@ -1399,7 +1399,7 @@ class DeleteForm(BaseModel):
 
 @router.post("/delete")
 async def delete_entries_from_collection(
-    form_data: DeleteForm, session: SessionDepends, user=Depends(get_admin_user)
+    form_data: DeleteForm, session: SessionDep, user=Depends(get_admin_user)
 ):
     """Delete entries from a collection in the vector database."""
     try:
@@ -1485,7 +1485,7 @@ class BatchProcessFilesResponse(BaseModel):
 async def process_files_batch(
     request: Request,
     form_data: BatchProcessFilesForm,
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ) -> BatchProcessFilesResponse:
     """Process a batch of files and save them to the vector database."""

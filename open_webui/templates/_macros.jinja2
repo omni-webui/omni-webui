@@ -1,0 +1,5 @@
+{% macro render_messages(messages) %}
+{% for message in messages %}
+{{ message.role|upper }}: {{ message.content if message.content is string else message.content|selectattr("type", "equalto", "text")|attr("text")|join("") }}
+{% endfor %}
+{% endmacro %}

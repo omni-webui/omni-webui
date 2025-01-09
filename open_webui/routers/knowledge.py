@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from sqlmodel import col, select
 
 from open_webui.constants import ERROR_MESSAGES
-from open_webui.models import SessionDepends
+from open_webui.models import SessionDep
 from open_webui.models.file import File as FileModel
 from open_webui.models.knowledge import (
     KnowledgeForm,
@@ -31,7 +31,7 @@ router = APIRouter()
 
 
 @router.get("/", response_model=list[KnowledgeUserResponse])
-async def get_knowledge(session: SessionDepends, user=Depends(get_verified_user)):
+async def get_knowledge(session: SessionDep, user=Depends(get_verified_user)):
     """Get knowledge bases."""
     knowledge_bases = []
 
@@ -95,7 +95,7 @@ async def get_knowledge(session: SessionDepends, user=Depends(get_verified_user)
 
 @router.get("/list", response_model=list[KnowledgeUserResponse])
 async def get_knowledge_list(
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ):
     """Get a list of knowledge bases."""
@@ -196,7 +196,7 @@ class KnowledgeFilesResponse(KnowledgeModel):
 @router.get("/{id}", response_model=Optional[KnowledgeFilesResponse])
 async def get_knowledge_by_id(
     id: str,
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ):
     """Get a knowledge base by ID."""
@@ -227,7 +227,7 @@ async def get_knowledge_by_id(
 async def update_knowledge_by_id(
     id: str,
     form_data: KnowledgeForm,
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ):
     """Update a knowledge base by ID."""
@@ -277,7 +277,7 @@ async def add_file_to_knowledge_by_id(
     request: Request,
     id: str,
     form_data: KnowledgeFileIdForm,
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ):
     """Add a file to a knowledge base."""
@@ -366,7 +366,7 @@ async def update_file_from_knowledge_by_id(
     request: Request,
     id: str,
     form_data: KnowledgeFileIdForm,
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ):
     """Update a file in a knowledge base."""
@@ -435,7 +435,7 @@ async def update_file_from_knowledge_by_id(
 async def remove_file_from_knowledge_by_id(
     id: str,
     form_data: KnowledgeFileIdForm,
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ):
     """Remove a file from a knowledge base."""
@@ -561,7 +561,7 @@ async def add_files_to_knowledge_batch(
     request: Request,
     id: str,
     form_data: list[KnowledgeFileIdForm],
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ):
     """Add multiple files to a knowledge base."""

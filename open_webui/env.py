@@ -31,6 +31,7 @@ class Environments(BaseSettings, case_sensitive=True):
     DATA_DIR: Path = get_package_dir("open_webui") / "data"
     DATABASE_URL: str = ""
     DOCKER: bool = False
+    FRONTEND_BUILD_DIR: Path = get_package_dir("open_webui") / "frontend"
     OPENAI_API_KEY: str = ""
     OPENAI_API_KEYS: Annotated[list[str], NoDecode] = Field(default_factory=list)
     OPENAI_BASE_URL: Annotated[
@@ -67,13 +68,9 @@ class Environments(BaseSettings, case_sensitive=True):
 
 
 env = Environments()
-EnvDepends = Annotated[Environments, Depends(lambda: env)]
+EnvDep = Annotated[Environments, Depends(lambda: env)]
 
 OPEN_WEBUI_DIR = Path(__file__).parent  # the path containing this file
-BACKEND_DIR = OPEN_WEBUI_DIR.parent  # the path containing this file
-
-
-DOCKER = os.environ.get("DOCKER", "False").lower() == "true"
 
 
 def get_device_type() -> Literal["cpu", "cuda", "mps"]:
@@ -149,16 +146,6 @@ WEBUI_BUILD_HASH = os.environ.get("WEBUI_BUILD_HASH", "dev-build")
 STATIC_DIR = Path(os.getenv("STATIC_DIR", OPEN_WEBUI_DIR / "static"))
 
 FONTS_DIR = Path(os.getenv("FONTS_DIR", OPEN_WEBUI_DIR / "static" / "fonts"))
-
-FRONTEND_BUILD_DIR = Path(
-    os.getenv("FRONTEND_BUILD_DIR", BACKEND_DIR / "build")
-).resolve()
-
-if FROM_INIT_PY:
-    FRONTEND_BUILD_DIR = Path(
-        os.getenv("FRONTEND_BUILD_DIR", OPEN_WEBUI_DIR / "frontend")
-    ).resolve()
-
 
 # Check if the file exists
 if os.path.exists(env.DATA_DIR / "ollama.db"):

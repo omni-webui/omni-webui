@@ -1,24 +1,21 @@
-import logging
+"""Utility functions for task-related operations."""
+
 import math
 import re
+import uuid
 from datetime import datetime
 from typing import Optional
-import uuid
 
+from loguru import logger
 
-from open_webui.utils.misc import get_last_user_message, get_messages_content
-
-from open_webui.env import SRC_LOG_LEVELS
 from open_webui.config import DEFAULT_RAG_TEMPLATE
-
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["RAG"])
+from open_webui.utils.misc import get_last_user_message, get_messages_content
 
 
 def get_task_model_id(
     default_model_id: str, task_model: str, task_model_external: str, models
 ) -> str:
+    """Get the task model ID."""
     # Set the task model
     task_model_id = default_model_id
     # Check if the user has a custom task model and use that model
@@ -35,6 +32,7 @@ def get_task_model_id(
 def prompt_template(
     template: str, user_name: Optional[str] = None, user_location: Optional[str] = None
 ) -> str:
+    """Replace the user name and location placeholders in the template."""
     # Get the current date
     current_date = datetime.now()
 
@@ -68,6 +66,8 @@ def prompt_template(
 
 
 def replace_prompt_variable(template: str, prompt: str) -> str:
+    """Replace the prompt variable in the template."""
+
     def replacement_function(match):
         full_match = match.group(
             0
@@ -98,8 +98,10 @@ def replace_prompt_variable(template: str, prompt: str) -> str:
 
 
 def replace_messages_variable(
-    template: str, messages: Optional[list[str]] = None
+    template: str, messages: Optional[list[dict]] = None
 ) -> str:
+    """Replace the messages variable in the template."""
+
     def replacement_function(match):
         full_match = match.group(0)
         start_length = match.group(1)
@@ -139,20 +141,18 @@ def replace_messages_variable(
     return template
 
 
-# {{prompt:middletruncate:8000}}
-
-
 def rag_template(template: str, context: str, query: str):
+    """Replace the context and query placeholders in the RAG template."""
     if template.strip() == "":
         template = DEFAULT_RAG_TEMPLATE
 
     if "[context]" not in template and "{{CONTEXT}}" not in template:
-        log.debug(
+        logger.debug(
             "WARNING: The RAG template does not contain the '[context]' or '{{CONTEXT}}' placeholder."
         )
 
     if "<context>" in context and "</context>" in context:
-        log.debug(
+        logger.debug(
             "WARNING: Potential prompt injection attack: the RAG "
             "context contains '<context>' and '</context>'. This might be "
             "nothing, or the user might be trying to hack something."
@@ -183,7 +183,9 @@ def rag_template(template: str, context: str, query: str):
 def title_generation_template(
     template: str, messages: list[dict], user: Optional[dict] = None
 ) -> str:
+    """Title generation template."""
     prompt = get_last_user_message(messages)
+    assert prompt is not None
     template = replace_prompt_variable(template, prompt)
     template = replace_messages_variable(template, messages)
 
@@ -202,7 +204,9 @@ def title_generation_template(
 def tags_generation_template(
     template: str, messages: list[dict], user: Optional[dict] = None
 ) -> str:
+    """Tags generation template."""
     prompt = get_last_user_message(messages)
+    assert prompt is not None
     template = replace_prompt_variable(template, prompt)
     template = replace_messages_variable(template, messages)
 
@@ -220,6 +224,7 @@ def tags_generation_template(
 def emoji_generation_template(
     template: str, prompt: str, user: Optional[dict] = None
 ) -> str:
+    """Emoji generation template."""
     template = replace_prompt_variable(template, prompt)
     template = prompt_template(
         template,
@@ -230,35 +235,15 @@ def emoji_generation_template(
         ),
     )
 
-    return template
-
-
-def autocomplete_generation_template(
-    template: str,
-    prompt: str,
-    messages: Optional[list[dict]] = None,
-    type: Optional[str] = None,
-    user: Optional[dict] = None,
-) -> str:
-    template = template.replace("{{TYPE}}", type if type else "")
-    template = replace_prompt_variable(template, prompt)
-    template = replace_messages_variable(template, messages)
-
-    template = prompt_template(
-        template,
-        **(
-            {"user_name": user.get("name"), "user_location": user.get("location")}
-            if user
-            else {}
-        ),
-    )
     return template
 
 
 def query_generation_template(
     template: str, messages: list[dict], user: Optional[dict] = None
 ) -> str:
+    """Query generation template."""
     prompt = get_last_user_message(messages)
+    assert prompt is not None
     template = replace_prompt_variable(template, prompt)
     template = replace_messages_variable(template, messages)
 
@@ -276,6 +261,8 @@ def query_generation_template(
 def moa_response_generation_template(
     template: str, prompt: str, responses: list[str]
 ) -> str:
+    """MOA response generation template."""
+
     def replacement_function(match):
         full_match = match.group(0)
         start_length = match.group(1)
@@ -304,12 +291,11 @@ def moa_response_generation_template(
     )
 
     responses = [f'"""{response}"""' for response in responses]
-    responses = "\n\n".join(responses)
-
-    template = template.replace("{{responses}}", responses)
+    template = template.replace("{{responses}}", "\n\n".join(responses))
     return template
 
 
 def tools_function_calling_generation_template(template: str, tools_specs: str) -> str:
+    """Tools function calling generation template."""
     template = template.replace("{{TOOLS}}", tools_specs)
     return template

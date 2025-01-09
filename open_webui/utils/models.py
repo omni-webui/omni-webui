@@ -1,35 +1,21 @@
+"""Model utility functions for Open Web UI."""
+
 import time
-import logging
-import sys
 
-from aiocache import cached
 from fastapi import Request
+from loguru import logger
 
-from open_webui.routers import openai, ollama
+from open_webui.config import DEFAULT_ARENA_MODEL
 from open_webui.functions import get_function_models
-
-
 from open_webui.models.functions import Functions
 from open_webui.models.models import Models
-
-
-from open_webui.utils.plugin import load_function_module_by_id
+from open_webui.routers import ollama, openai
 from open_webui.utils.access_control import has_access
-
-
-from open_webui.config import (
-    DEFAULT_ARENA_MODEL,
-)
-
-from open_webui.env import SRC_LOG_LEVELS, GLOBAL_LOG_LEVEL
-
-
-logging.basicConfig(stream=sys.stdout, level=GLOBAL_LOG_LEVEL)
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MAIN"])
+from open_webui.utils.plugin import load_function_module_by_id
 
 
 async def get_all_base_models(request: Request):
+    """Get all base models."""
     function_models = []
     openai_models = []
     ollama_models = []
@@ -59,6 +45,7 @@ async def get_all_base_models(request: Request):
 
 
 async def get_all_models(request):
+    """Get all models."""
     models = await get_all_base_models(request)
 
     # If there are no models, return an empty list
@@ -216,13 +203,14 @@ async def get_all_models(request):
             model["actions"].extend(
                 get_action_items_from_module(action_function, function_module)
             )
-    log.debug(f"get_all_models() returned {len(models)} models")
+    logger.debug(f"get_all_models() returned {len(models)} models")
 
     request.app.state.MODELS = {model["id"]: model for model in models}
     return models
 
 
 def check_model_access(user, model):
+    """Check model access."""
     if model.get("arena"):
         if not has_access(
             user.id,

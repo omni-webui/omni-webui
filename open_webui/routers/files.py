@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from sqlmodel import select
 
 from open_webui.constants import ERROR_MESSAGES
-from open_webui.models import SessionDepends
+from open_webui.models import SessionDep
 from open_webui.models.file import File as FileModel
 from open_webui.models.files import FileModelResponse
 from open_webui.routers.retrieval import ProcessFileForm, process_file
@@ -31,7 +31,7 @@ async def upload_file(
     request: Request,
     file: UploadFile = File(...),
     user=Depends(get_verified_user),
-    session: SessionDepends,
+    session: SessionDep,
 ):
     """Upload file."""
     logger.info(f"{file.content_type=}")
@@ -66,7 +66,7 @@ async def upload_file(
     response_model_exclude={"path", "access_control"},
 )
 async def list_files(
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ):
     """List files."""
@@ -80,7 +80,7 @@ async def list_files(
 
 
 @router.delete("/all")
-async def delete_all_files(session: SessionDepends, user=Depends(get_admin_user)):
+async def delete_all_files(session: SessionDep, user=Depends(get_admin_user)):
     """Delete all files."""
     for file in (await session.exec(select(FileModel))).all():
         await session.delete(file)
@@ -101,7 +101,7 @@ async def delete_all_files(session: SessionDepends, user=Depends(get_admin_user)
 @router.get("/{id}", response_model=Optional[FileModel])
 async def get_file_by_id(
     id: str,
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ):
     """Get file by id."""
@@ -119,7 +119,7 @@ async def get_file_by_id(
 @router.get("/{id}/data/content")
 async def get_file_data_content_by_id(
     id: str,
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ):
     """Get file data content by id."""
@@ -145,7 +145,7 @@ async def update_file_data_content_by_id(
     request: Request,
     id: str,
     form_data: ContentForm,
-    session: SessionDepends,
+    session: SessionDep,
     user=Depends(get_verified_user),
 ):
     """Update file data content by id."""
@@ -173,7 +173,7 @@ async def update_file_data_content_by_id(
 
 @router.get("/{id}/content")
 async def get_file_content_by_id(
-    id: str, session: SessionDepends, user=Depends(get_verified_user)
+    id: str, session: SessionDep, user=Depends(get_verified_user)
 ):
     """Get file content by id."""
     file = await session.get_one(FileModel, id)
@@ -221,7 +221,7 @@ async def get_file_content_by_id(
 
 @router.get("/{id}/content/html")
 async def get_html_file_content_by_id(
-    id: str, session: SessionDepends, user=Depends(get_verified_user)
+    id: str, session: SessionDep, user=Depends(get_verified_user)
 ):
     """Get HTML file content by id."""
     file = await session.get_one(FileModel, id)
@@ -255,7 +255,7 @@ async def get_html_file_content_by_id(
 
 @router.get("/{id}/content/{file_name}")
 async def get_file_content_by_id_and_name(
-    id: str, session: SessionDepends, user=Depends(get_verified_user)
+    id: str, session: SessionDep, user=Depends(get_verified_user)
 ):
     """Get file content by id and file name."""
     file = await session.get_one(FileModel, id)
@@ -304,7 +304,7 @@ async def get_file_content_by_id_and_name(
 
 @router.delete("/{id}")
 async def delete_file_by_id(
-    id: str, session: SessionDepends, user=Depends(get_verified_user)
+    id: str, session: SessionDep, user=Depends(get_verified_user)
 ):
     """Delete file by id."""
     file = await session.get_one(FileModel, id)

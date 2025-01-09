@@ -3,37 +3,16 @@
 import base64
 import mimetypes
 import uuid
-from typing import Literal, cast
+from typing import Annotated, Literal, cast
 
 import aiohttp
 from authlib.integrations.starlette_client import OAuth
 from authlib.oidc.core import UserInfo
-from fastapi import (
-    HTTPException,
-    status,
-)
+from fastapi import Depends, HTTPException, status
 from loguru import logger
 from starlette.responses import RedirectResponse
 
-from open_webui.config import (
-    DEFAULT_USER_ROLE,
-    ENABLE_OAUTH_GROUP_MANAGEMENT,
-    ENABLE_OAUTH_ROLE_MANAGEMENT,
-    ENABLE_OAUTH_SIGNUP,
-    OAUTH_ADMIN_ROLES,
-    OAUTH_ALLOWED_DOMAINS,
-    OAUTH_ALLOWED_ROLES,
-    OAUTH_EMAIL_CLAIM,
-    OAUTH_GROUPS_CLAIM,
-    OAUTH_MERGE_ACCOUNTS_BY_EMAIL,
-    OAUTH_PICTURE_CLAIM,
-    OAUTH_PROVIDERS,
-    OAUTH_ROLES_CLAIM,
-    OAUTH_USERNAME_CLAIM,
-    WEBHOOK_URL,
-    AppConfig,
-    ConfigDepends,
-)
+from open_webui.config import ConfigDep, UserRole
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import env
 from open_webui.models.auths import Auths
@@ -42,29 +21,23 @@ from open_webui.models.users import Users
 from open_webui.utils.auth import create_token, get_password_hash
 from open_webui.utils.webhook import post_webhook
 
-auth_manager_config = AppConfig()
-auth_manager_config.DEFAULT_USER_ROLE = DEFAULT_USER_ROLE
-auth_manager_config.ENABLE_OAUTH_SIGNUP = ENABLE_OAUTH_SIGNUP
-auth_manager_config.OAUTH_MERGE_ACCOUNTS_BY_EMAIL = OAUTH_MERGE_ACCOUNTS_BY_EMAIL
-auth_manager_config.ENABLE_OAUTH_ROLE_MANAGEMENT = ENABLE_OAUTH_ROLE_MANAGEMENT
-auth_manager_config.ENABLE_OAUTH_GROUP_MANAGEMENT = ENABLE_OAUTH_GROUP_MANAGEMENT
-auth_manager_config.OAUTH_ROLES_CLAIM = OAUTH_ROLES_CLAIM
-auth_manager_config.OAUTH_GROUPS_CLAIM = OAUTH_GROUPS_CLAIM
-auth_manager_config.OAUTH_EMAIL_CLAIM = OAUTH_EMAIL_CLAIM
-auth_manager_config.OAUTH_PICTURE_CLAIM = OAUTH_PICTURE_CLAIM
-auth_manager_config.OAUTH_USERNAME_CLAIM = OAUTH_USERNAME_CLAIM
-auth_manager_config.OAUTH_ALLOWED_ROLES = OAUTH_ALLOWED_ROLES
-auth_manager_config.OAUTH_ADMIN_ROLES = OAUTH_ADMIN_ROLES
-auth_manager_config.OAUTH_ALLOWED_DOMAINS = OAUTH_ALLOWED_DOMAINS
-auth_manager_config.WEBHOOK_URL = WEBHOOK_URL
-
 
 class OAuthManager:
     """OAuth Manager."""
 
-    def __init__(self):  # noqa: D107
+    def __init__(self, config: ConfigDep):  # noqa: D107
         self.oauth = OAuth()
-        for provider_name, provider_config in OAUTH_PROVIDERS.items():
+        self.enable_signup = config.oauth.enable_signup
+        self.merge_accounts_by_email = config.oauth.merge_accounts_by_email
+        self.jwt_expiry = config.auth.jwt_expiry
+        self.webhook_url = config.webhook_url
+        self.username_claim = config.oauth.oidc.username_claim
+        self.picture_claim = config.oauth.oidc.avatar_claim
+        self.email_claim = config.oauth.oidc.email_claim
+        self.group_claim = config.oauth.oidc.group_claim
+        self.config = config.oauth
+        self.default_user_role: UserRole = config.ui.default_user_role
+        for provider_name, provider_config in self.config.providers.items():
             self.oauth.register(
                 name=provider_name,
                 client_id=provider_config["client_id"],
@@ -89,10 +62,11 @@ class OAuthManager:
             # If there are no users, assign the role "admin", as the first user will be an admin
             return "admin"
 
-        if auth_manager_config.ENABLE_OAUTH_ROLE_MANAGEMENT:
-            oauth_claim = cast(str, auth_manager_config.OAUTH_ROLES_CLAIM)
-            oauth_allowed_roles = auth_manager_config.OAUTH_ALLOWED_ROLES
-            oauth_admin_roles = auth_manager_config.OAUTH_ADMIN_ROLES
+        role: UserRole
+        if self.config.enable_role_mapping:
+            oauth_claim = self.config.roles_claim
+            oauth_allowed_roles = self.config.allowed_roles
+            oauth_admin_roles = self.config.admin_roles
             oauth_roles = None
             role = "pending"  # Default/fallback role if no matching roles are found
 
@@ -120,19 +94,16 @@ class OAuthManager:
         else:
             if not user:
                 # If role management is disabled, use the default role for new users
-                role = cast(
-                    Literal["admin", "user", "pending"],
-                    auth_manager_config.DEFAULT_USER_ROLE,
-                )
+                role = self.default_user_role
             else:
                 # If role management is disabled, use the existing role for existing users
-                role = cast(Literal["admin", "user", "pending"], user.role)
+                role = cast(UserRole, user.role)
 
         return role
 
     def update_user_groups(self, user, user_data, default_permissions):
         """Update the user's groups based on the OAuth data."""
-        oauth_claim = auth_manager_config.OAUTH_GROUPS_CLAIM
+        oauth_claim = self.group_claim
 
         user_oauth_groups: list[str] = user_data.get(oauth_claim, list())
         user_current_groups: list[GroupModel] = Groups.get_groups_by_member_id(user.id)
@@ -186,22 +157,22 @@ class OAuthManager:
                     id=group_model.id, form_data=update_form, overwrite=False
                 )
 
-    async def handle_login(self, provider, request):
+    async def handle_login(self, provider: str, request):
         """Handle the login process for the given OAuth provider."""
-        if provider not in OAUTH_PROVIDERS:
+        if provider not in self.config.providers:
             raise HTTPException(404)
         # If the provider has a custom redirect URL, use that, otherwise automatically generate one
-        redirect_uri = OAUTH_PROVIDERS[provider].get("redirect_uri") or request.url_for(
-            "oauth_callback", provider=provider
-        )
+        redirect_uri = self.config.providers[provider].get(
+            "redirect_uri"
+        ) or request.url_for("oauth_callback", provider=provider)
         client = self.get_client(provider)
         if client is None:
             raise HTTPException(404)
         return await client.authorize_redirect(request, redirect_uri)
 
-    async def handle_callback(self, provider, request, response, config: ConfigDepends):
+    async def handle_callback(self, provider, request, response):
         """Handle the callback process for the given OAuth provider."""
-        if provider not in OAUTH_PROVIDERS:
+        if provider not in self.config.providers:
             raise HTTPException(404)
         client = self.get_client(provider)
         try:
@@ -221,15 +192,15 @@ class OAuthManager:
             logger.warning(f"OAuth callback failed, sub is missing: {user_data}")
             raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
         provider_sub = f"{provider}@{sub}"
-        email_claim = auth_manager_config.OAUTH_EMAIL_CLAIM
+        email_claim = self.email_claim
         email = user_data.get(email_claim, "").lower()
         # We currently mandate that email addresses are provided
         if not email:
             logger.warning(f"OAuth callback failed, email is missing: {user_data}")
             raise HTTPException(400, detail=ERROR_MESSAGES.INVALID_CRED)
         if (
-            "*" not in auth_manager_config.OAUTH_ALLOWED_DOMAINS
-            and email.split("@")[-1] not in auth_manager_config.OAUTH_ALLOWED_DOMAINS
+            "*" not in self.config.allowed_domains
+            and email.split("@")[-1] not in self.config.allowed_domains
         ):
             logger.warning(
                 f"OAuth callback failed, e-mail domain is not in the list of allowed domains: {user_data}"
@@ -241,7 +212,7 @@ class OAuthManager:
 
         if not user:
             # If the user does not exist, check if merging is enabled
-            if auth_manager_config.OAUTH_MERGE_ACCOUNTS_BY_EMAIL:
+            if self.merge_accounts_by_email:
                 # Check if the user exists by email
                 user = Users.get_user_by_email(email)
                 if user:
@@ -255,7 +226,7 @@ class OAuthManager:
 
         if not user:
             # If the user does not exist, check if signups are enabled
-            if auth_manager_config.ENABLE_OAUTH_SIGNUP:
+            if self.enable_signup:
                 # Check if an existing user with the same email already exists
                 existing_user = Users.get_user_by_email(
                     user_data.get("email", "").lower()
@@ -263,7 +234,7 @@ class OAuthManager:
                 if existing_user:
                     raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_TAKEN)
 
-                picture_claim = auth_manager_config.OAUTH_PICTURE_CLAIM
+                picture_claim = self.picture_claim
                 picture_url = user_data.get(picture_claim, "")
                 if picture_url:
                     # Download the profile image into a base64 string
@@ -286,7 +257,7 @@ class OAuthManager:
                         picture_url = ""
                 if not picture_url:
                     picture_url = "/user.png"
-                username_claim = auth_manager_config.OAUTH_USERNAME_CLAIM
+                username_claim = self.username_claim
 
                 role = self.get_user_role(None, user_data)
 
@@ -300,9 +271,9 @@ class OAuthManager:
                 )
                 assert user is not None
 
-                if auth_manager_config.WEBHOOK_URL:
+                if self.webhook_url:
                     post_webhook(
-                        cast(str, auth_manager_config.WEBHOOK_URL),
+                        cast(str, self.webhook_url),
                         f"New user {user.name} signed up",
                         {
                             "action": "signup",
@@ -317,10 +288,10 @@ class OAuthManager:
 
         jwt_token = create_token(
             data={"id": user.id},
-            expires_delta=config.auth.jwt_expiry,
+            expires_delta=self.jwt_expiry,
         )
 
-        if auth_manager_config.ENABLE_OAUTH_GROUP_MANAGEMENT:
+        if self.config.enable_group_mapping:
             self.update_user_groups(
                 user=user,
                 user_data=user_data,
@@ -336,7 +307,7 @@ class OAuthManager:
             secure=env.WEBUI_SESSION_COOKIE_SECURE,
         )
 
-        if ENABLE_OAUTH_SIGNUP.value:
+        if self.enable_signup:
             oauth_id_token = token.get("id_token")
             response.set_cookie(
                 key="oauth_id_token",
@@ -350,4 +321,4 @@ class OAuthManager:
         return RedirectResponse(url=redirect_url, headers=response.headers)
 
 
-oauth_manager = OAuthManager()
+OAuthManagerDep = Annotated[OAuthManager, Depends()]

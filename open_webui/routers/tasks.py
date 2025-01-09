@@ -1,57 +1,52 @@
-from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+"""Tasks router."""
 
-from pydantic import BaseModel
 from typing import Optional
-import logging
 
-from open_webui.utils.chat import generate_chat_completion
-from open_webui.utils.task import (
-    title_generation_template,
-    query_generation_template,
-    autocomplete_generation_template,
-    tags_generation_template,
-    emoji_generation_template,
-    moa_response_generation_template,
-)
-from open_webui.utils.auth import get_admin_user, get_verified_user
-from open_webui.constants import TASKS
+import jinja2
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import JSONResponse
+from loguru import logger
+from pydantic import BaseModel
 
-from open_webui.routers.pipelines import process_pipeline_inlet_filter
-from open_webui.utils.task import get_task_model_id
-
+from open_webui import j2
 from open_webui.config import (
-    DEFAULT_TITLE_GENERATION_PROMPT_TEMPLATE,
-    DEFAULT_TAGS_GENERATION_PROMPT_TEMPLATE,
-    DEFAULT_QUERY_GENERATION_PROMPT_TEMPLATE,
-    DEFAULT_AUTOCOMPLETE_GENERATION_PROMPT_TEMPLATE,
     DEFAULT_EMOJI_GENERATION_PROMPT_TEMPLATE,
     DEFAULT_MOA_GENERATION_PROMPT_TEMPLATE,
+    DEFAULT_QUERY_GENERATION_PROMPT_TEMPLATE,
+    DEFAULT_TAGS_GENERATION_PROMPT_TEMPLATE,
+    DEFAULT_TITLE_GENERATION_PROMPT_TEMPLATE,
+    Config,
+    ConfigData,
+    ConfigDBDep,
+    ConfigDep,
 )
-from open_webui.env import SRC_LOG_LEVELS
-
-
-log = logging.getLogger(__name__)
-log.setLevel(SRC_LOG_LEVELS["MODELS"])
+from open_webui.constants import TASKS
+from open_webui.models import SessionDep
+from open_webui.utils.auth import get_admin_user, get_verified_user
+from open_webui.utils.chat import generate_chat_completion
+from open_webui.utils.task import (
+    emoji_generation_template,
+    get_task_model_id,
+    moa_response_generation_template,
+    query_generation_template,
+    tags_generation_template,
+    title_generation_template,
+)
 
 router = APIRouter()
 
 
-##################################
-#
-# Task Endpoints
-#
-##################################
-
-
 @router.get("/config")
-async def get_task_config(request: Request, user=Depends(get_verified_user)):
+async def get_task_config(
+    request: Request, config: ConfigDep, user=Depends(get_verified_user)
+):
+    """Get task config."""
     return {
         "TASK_MODEL": request.app.state.config.TASK_MODEL,
         "TASK_MODEL_EXTERNAL": request.app.state.config.TASK_MODEL_EXTERNAL,
         "TITLE_GENERATION_PROMPT_TEMPLATE": request.app.state.config.TITLE_GENERATION_PROMPT_TEMPLATE,
-        "ENABLE_AUTOCOMPLETE_GENERATION": request.app.state.config.ENABLE_AUTOCOMPLETE_GENERATION,
-        "AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH": request.app.state.config.AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH,
+        "ENABLE_AUTOCOMPLETE_GENERATION": config.task.autocomplete.enable,
+        "AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH": config.task.autocomplete.input_max_length,
         "TAGS_GENERATION_PROMPT_TEMPLATE": request.app.state.config.TAGS_GENERATION_PROMPT_TEMPLATE,
         "ENABLE_TAGS_GENERATION": request.app.state.config.ENABLE_TAGS_GENERATION,
         "ENABLE_SEARCH_QUERY_GENERATION": request.app.state.config.ENABLE_SEARCH_QUERY_GENERATION,
@@ -62,6 +57,8 @@ async def get_task_config(request: Request, user=Depends(get_verified_user)):
 
 
 class TaskConfigForm(BaseModel):
+    """Task config form."""
+
     TASK_MODEL: Optional[str]
     TASK_MODEL_EXTERNAL: Optional[str]
     TITLE_GENERATION_PROMPT_TEMPLATE: str
@@ -77,18 +74,26 @@ class TaskConfigForm(BaseModel):
 
 @router.post("/config/update")
 async def update_task_config(
-    request: Request, form_data: TaskConfigForm, user=Depends(get_admin_user)
+    request: Request,
+    form_data: TaskConfigForm,
+    session: SessionDep,
+    config_db: ConfigDBDep,
+    user=Depends(get_admin_user),
 ):
+    """Update task config."""
+    if config_db is None:
+        config = ConfigData()
+        config_db = Config(data=config)
+    else:
+        config = config_db.data
     request.app.state.config.TASK_MODEL = form_data.TASK_MODEL
     request.app.state.config.TASK_MODEL_EXTERNAL = form_data.TASK_MODEL_EXTERNAL
     request.app.state.config.TITLE_GENERATION_PROMPT_TEMPLATE = (
         form_data.TITLE_GENERATION_PROMPT_TEMPLATE
     )
 
-    request.app.state.config.ENABLE_AUTOCOMPLETE_GENERATION = (
-        form_data.ENABLE_AUTOCOMPLETE_GENERATION
-    )
-    request.app.state.config.AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH = (
+    config.task.autocomplete.enable = form_data.ENABLE_AUTOCOMPLETE_GENERATION
+    config.task.autocomplete.input_max_length = (
         form_data.AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH
     )
 
@@ -110,12 +115,17 @@ async def update_task_config(
         form_data.TOOLS_FUNCTION_CALLING_PROMPT_TEMPLATE
     )
 
+    config_db.data = config
+    session.add(config_db)
+    await session.commit()
+    await session.refresh(config_db)
+    config = config_db.data
     return {
         "TASK_MODEL": request.app.state.config.TASK_MODEL,
         "TASK_MODEL_EXTERNAL": request.app.state.config.TASK_MODEL_EXTERNAL,
         "TITLE_GENERATION_PROMPT_TEMPLATE": request.app.state.config.TITLE_GENERATION_PROMPT_TEMPLATE,
-        "ENABLE_AUTOCOMPLETE_GENERATION": request.app.state.config.ENABLE_AUTOCOMPLETE_GENERATION,
-        "AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH": request.app.state.config.AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH,
+        "ENABLE_AUTOCOMPLETE_GENERATION": config.task.autocomplete.enable,
+        "AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH": config.task.autocomplete.input_max_length,
         "TAGS_GENERATION_PROMPT_TEMPLATE": request.app.state.config.TAGS_GENERATION_PROMPT_TEMPLATE,
         "ENABLE_TAGS_GENERATION": request.app.state.config.ENABLE_TAGS_GENERATION,
         "ENABLE_SEARCH_QUERY_GENERATION": request.app.state.config.ENABLE_SEARCH_QUERY_GENERATION,
@@ -129,6 +139,7 @@ async def update_task_config(
 async def generate_title(
     request: Request, form_data: dict, user=Depends(get_verified_user)
 ):
+    """Generate chat title."""
     models = request.app.state.MODELS
 
     model_id = form_data["model"]
@@ -147,7 +158,7 @@ async def generate_title(
         models,
     )
 
-    log.debug(
+    logger.debug(
         f"generating chat title using model {task_model_id} for user {user.email} "
     )
 
@@ -185,8 +196,8 @@ async def generate_title(
 
     try:
         return await generate_chat_completion(request, form_data=payload, user=user)
-    except Exception as e:
-        log.error("Exception occurred", exc_info=True)
+    except Exception:
+        logger.error("Exception occurred", exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={"detail": "An internal error has occurred."},
@@ -197,7 +208,7 @@ async def generate_title(
 async def generate_chat_tags(
     request: Request, form_data: dict, user=Depends(get_verified_user)
 ):
-
+    """Generate chat tags."""
     if not request.app.state.config.ENABLE_TAGS_GENERATION:
         return JSONResponse(
             status_code=status.HTTP_200_OK,
@@ -222,7 +233,7 @@ async def generate_chat_tags(
         models,
     )
 
-    log.debug(
+    logger.debug(
         f"generating chat tags using model {task_model_id} for user {user.email} "
     )
 
@@ -249,7 +260,7 @@ async def generate_chat_tags(
     try:
         return await generate_chat_completion(request, form_data=payload, user=user)
     except Exception as e:
-        log.error(f"Error generating chat completion: {e}")
+        logger.error(f"Error generating chat completion: {e}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": "An internal error has occurred."},
@@ -260,19 +271,19 @@ async def generate_chat_tags(
 async def generate_queries(
     request: Request, form_data: dict, user=Depends(get_verified_user)
 ):
-
+    """Generate queries."""
     type = form_data.get("type")
     if type == "web_search":
         if not request.app.state.config.ENABLE_SEARCH_QUERY_GENERATION:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Search query generation is disabled",
+                detail="Search query generation is disabled",
             )
     elif type == "retrieval":
         if not request.app.state.config.ENABLE_RETRIEVAL_QUERY_GENERATION:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Query generation is disabled",
+                detail="Query generation is disabled",
             )
 
     models = request.app.state.MODELS
@@ -293,7 +304,7 @@ async def generate_queries(
         models,
     )
 
-    log.debug(
+    logger.debug(
         f"generating {type} queries using model {task_model_id} for user {user.email}"
     )
 
@@ -326,33 +337,40 @@ async def generate_queries(
         )
 
 
+class AutoCompletionForm(BaseModel):
+    """Autocompletion form."""
+
+    model: str
+    prompt: str
+    type: str
+    messages: list
+    chat_id: str | None
+
+
 @router.post("/auto/completions")
 async def generate_autocompletion(
-    request: Request, form_data: dict, user=Depends(get_verified_user)
+    request: Request,
+    form_data: AutoCompletionForm,
+    config: ConfigDep,
+    user=Depends(get_verified_user),
 ):
-    if not request.app.state.config.ENABLE_AUTOCOMPLETE_GENERATION:
+    """Generate autocompletion."""
+    if not config.task.autocomplete.enable:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Autocompletion generation is disabled",
+            detail="Autocompletion generation is disabled",
         )
 
-    type = form_data.get("type")
-    prompt = form_data.get("prompt")
-    messages = form_data.get("messages")
-
-    if request.app.state.config.AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH > 0:
-        if (
-            len(prompt)
-            > request.app.state.config.AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH
-        ):
+    if config.task.autocomplete.input_max_length > 0:
+        if len(form_data.prompt) > config.task.autocomplete.input_max_length:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Input prompt exceeds maximum length of {request.app.state.config.AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH}",
+                detail=f"Input prompt exceeds maximum length of {config.task.autocomplete.input_max_length}",
             )
 
     models = request.app.state.MODELS
 
-    model_id = form_data["model"]
+    model_id = form_data.model
     if model_id not in models:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -368,17 +386,20 @@ async def generate_autocompletion(
         models,
     )
 
-    log.debug(
+    logger.debug(
         f"generating autocompletion using model {task_model_id} for user {user.email}"
     )
 
-    if (request.app.state.config.AUTOCOMPLETE_GENERATION_PROMPT_TEMPLATE).strip() != "":
-        template = request.app.state.config.AUTOCOMPLETE_GENERATION_PROMPT_TEMPLATE
-    else:
-        template = DEFAULT_AUTOCOMPLETE_GENERATION_PROMPT_TEMPLATE
-
-    content = autocomplete_generation_template(
-        template, prompt, messages, type, {"name": user.name}
+    template = (
+        jinja2.Template(config.task.autocomplete.prompt_template)
+        if config.task.autocomplete.prompt_template
+        else j2.env.get_template("autocomplete.j2")
+    )
+    content = template.render(
+        prompt=form_data.prompt,
+        messages=form_data.messages,
+        type=form_data.type,
+        user_name=user.name,
     )
 
     payload = {
@@ -388,14 +409,14 @@ async def generate_autocompletion(
         "metadata": {
             "task": str(TASKS.AUTOCOMPLETE_GENERATION),
             "task_body": form_data,
-            "chat_id": form_data.get("chat_id", None),
+            "chat_id": form_data.chat_id,
         },
     }
 
     try:
         return await generate_chat_completion(request, form_data=payload, user=user)
     except Exception as e:
-        log.error(f"Error generating chat completion: {e}")
+        logger.error(f"Error generating chat completion: {e}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={"detail": "An internal error has occurred."},
@@ -406,7 +427,7 @@ async def generate_autocompletion(
 async def generate_emoji(
     request: Request, form_data: dict, user=Depends(get_verified_user)
 ):
-
+    """Generate emoji."""
     models = request.app.state.MODELS
 
     model_id = form_data["model"]
@@ -425,7 +446,7 @@ async def generate_emoji(
         models,
     )
 
-    log.debug(f"generating emoji using model {task_model_id} for user {user.email} ")
+    logger.debug(f"generating emoji using model {task_model_id} for user {user.email} ")
 
     template = DEFAULT_EMOJI_GENERATION_PROMPT_TEMPLATE
 
@@ -466,7 +487,7 @@ async def generate_emoji(
 async def generate_moa_response(
     request: Request, form_data: dict, user=Depends(get_verified_user)
 ):
-
+    """Generate MOA response."""
     models = request.app.state.MODELS
     model_id = form_data["model"]
 
@@ -485,7 +506,7 @@ async def generate_moa_response(
         models,
     )
 
-    log.debug(f"generating MOA model {task_model_id} for user {user.email} ")
+    logger.debug(f"generating MOA model {task_model_id} for user {user.email} ")
 
     template = DEFAULT_MOA_GENERATION_PROMPT_TEMPLATE
 

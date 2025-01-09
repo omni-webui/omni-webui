@@ -9,7 +9,7 @@ import jwt
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from open_webui.config import ConfigDepends
+from open_webui.config import ConfigDep
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import env
 from open_webui.models.users import Users
@@ -67,7 +67,7 @@ def get_http_authorization_cred(auth_header: str):
 
 def get_current_user(
     request: Request,
-    config: ConfigDepends,
+    config: ConfigDep,
     auth_token: HTTPAuthorizationCredentials = Depends(bearer_security),
 ):
     """Get current user."""

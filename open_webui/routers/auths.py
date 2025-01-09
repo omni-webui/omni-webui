@@ -16,11 +16,11 @@ from ldap3.utils.conv import escape_filter_chars
 from pydantic import BaseModel
 
 from open_webui.config import (
-    ENABLE_OAUTH_SIGNUP,
-    OPENID_PROVIDER_URL,
     Config,
-    ConfigDBDepends,
-    ConfigDepends,
+    ConfigData,
+    ConfigDBDep,
+    ConfigDep,
+    UserRole,
     parse_duration,
 )
 from open_webui.constants import ERROR_MESSAGES, WEBHOOK_MESSAGES
@@ -30,7 +30,7 @@ from open_webui.env import (
     WEBUI_AUTH_TRUSTED_NAME_HEADER,
     env,
 )
-from open_webui.models import SessionDepends
+from open_webui.models import SessionDep
 from open_webui.models.auths import (
     AddUserForm,
     ApiKey,
@@ -74,7 +74,7 @@ class SessionUserResponse(Token, UserResponse):
 async def get_session_user(
     request: Request,
     response: Response,
-    config: ConfigDepends,
+    config: ConfigDep,
     user=Depends(get_current_user),
 ):
     """Get session user."""
@@ -160,7 +160,7 @@ async def update_password(
 
 @router.post("/ldap", response_model=SigninResponse)
 async def ldap_auth(
-    request: Request, response: Response, config: ConfigDepends, form_data: LdapForm
+    request: Request, response: Response, config: ConfigDep, form_data: LdapForm
 ):
     """LDAP authentication."""
     ENABLE_LDAP = request.app.state.config.ENABLE_LDAP
@@ -243,7 +243,7 @@ async def ldap_auth(
                     role = (
                         "admin"
                         if Users.get_num_users() == 0
-                        else request.app.state.config.DEFAULT_USER_ROLE
+                        else config.ui.default_user_role
                     )
 
                     user = Auths.insert_new_auth(
@@ -297,7 +297,11 @@ async def ldap_auth(
 
 @router.post("/signin", response_model=SessionUserResponse)
 async def signin(
-    request: Request, response: Response, config: ConfigDepends, form_data: SigninForm
+    request: Request,
+    response: Response,
+    form_data: SigninForm,
+    session: SessionDep,
+    config_db: ConfigDBDep,
 ):
     """Sign in."""
     if WEBUI_AUTH_TRUSTED_EMAIL_HEADER:
@@ -314,7 +318,8 @@ async def signin(
             await signup(
                 request,
                 response,
-                config,
+                session,
+                config_db,
                 SignupForm(
                     email=trusted_email, password=str(uuid.uuid4()), name=trusted_name
                 ),
@@ -333,7 +338,8 @@ async def signin(
             await signup(
                 request,
                 response,
-                config,
+                session,
+                config_db,
                 SignupForm(email=admin_email, password=admin_password, name="User"),
             )
 
@@ -342,7 +348,7 @@ async def signin(
         user = Auths.authenticate_user(form_data.email.lower(), form_data.password)
 
     if user:
-        expires_delta = config.auth.jwt_expiry
+        expires_delta = config_db.data.auth.jwt_expiry if config_db else None
         expires_at = None
         if expires_delta:
             expires_at = int(time.time()) + int(expires_delta.total_seconds())
@@ -389,12 +395,21 @@ async def signin(
 
 @router.post("/signup", response_model=SessionUserResponse)
 async def signup(
-    request: Request, response: Response, config: ConfigDepends, form_data: SignupForm
+    request: Request,
+    response: Response,
+    session: SessionDep,
+    config_db: ConfigDBDep,
+    form_data: SignupForm,
 ):
     """Sign up."""
+    if config_db is None:
+        config = ConfigData()
+        config_db = Config(data=config)
+    else:
+        config = config_db.data
     if env.WEBUI_AUTH:
         if (
-            not request.app.state.config.ENABLE_SIGNUP
+            not config.ui.enable_signup
             or not request.app.state.config.ENABLE_LOGIN_FORM
         ):
             raise HTTPException(
@@ -414,96 +429,92 @@ async def signup(
     if Users.get_user_by_email(form_data.email.lower()):
         raise HTTPException(400, detail=ERROR_MESSAGES.EMAIL_TAKEN)
 
-    try:
-        role = (
-            "admin"
-            if Users.get_num_users() == 0
-            else request.app.state.config.DEFAULT_USER_ROLE
+    role = "admin" if Users.get_num_users() == 0 else config.ui.default_user_role
+
+    if Users.get_num_users() == 0:
+        # Disable signup after the first user is created
+        config.ui.enable_signup = False
+
+    hashed = get_password_hash(form_data.password)
+    user = Auths.insert_new_auth(
+        form_data.email.lower(),
+        hashed,
+        form_data.name,
+        form_data.profile_image_url or "/user.png",
+        role,
+    )
+
+    if user is None:
+        raise HTTPException(500, detail=ERROR_MESSAGES.CREATE_USER_ERROR)
+
+    expires_delta = config.auth.jwt_expiry
+    expires_at = None
+    if expires_delta:
+        expires_at = int(time.time()) + int(expires_delta.total_seconds())
+
+    token = create_token(
+        data={"id": user.id},
+        expires_delta=expires_delta,
+    )
+
+    datetime_expires_at = (
+        datetime.datetime.fromtimestamp(expires_at, datetime.timezone.utc)
+        if expires_at
+        else None
+    )
+
+    # Set the cookie token
+    response.set_cookie(
+        key="token",
+        value=token,
+        expires=datetime_expires_at,
+        httponly=True,  # Ensures the cookie is not accessible via JavaScript
+        samesite=env.WEBUI_SESSION_COOKIE_SAME_SITE,
+        secure=env.WEBUI_SESSION_COOKIE_SECURE,
+    )
+
+    if config.webhook_url:
+        post_webhook(
+            config.webhook_url,
+            WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
+            {
+                "action": "signup",
+                "message": WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
+                "user": user.model_dump_json(exclude_none=True),
+            },
         )
 
-        if Users.get_num_users() == 0:
-            # Disable signup after the first user is created
-            request.app.state.config.ENABLE_SIGNUP = False
+    user_permissions = get_permissions(
+        user.id, request.app.state.config.USER_PERMISSIONS
+    )
 
-        hashed = get_password_hash(form_data.password)
-        user = Auths.insert_new_auth(
-            form_data.email.lower(),
-            hashed,
-            form_data.name,
-            form_data.profile_image_url or "/user.png",
-            role,
-        )
-
-        if user:
-            expires_delta = config.auth.jwt_expiry
-            expires_at = None
-            if expires_delta:
-                expires_at = int(time.time()) + int(expires_delta.total_seconds())
-
-            token = create_token(
-                data={"id": user.id},
-                expires_delta=expires_delta,
-            )
-
-            datetime_expires_at = (
-                datetime.datetime.fromtimestamp(expires_at, datetime.timezone.utc)
-                if expires_at
-                else None
-            )
-
-            # Set the cookie token
-            response.set_cookie(
-                key="token",
-                value=token,
-                expires=datetime_expires_at,
-                httponly=True,  # Ensures the cookie is not accessible via JavaScript
-                samesite=env.WEBUI_SESSION_COOKIE_SAME_SITE,
-                secure=env.WEBUI_SESSION_COOKIE_SECURE,
-            )
-
-            if request.app.state.config.WEBHOOK_URL:
-                post_webhook(
-                    request.app.state.config.WEBHOOK_URL,
-                    WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
-                    {
-                        "action": "signup",
-                        "message": WEBHOOK_MESSAGES.USER_SIGNUP(user.name),
-                        "user": user.model_dump_json(exclude_none=True),
-                    },
-                )
-
-            user_permissions = get_permissions(
-                user.id, request.app.state.config.USER_PERMISSIONS
-            )
-
-            return {
-                "token": token,
-                "token_type": "Bearer",
-                "expires_at": expires_at,
-                "id": user.id,
-                "email": user.email,
-                "name": user.name,
-                "role": user.role,
-                "profile_image_url": user.profile_image_url,
-                "permissions": user_permissions,
-            }
-        else:
-            raise HTTPException(500, detail=ERROR_MESSAGES.CREATE_USER_ERROR)
-    except Exception as e:
-        raise HTTPException(500, detail=str(e))
+    config_db.data = config
+    session.add(config_db)
+    await session.commit()
+    return {
+        "token": token,
+        "token_type": "Bearer",
+        "expires_at": expires_at,
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "role": user.role,
+        "profile_image_url": user.profile_image_url,
+        "permissions": user_permissions,
+    }
 
 
 @router.get("/signout")
-async def signout(request: Request, response: Response):
+async def signout(request: Request, response: Response, config: ConfigDep):
     """Sign out."""
     response.delete_cookie("token")
 
-    if ENABLE_OAUTH_SIGNUP.value:
+    if config.oauth.enable_signup:
         oauth_id_token = request.cookies.get("oauth_id_token")
         if oauth_id_token:
             try:
                 async with ClientSession() as session:
-                    async with session.get(OPENID_PROVIDER_URL.value) as resp:  # type: ignore
+                    async with session.get(config.oauth.oidc.provider_url) as resp:  # type: ignore
                         if resp.status == 200:
                             openid_data = await resp.json()
                             logout_url = openid_data.get("end_session_endpoint")
@@ -588,18 +599,18 @@ async def get_admin_details(request: Request, user=Depends(get_current_user)):
 
 @router.get("/admin/config")
 async def get_admin_config(
-    request: Request, config: ConfigDepends, user=Depends(get_admin_user)
+    request: Request, config: ConfigDep, user=Depends(get_admin_user)
 ):
     """Get admin configuration."""
     return {
         "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
         "WEBUI_URL": request.app.state.config.WEBUI_URL,
-        "ENABLE_SIGNUP": request.app.state.config.ENABLE_SIGNUP,
+        "ENABLE_SIGNUP": config.ui.enable_signup,
         "ENABLE_API_KEY": config.auth.api_key.enable,
         "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS": config.auth.api_key.endpoint_restrictions,
         "API_KEY_ALLOWED_ENDPOINTS": ",".join(config.auth.api_key.allowed_endpoints),
         "ENABLE_CHANNELS": request.app.state.config.ENABLE_CHANNELS,
-        "DEFAULT_USER_ROLE": request.app.state.config.DEFAULT_USER_ROLE,
+        "DEFAULT_USER_ROLE": config.ui.default_user_role,
         "JWT_EXPIRES_IN": config.auth.model_dump()["jwt_expiry"],
         "ENABLE_COMMUNITY_SHARING": request.app.state.config.ENABLE_COMMUNITY_SHARING,
         "ENABLE_MESSAGE_RATING": request.app.state.config.ENABLE_MESSAGE_RATING,
@@ -616,7 +627,7 @@ class AdminConfig(BaseModel):
     ENABLE_API_KEY_ENDPOINT_RESTRICTIONS: bool
     API_KEY_ALLOWED_ENDPOINTS: str
     ENABLE_CHANNELS: bool
-    DEFAULT_USER_ROLE: str
+    DEFAULT_USER_ROLE: UserRole
     JWT_EXPIRES_IN: str
     ENABLE_COMMUNITY_SHARING: bool
     ENABLE_MESSAGE_RATING: bool
@@ -626,15 +637,15 @@ class AdminConfig(BaseModel):
 async def update_admin_config(
     request: Request,
     form_data: AdminConfig,
-    config: ConfigDepends,
-    config_db: ConfigDBDepends,
-    session: SessionDepends,
+    config: ConfigDep,
+    config_db: ConfigDBDep,
+    session: SessionDep,
     user=Depends(get_admin_user),
 ):
     """Update admin configuration."""
     request.app.state.config.SHOW_ADMIN_DETAILS = form_data.SHOW_ADMIN_DETAILS
     request.app.state.config.WEBUI_URL = form_data.WEBUI_URL
-    request.app.state.config.ENABLE_SIGNUP = form_data.ENABLE_SIGNUP
+    config.ui.enable_signup = form_data.ENABLE_SIGNUP
 
     config.auth.api_key.enable = form_data.ENABLE_API_KEY
     config.auth.api_key.endpoint_restrictions = (
@@ -648,8 +659,7 @@ async def update_admin_config(
 
     request.app.state.config.ENABLE_CHANNELS = form_data.ENABLE_CHANNELS
 
-    if form_data.DEFAULT_USER_ROLE in ["pending", "user", "admin"]:
-        request.app.state.config.DEFAULT_USER_ROLE = form_data.DEFAULT_USER_ROLE
+    config.ui.default_user_role = form_data.DEFAULT_USER_ROLE
 
     pattern = r"^(-1|0|(-?\d+(\.\d+)?)(ms|s|m|h|d|w))$"
 
@@ -671,12 +681,12 @@ async def update_admin_config(
     return {
         "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
         "WEBUI_URL": request.app.state.config.WEBUI_URL,
-        "ENABLE_SIGNUP": request.app.state.config.ENABLE_SIGNUP,
+        "ENABLE_SIGNUP": config.ui.enable_signup,
         "ENABLE_API_KEY": config.auth.api_key.enable,
         "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS": config.auth.api_key.endpoint_restrictions,
         "API_KEY_ALLOWED_ENDPOINTS": ",".join(config.auth.api_key.allowed_endpoints),
         "ENABLE_CHANNELS": request.app.state.config.ENABLE_CHANNELS,
-        "DEFAULT_USER_ROLE": request.app.state.config.DEFAULT_USER_ROLE,
+        "DEFAULT_USER_ROLE": config.ui.default_user_role,
         "JWT_EXPIRES_IN": config.auth.model_dump()["jwt_expiry"],
         "ENABLE_COMMUNITY_SHARING": request.app.state.config.ENABLE_COMMUNITY_SHARING,
         "ENABLE_MESSAGE_RATING": request.app.state.config.ENABLE_MESSAGE_RATING,
@@ -792,7 +802,7 @@ async def update_ldap_config(
 
 @router.post("/api_key", response_model=ApiKey)
 async def generate_api_key(
-    request: Request, config: ConfigDepends, user=Depends(get_current_user)
+    request: Request, config: ConfigDep, user=Depends(get_current_user)
 ):
     """Create api key."""
     if not config.auth.api_key.enable:

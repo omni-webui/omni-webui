@@ -13,6 +13,8 @@ from typing import (
     Annotated,
     Any,
     Generic,
+    Iterable,
+    Literal,
     NotRequired,
     Optional,
     TypedDict,
@@ -31,6 +33,7 @@ from openai.types.audio import SpeechCreateParams, SpeechModel
 from pydantic import (
     AliasChoices,
     Field,
+    TypeAdapter,
     ValidationError,
     ValidatorFunctionWrapHandler,
     WrapValidator,
@@ -48,7 +51,6 @@ from typing_extensions import deprecated
 
 from open_webui.env import (
     DATABASE_URL,
-    FRONTEND_BUILD_DIR,
     OFFLINE_MODE,
     OPEN_WEBUI_DIR,
     OPENAI_BASE_URL,
@@ -56,7 +58,7 @@ from open_webui.env import (
 )
 from open_webui.env import WEBUI_FAVICON_URL as WEBUI_FAVICON_URL
 from open_webui.internal.db import get_db
-from open_webui.models import SessionDepends
+from open_webui.models import SessionDep
 
 from ._types import MutableBaseModel as BaseModel
 
@@ -240,9 +242,13 @@ class OAuthProvider(TypedDict):
     scope: str
     redirect_uri: str
     name: NotRequired[str]
+    server_metadata_url: str
 
 
-class OAuthConfig(BaseModel):
+type UserRole = Literal["pending", "user", "admin"]
+
+
+class OAuthConfig(BaseModel, env_prefix="OAUTH_"):
     """OAuth configuration."""
 
     class Provider(BaseSettings):
@@ -274,21 +280,31 @@ class OAuthConfig(BaseModel):
             Field(validation_alias=AliasChoices("OAUTH_PICTURE_CLAIM", "avatar_claim")),
         ] = "picture"
         email_claim: str = "email"
-        enable_role_mapping: Annotated[
-            bool,
-            Field(
-                validation_alias=AliasChoices(
-                    "ENABLE_OAUTH_ROLE_MANAGEMENT", "enable_role_mapping"
-                )
-            ),
-        ] = False
+
         roles_claim: str = "roles"
+        group_claim: str = "groups"
         allowed_roles: list[str] = ["user", "admin"]
         admin_roles: list[str] = ["admin"]
 
     enable_signup: Annotated[
         bool,
         Field(validation_alias=AliasChoices("ENABLE_OAUTH_SIGNUP", "enable_signup")),
+    ] = False
+    enable_role_mapping: Annotated[
+        bool,
+        Field(
+            validation_alias=AliasChoices(
+                "ENABLE_OAUTH_ROLE_MANAGEMENT", "enable_role_mapping"
+            )
+        ),
+    ] = False
+    enable_group_mapping: Annotated[
+        bool,
+        Field(
+            validation_alias=AliasChoices(
+                "ENABLE_OAUTH_GROUP_MANAGEMENT", "enable_group_mapping"
+            )
+        ),
     ] = False
     merge_accounts_by_email: Annotated[
         bool,
@@ -301,6 +317,30 @@ class OAuthConfig(BaseModel):
     google: Google = Field(default_factory=Google)
     microsoft: Microsoft = Field(default_factory=Microsoft)
     oidc: OIDC = Field(default_factory=OIDC)
+    roles_claim: str = "roles"
+    allowed_roles: Annotated[set[UserRole], NoDecode] = Field(default={"user", "admin"})
+    admin_roles: Annotated[set[str], NoDecode] = Field(default={"admin"})
+    allowed_domains: Annotated[set[str], NoDecode] = Field(default={"*"})
+
+    @field_validator("allowed_roles", "admin_roles", mode="before")
+    @classmethod
+    def parse_comma_separated_values(cls, v: Any) -> set[UserRole]:
+        """Parse the comma-separated values."""
+        if isinstance(v, str):
+            return TypeAdapter(set[UserRole]).validate_python(set(v.split(",")))
+        if isinstance(v, Iterable) and all(isinstance(i, str) for i in v):
+            return set(v)
+        raise ValidationError("Invalid value")
+
+    @field_validator("allowed_domains", mode="before")
+    @classmethod
+    def parse_comma_separated_domains(cls, v: Any) -> set[str]:
+        """Parse the comma-separated domains."""
+        if isinstance(v, str):
+            return set(v.split(","))
+        if isinstance(v, Iterable) and all(isinstance(i, str) for i in v):
+            return set(v)
+        raise ValidationError("Invalid value")
 
     @property
     def providers(self) -> dict[str, OAuthProvider]:
@@ -454,6 +494,41 @@ class RAGConfig(BaseModel):
     file: File = Field(default_factory=File)
 
 
+class TaskConfig(BaseModel):
+    """Task configuration."""
+
+    class AutoComplete(BaseSettings, env_prefix="AUTOCOMPLETE_GENERATION_"):
+        """Auto-complete configuration."""
+
+        enable: Annotated[
+            bool,
+            Field(
+                validation_alias=AliasChoices(
+                    "ENABLE_AUTOCOMPLETE_GENERATION", "enable"
+                )
+            ),
+        ] = True
+        input_max_length: int = -1
+        prompt_template: str = Field(
+            default_factory=lambda: (
+                Path(__file__).parent / "templates" / "autocomplete.j2"
+            ).read_text()
+        )
+
+    autocomplete: AutoComplete = Field(default_factory=AutoComplete)
+
+
+class BannerModel(BaseModel):
+    """Banner model."""
+
+    id: str
+    type: str
+    title: Optional[str] = None
+    content: str
+    dismissible: bool
+    timestamp: int
+
+
 class UIConfig(BaseSettings):
     """UI configuration."""
 
@@ -467,9 +542,18 @@ class UIConfig(BaseSettings):
     prompt_suggestions: list[PromptSuggestion] = Field(default_factory=list)
     enable_signup: bool = True
     default_models: str | None = None
+    language_model_order_list: list[str] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("MODEL_ORDER_LIST", "language_model_order_list"),
+        serialization_alias="model_order_list",
+    )
     ENABLE_LOGIN_FORM: bool = True
+    default_user_role: UserRole = "pending"
     enable_community_sharing: bool = True
     enable_message_rating: bool = True
+    banners: list[BannerModel] = Field(
+        default_factory=list, validation_alias=AliasChoices("WEBUI_BANNERS", "banners")
+    )
 
 
 class UserConfig(BaseModel):
@@ -545,8 +629,10 @@ class ConfigData(BaseModel, nested_model_default_partial_update=True):
     ollama: OllamaConfig = Field(default_factory=OllamaConfig)
     openai: OpenAIConfig = Field(default_factory=OpenAIConfig)
     rag: RAGConfig = Field(default_factory=RAGConfig)
+    task: TaskConfig = Field(default_factory=TaskConfig)
     ui: UIConfig = Field(default_factory=UIConfig)
     user: UserConfig = Field(default_factory=UserConfig)
+    webhook_url: str = ""
 
 
 class EndpointFilter(logging.Filter):
@@ -558,27 +644,6 @@ class EndpointFilter(logging.Filter):
 
 
 logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
-
-
-def run_migrations():
-    """Run the alembic migrations."""
-    logger.info("Running migrations")
-    from alembic import command
-    from alembic.config import Config
-
-    alembic_cfg = Config(OPEN_WEBUI_DIR / "alembic.ini")
-
-    # Set the script location dynamically
-    migrations_path = OPEN_WEBUI_DIR / "migrations"
-    alembic_cfg.set_main_option("script_location", str(migrations_path))
-
-    command.upgrade(alembic_cfg, "head")
-
-
-try:
-    run_migrations()
-except Exception as e:
-    logger.exception(e)
 
 
 class Config(SQLModel, table=True):
@@ -624,77 +689,25 @@ if (env.DATA_DIR / "config.json").exists():
     save_to_db(data)
     os.rename(env.DATA_DIR / "config.json", env.DATA_DIR / "old_config.json")
 
-DEFAULT_CONFIG = {
-    "version": 0,
-    "ui": {
-        "default_locale": "",
-        "prompt_suggestions": [
-            {
-                "title": [
-                    "Help me study",
-                    "vocabulary for a college entrance exam",
-                ],
-                "content": "Help me study vocabulary: write a sentence for me to fill in the blank, and I'll try to pick the correct option.",
-            },
-            {
-                "title": [
-                    "Give me ideas",
-                    "for what to do with my kids' art",
-                ],
-                "content": "What are 5 creative things I could do with my kids' art? I don't want to throw them away, but it's also so much clutter.",
-            },
-            {
-                "title": ["Tell me a fun fact", "about the Roman Empire"],
-                "content": "Tell me a random fun fact about the Roman Empire",
-            },
-            {
-                "title": [
-                    "Show me a code snippet",
-                    "of a website's sticky header",
-                ],
-                "content": "Show me a code snippet of a website's sticky header in CSS and JavaScript.",
-            },
-            {
-                "title": [
-                    "Explain options trading",
-                    "if I'm familiar with buying and selling stocks",
-                ],
-                "content": "Explain options trading in simple terms if I'm familiar with buying and selling stocks.",
-            },
-            {
-                "title": ["Overcome procrastination", "give me tips"],
-                "content": "Could you start by asking me about instances when I procrastinate the most and then give me some suggestions to overcome it?",
-            },
-            {
-                "title": [
-                    "Grammar check",
-                    "rewrite it for better readability ",
-                ],
-                "content": 'Check the following sentence for grammar and clarity: "[sentence]". Rewrite it for better readability while maintaining its original meaning.',
-            },
-        ],
-    },
-}
-
 
 def get_config():
     """Get the config."""
     with get_db() as db:
         config_entry = db.query(Config).order_by(col(Config.id).desc()).first()
-        return config_entry.data.model_dump() if config_entry else DEFAULT_CONFIG
+        return config_entry.data.model_dump() if config_entry else {}
 
 
-async def _get_config(session: SessionDepends):
+async def _get_config(session: SessionDep):
     return (await session.exec(select(Config).order_by(col(Config.id).desc()))).first()
 
 
-ConfigDepends = Annotated[
+ConfigDep = Annotated[
     ConfigData, Depends(lambda: ConfigData.model_validate(get_config()))
 ]
-ConfigDBDepends = Annotated[Config | None, Depends(_get_config)]
+ConfigDBDep = Annotated[Config | None, Depends(_get_config)]
 
 
-CONFIG_DATA = get_config()
+CONFIG_DATA = {}
 
 
 def get_config_value(config_path: str):
@@ -710,23 +723,6 @@ def get_config_value(config_path: str):
 
 
 PERSISTENT_CONFIG_REGISTRY = []
-
-
-def save_config(config):
-    """Save the config."""
-    global CONFIG_DATA
-    global PERSISTENT_CONFIG_REGISTRY
-    try:
-        save_to_db(config)
-        CONFIG_DATA = config
-
-        # Trigger updates on all registered PersistentConfig entries
-        for config_item in PERSISTENT_CONFIG_REGISTRY:
-            config_item.update()
-    except Exception as e:
-        logger.exception(e)
-        return False
-    return True
 
 
 T = TypeVar("T")
@@ -806,223 +802,9 @@ class AppConfig:
         return self._state[key].value
 
 
-ENABLE_OAUTH_SIGNUP = PersistentConfig(
-    "ENABLE_OAUTH_SIGNUP",
-    "oauth.enable_signup",
-    os.environ.get("ENABLE_OAUTH_SIGNUP", "False").lower() == "true",
-)
-
-OAUTH_MERGE_ACCOUNTS_BY_EMAIL = PersistentConfig(
-    "OAUTH_MERGE_ACCOUNTS_BY_EMAIL",
-    "oauth.merge_accounts_by_email",
-    os.environ.get("OAUTH_MERGE_ACCOUNTS_BY_EMAIL", "False").lower() == "true",
-)
-
-OAUTH_PROVIDERS = {}
-
-GOOGLE_CLIENT_ID = PersistentConfig(
-    "GOOGLE_CLIENT_ID",
-    "oauth.google.client_id",
-    os.environ.get("GOOGLE_CLIENT_ID", ""),
-)
-
-GOOGLE_CLIENT_SECRET = PersistentConfig(
-    "GOOGLE_CLIENT_SECRET",
-    "oauth.google.client_secret",
-    os.environ.get("GOOGLE_CLIENT_SECRET", ""),
-)
-
-
-GOOGLE_OAUTH_SCOPE = PersistentConfig(
-    "GOOGLE_OAUTH_SCOPE",
-    "oauth.google.scope",
-    os.environ.get("GOOGLE_OAUTH_SCOPE", "openid email profile"),
-)
-
-GOOGLE_REDIRECT_URI = PersistentConfig(
-    "GOOGLE_REDIRECT_URI",
-    "oauth.google.redirect_uri",
-    os.environ.get("GOOGLE_REDIRECT_URI", ""),
-)
-
-MICROSOFT_CLIENT_ID = PersistentConfig(
-    "MICROSOFT_CLIENT_ID",
-    "oauth.microsoft.client_id",
-    os.environ.get("MICROSOFT_CLIENT_ID", ""),
-)
-
-MICROSOFT_CLIENT_SECRET = PersistentConfig(
-    "MICROSOFT_CLIENT_SECRET",
-    "oauth.microsoft.client_secret",
-    os.environ.get("MICROSOFT_CLIENT_SECRET", ""),
-)
-
-MICROSOFT_CLIENT_TENANT_ID = PersistentConfig(
-    "MICROSOFT_CLIENT_TENANT_ID",
-    "oauth.microsoft.tenant_id",
-    os.environ.get("MICROSOFT_CLIENT_TENANT_ID", ""),
-)
-
-MICROSOFT_OAUTH_SCOPE = PersistentConfig(
-    "MICROSOFT_OAUTH_SCOPE",
-    "oauth.microsoft.scope",
-    os.environ.get("MICROSOFT_OAUTH_SCOPE", "openid email profile"),
-)
-
-MICROSOFT_REDIRECT_URI = PersistentConfig(
-    "MICROSOFT_REDIRECT_URI",
-    "oauth.microsoft.redirect_uri",
-    os.environ.get("MICROSOFT_REDIRECT_URI", ""),
-)
-
-OAUTH_CLIENT_ID = PersistentConfig(
-    "OAUTH_CLIENT_ID",
-    "oauth.oidc.client_id",
-    os.environ.get("OAUTH_CLIENT_ID", ""),
-)
-
-OAUTH_CLIENT_SECRET = PersistentConfig(
-    "OAUTH_CLIENT_SECRET",
-    "oauth.oidc.client_secret",
-    os.environ.get("OAUTH_CLIENT_SECRET", ""),
-)
-
-OPENID_PROVIDER_URL = PersistentConfig(
-    "OPENID_PROVIDER_URL",
-    "oauth.oidc.provider_url",
-    os.environ.get("OPENID_PROVIDER_URL", ""),
-)
-
-OPENID_REDIRECT_URI = PersistentConfig(
-    "OPENID_REDIRECT_URI",
-    "oauth.oidc.redirect_uri",
-    os.environ.get("OPENID_REDIRECT_URI", ""),
-)
-
-OAUTH_SCOPES = PersistentConfig(
-    "OAUTH_SCOPES",
-    "oauth.oidc.scopes",
-    os.environ.get("OAUTH_SCOPES", "openid email profile"),
-)
-
-OAUTH_PROVIDER_NAME = PersistentConfig(
-    "OAUTH_PROVIDER_NAME",
-    "oauth.oidc.provider_name",
-    os.environ.get("OAUTH_PROVIDER_NAME", "SSO"),
-)
-
-OAUTH_USERNAME_CLAIM = PersistentConfig(
-    "OAUTH_USERNAME_CLAIM",
-    "oauth.oidc.username_claim",
-    os.environ.get("OAUTH_USERNAME_CLAIM", "name"),
-)
-
-OAUTH_PICTURE_CLAIM = PersistentConfig(
-    "OAUTH_PICTURE_CLAIM",
-    "oauth.oidc.avatar_claim",
-    os.environ.get("OAUTH_PICTURE_CLAIM", "picture"),
-)
-
-OAUTH_EMAIL_CLAIM = PersistentConfig(
-    "OAUTH_EMAIL_CLAIM",
-    "oauth.oidc.email_claim",
-    os.environ.get("OAUTH_EMAIL_CLAIM", "email"),
-)
-
-OAUTH_GROUPS_CLAIM = PersistentConfig(
-    "OAUTH_GROUPS_CLAIM",
-    "oauth.oidc.group_claim",
-    os.environ.get("OAUTH_GROUP_CLAIM", "groups"),
-)
-
-ENABLE_OAUTH_ROLE_MANAGEMENT = PersistentConfig(
-    "ENABLE_OAUTH_ROLE_MANAGEMENT",
-    "oauth.enable_role_mapping",
-    os.environ.get("ENABLE_OAUTH_ROLE_MANAGEMENT", "False").lower() == "true",
-)
-
-ENABLE_OAUTH_GROUP_MANAGEMENT = PersistentConfig(
-    "ENABLE_OAUTH_GROUP_MANAGEMENT",
-    "oauth.enable_group_mapping",
-    os.environ.get("ENABLE_OAUTH_GROUP_MANAGEMENT", "False").lower() == "true",
-)
-
-OAUTH_ROLES_CLAIM = PersistentConfig(
-    "OAUTH_ROLES_CLAIM",
-    "oauth.roles_claim",
-    os.environ.get("OAUTH_ROLES_CLAIM", "roles"),
-)
-
-OAUTH_ALLOWED_ROLES = PersistentConfig(
-    "OAUTH_ALLOWED_ROLES",
-    "oauth.allowed_roles",
-    [
-        role.strip()
-        for role in os.environ.get("OAUTH_ALLOWED_ROLES", "user,admin").split(",")
-    ],
-)
-
-OAUTH_ADMIN_ROLES = PersistentConfig(
-    "OAUTH_ADMIN_ROLES",
-    "oauth.admin_roles",
-    [role.strip() for role in os.environ.get("OAUTH_ADMIN_ROLES", "admin").split(",")],
-)
-
-OAUTH_ALLOWED_DOMAINS = PersistentConfig(
-    "OAUTH_ALLOWED_DOMAINS",
-    "oauth.allowed_domains",
-    [
-        domain.strip()
-        for domain in os.environ.get("OAUTH_ALLOWED_DOMAINS", "*").split(",")
-    ],
-)
-
-
-def load_oauth_providers():
-    """Load the OAuth providers."""
-    OAUTH_PROVIDERS.clear()
-    if GOOGLE_CLIENT_ID.value and GOOGLE_CLIENT_SECRET.value:
-        OAUTH_PROVIDERS["google"] = {
-            "client_id": GOOGLE_CLIENT_ID.value,
-            "client_secret": GOOGLE_CLIENT_SECRET.value,
-            "server_metadata_url": "https://accounts.google.com/.well-known/openid-configuration",
-            "scope": GOOGLE_OAUTH_SCOPE.value,
-            "redirect_uri": GOOGLE_REDIRECT_URI.value,
-        }
-
-    if (
-        MICROSOFT_CLIENT_ID.value
-        and MICROSOFT_CLIENT_SECRET.value
-        and MICROSOFT_CLIENT_TENANT_ID.value
-    ):
-        OAUTH_PROVIDERS["microsoft"] = {
-            "client_id": MICROSOFT_CLIENT_ID.value,
-            "client_secret": MICROSOFT_CLIENT_SECRET.value,
-            "server_metadata_url": f"https://login.microsoftonline.com/{MICROSOFT_CLIENT_TENANT_ID.value}/v2.0/.well-known/openid-configuration",
-            "scope": MICROSOFT_OAUTH_SCOPE.value,
-            "redirect_uri": MICROSOFT_REDIRECT_URI.value,
-        }
-
-    if (
-        OAUTH_CLIENT_ID.value
-        and OAUTH_CLIENT_SECRET.value
-        and OPENID_PROVIDER_URL.value
-    ):
-        OAUTH_PROVIDERS["oidc"] = {
-            "client_id": OAUTH_CLIENT_ID.value,
-            "client_secret": OAUTH_CLIENT_SECRET.value,
-            "server_metadata_url": OPENID_PROVIDER_URL.value,
-            "scope": OAUTH_SCOPES.value,
-            "name": OAUTH_PROVIDER_NAME.value,
-            "redirect_uri": OPENID_REDIRECT_URI.value,
-        }
-
-
-load_oauth_providers()
-
 STATIC_DIR = Path(os.getenv("STATIC_DIR", OPEN_WEBUI_DIR / "static")).resolve()
 
-frontend_favicon = FRONTEND_BUILD_DIR / "static" / "favicon.png"
+frontend_favicon = env.FRONTEND_BUILD_DIR / "static" / "favicon.png"
 
 if frontend_favicon.exists():
     try:
@@ -1032,7 +814,7 @@ if frontend_favicon.exists():
 else:
     logger.warning(f"Frontend favicon not found at {frontend_favicon}")
 
-frontend_splash = FRONTEND_BUILD_DIR / "static" / "splash.png"
+frontend_splash = env.FRONTEND_BUILD_DIR / "static" / "splash.png"
 
 if frontend_splash.exists():
     try:
@@ -1044,7 +826,6 @@ else:
 
 
 STORAGE_PROVIDER = os.environ.get("STORAGE_PROVIDER", "")  # defaults to local, s3
-
 S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID", None)
 S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY", None)
 S3_REGION_NAME = os.environ.get("S3_REGION_NAME", None)
@@ -1113,13 +894,6 @@ OLLAMA_API_CONFIGS = PersistentConfig(
     {},
 )
 
-ENABLE_OPENAI_API = PersistentConfig(
-    "ENABLE_OPENAI_API",
-    "openai.enable",
-    os.environ.get("ENABLE_OPENAI_API", "True").lower() == "true",
-)
-
-
 OPENAI_API_KEY = env.OPENAI_API_KEY
 OPENAI_API_BASE_URL = env.OPENAI_BASE_URL
 
@@ -1159,17 +933,6 @@ OPENAI_API_BASE_URL = OPENAI_BASE_URL
 
 WEBUI_URL = PersistentConfig(
     "WEBUI_URL", "webui.url", os.environ.get("WEBUI_URL", "http://localhost:3000")
-)
-
-
-ENABLE_SIGNUP = PersistentConfig(
-    "ENABLE_SIGNUP",
-    "ui.enable_signup",
-    (
-        False
-        if not env.WEBUI_AUTH
-        else os.environ.get("ENABLE_SIGNUP", "True").lower() == "true"
-    ),
 )
 
 ENABLE_LOGIN_FORM = PersistentConfig(
@@ -1221,18 +984,6 @@ DEFAULT_PROMPT_SUGGESTIONS = PersistentConfig(
             "content": "Could you start by asking me about instances when I procrastinate the most and then give me some suggestions to overcome it?",
         },
     ],
-)
-
-MODEL_ORDER_LIST = PersistentConfig(
-    "MODEL_ORDER_LIST",
-    "ui.model_order_list",
-    [],
-)
-
-DEFAULT_USER_ROLE = PersistentConfig(
-    "DEFAULT_USER_ROLE",
-    "ui.default_user_role",
-    os.getenv("DEFAULT_USER_ROLE", "pending"),
 )
 
 USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS = (
@@ -1317,10 +1068,6 @@ DEFAULT_ARENA_MODEL = {
     },
 }
 
-WEBHOOK_URL = PersistentConfig(
-    "WEBHOOK_URL", "webhook_url", os.environ.get("WEBHOOK_URL", "")
-)
-
 ENABLE_ADMIN_EXPORT = os.environ.get("ENABLE_ADMIN_EXPORT", "True").lower() == "true"
 
 ENABLE_ADMIN_CHAT_ACCESS = (
@@ -1375,28 +1122,6 @@ if "*" in CORS_ALLOW_ORIGIN:
     )
 
 validate_cors_origins(CORS_ALLOW_ORIGIN)
-
-
-class BannerModel(BaseModel):
-    """Banner model."""
-
-    id: str
-    type: str
-    title: Optional[str] = None
-    content: str
-    dismissible: bool
-    timestamp: int
-
-
-try:
-    banners = json.loads(os.environ.get("WEBUI_BANNERS", "[]"))
-    banners = [BannerModel(**banner) for banner in banners]
-except Exception as e:
-    logger.error(f"Error loading WEBUI_BANNERS: {e}")
-    banners = []
-
-WEBUI_BANNERS = PersistentConfig("WEBUI_BANNERS", "ui.banners", banners)
-
 
 SHOW_ADMIN_DETAILS = PersistentConfig(
     "SHOW_ADMIN_DETAILS",
@@ -1517,67 +1242,6 @@ Strictly return in JSON format:
 </chat_history>
 """
 
-ENABLE_AUTOCOMPLETE_GENERATION = PersistentConfig(
-    "ENABLE_AUTOCOMPLETE_GENERATION",
-    "task.autocomplete.enable",
-    os.environ.get("ENABLE_AUTOCOMPLETE_GENERATION", "True").lower() == "true",
-)
-
-AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH = PersistentConfig(
-    "AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH",
-    "task.autocomplete.input_max_length",
-    int(os.environ.get("AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH", "-1")),
-)
-
-AUTOCOMPLETE_GENERATION_PROMPT_TEMPLATE = PersistentConfig(
-    "AUTOCOMPLETE_GENERATION_PROMPT_TEMPLATE",
-    "task.autocomplete.prompt_template",
-    os.environ.get("AUTOCOMPLETE_GENERATION_PROMPT_TEMPLATE", ""),
-)
-
-
-DEFAULT_AUTOCOMPLETE_GENERATION_PROMPT_TEMPLATE = """### Task:
-You are an autocompletion system. Continue the text in `<text>` based on the **completion type** in `<type>` and the given language.
-
-### **Instructions**:
-1. Analyze `<text>` for context and meaning.
-2. Use `<type>` to guide your output:
-   - **General**: Provide a natural, concise continuation.
-   - **Search Query**: Complete as if generating a realistic search query.
-3. Start as if you are directly continuing `<text>`. Do **not** repeat, paraphrase, or respond as a model. Simply complete the text.
-4. Ensure the continuation:
-   - Flows naturally from `<text>`.
-   - Avoids repetition, overexplaining, or unrelated ideas.
-5. If unsure, return: `{ "text": "" }`.
-
-### **Output Rules**:
-- Respond only in JSON format: `{ "text": "<your_completion>" }`.
-
-### **Examples**:
-#### Example 1:
-Input:
-<type>General</type>
-<text>The sun was setting over the horizon, painting the sky</text>
-Output:
-{ "text": "with vibrant shades of orange and pink." }
-
-#### Example 2:
-Input:
-<type>Search Query</type>
-<text>Top-rated restaurants in</text>
-Output:
-{ "text": "New York City for Italian cuisine." }
-
----
-### Context:
-<chat_history>
-{{MESSAGES:END:6}}
-</chat_history>
-<type>{{TYPE}}</type>
-<text>{{PROMPT}}</text>
-#### Output:
-"""
-
 TOOLS_FUNCTION_CALLING_PROMPT_TEMPLATE = PersistentConfig(
     "TOOLS_FUNCTION_CALLING_PROMPT_TEMPLATE",
     "task.tools.prompt_template",
@@ -1647,11 +1311,6 @@ if VECTOR_DB == "pgvector" and not PGVECTOR_DB_URL.startswith("postgres"):
 PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH = int(
     os.environ.get("PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH", "1536")
 )
-
-####################################
-# Information Retrieval (RAG)
-####################################
-
 
 # If configured, Google Drive will be available as an upload option.
 ENABLE_GOOGLE_DRIVE_INTEGRATION = PersistentConfig(
@@ -2225,11 +1884,6 @@ IMAGE_GENERATION_MODEL = PersistentConfig(
     os.getenv("IMAGE_GENERATION_MODEL", ""),
 )
 
-####################################
-# Audio
-####################################
-
-# Transcription
 WHISPER_MODEL = PersistentConfig(
     "WHISPER_MODEL",
     "audio.stt.whisper_model",
@@ -2322,11 +1976,6 @@ AUDIO_TTS_AZURE_SPEECH_OUTPUT_FORMAT = PersistentConfig(
         "AUDIO_TTS_AZURE_SPEECH_OUTPUT_FORMAT", "audio-24khz-160kbitrate-mono-mp3"
     ),
 )
-
-
-####################################
-# LDAP
-####################################
 
 ENABLE_LDAP = PersistentConfig(
     "ENABLE_LDAP",
