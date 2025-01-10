@@ -1,19 +1,28 @@
+"""Vector API models."""
+
+from typing import Any, Sequence
+
 from pydantic import BaseModel
-from typing import Optional, List, Any
 
 
 class VectorItem(BaseModel):
+    """Vector item."""
+
     id: str
     text: str
-    vector: List[float | int]
+    vector: Sequence[float] | Sequence[int]
     metadata: Any
 
 
 class GetResult(BaseModel):
-    ids: Optional[List[List[str]]]
-    documents: Optional[List[List[str]]]
-    metadatas: Optional[List[List[Any]]]
+    """Get result."""
+
+    ids: list[list[str]]
+    documents: list[list[str]]
+    metadatas: list[list[Any]]
 
 
 class SearchResult(GetResult):
-    distances: Optional[List[List[float | int]]]
+    """Search result."""
+
+    distances: list[list[float | int]] | None

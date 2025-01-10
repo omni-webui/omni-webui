@@ -15,8 +15,6 @@ from open_webui.config import (
     DEFAULT_QUERY_GENERATION_PROMPT_TEMPLATE,
     DEFAULT_TAGS_GENERATION_PROMPT_TEMPLATE,
     DEFAULT_TITLE_GENERATION_PROMPT_TEMPLATE,
-    Config,
-    ConfigData,
     ConfigDBDep,
     ConfigDep,
 )
@@ -81,11 +79,7 @@ async def update_task_config(
     user=Depends(get_admin_user),
 ):
     """Update task config."""
-    if config_db is None:
-        config = ConfigData()
-        config_db = Config(data=config)
-    else:
-        config = config_db.data
+    config = config_db.data
     request.app.state.config.TASK_MODEL = form_data.TASK_MODEL
     request.app.state.config.TASK_MODEL_EXTERNAL = form_data.TASK_MODEL_EXTERNAL
     request.app.state.config.TITLE_GENERATION_PROMPT_TEMPLATE = (

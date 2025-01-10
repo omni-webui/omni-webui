@@ -1,13 +1,10 @@
 """Configs router."""
 
-from typing import Optional
-
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from open_webui.config import (
     BannerModel,
-    Config,
     ConfigData,
     ConfigDBDep,
     ConfigDep,
@@ -33,12 +30,9 @@ async def import_config(
     user=Depends(get_admin_user),
 ):
     """Import config."""
-    if config_db is not None:
-        config_db.data = ConfigData.model_validate(
-            config_db.data.model_dump() | form_data.config
-        )
-    else:
-        config_db = Config.model_validate({"data": form_data.config})
+    config_db.data = ConfigData.model_validate(
+        config_db.data.model_dump() | form_data.config
+    )
     session.add(config_db)
     await session.commit()
     await session.refresh(config_db)
@@ -54,8 +48,8 @@ async def export_config(config: ConfigDep, user=Depends(get_admin_user)):
 class ModelsConfigForm(BaseModel):
     """Models config form."""
 
-    DEFAULT_MODELS: Optional[str]
-    MODEL_ORDER_LIST: Optional[list[str]]
+    DEFAULT_MODELS: str | None
+    MODEL_ORDER_LIST: list[str] | None
 
 
 @router.get("/models", response_model=ModelsConfigForm)
@@ -75,20 +69,8 @@ async def set_models_config(
     user=Depends(get_admin_user),
 ):
     """Set models config."""
-    if config_db is not None:
-        config_db.data.ui.default_models = form_data.DEFAULT_MODELS
-        config_db.data.ui.language_model_order_list = form_data.MODEL_ORDER_LIST or []
-    else:
-        config_db = Config.model_validate(
-            {
-                "data": {
-                    "ui": {
-                        "default_models": form_data.DEFAULT_MODELS,
-                        "language_model_order_list": form_data.MODEL_ORDER_LIST or [],
-                    }
-                }
-            }
-        )
+    config_db.data.ui.default_models = form_data.DEFAULT_MODELS
+    config_db.data.ui.language_model_order_list = form_data.MODEL_ORDER_LIST or []
     session.add(config_db)
     await session.commit()
     await session.refresh(config_db)
@@ -119,12 +101,7 @@ async def set_default_suggestions(
     user=Depends(get_admin_user),
 ):
     """Set default suggestions."""
-    if config_db is not None:
-        config_db.data.ui.prompt_suggestions = suggestions
-    else:
-        config_db = Config.model_validate(
-            {"data": {"ui": {"prompt_suggestions": suggestions}}}
-        )
+    config_db.data.ui.prompt_suggestions = suggestions
     session.add(config_db)
     await session.commit()
     await session.refresh(config_db)
@@ -139,10 +116,7 @@ async def set_banners(
     user=Depends(get_admin_user),
 ):
     """Set banners."""
-    if config_db is not None:
-        config_db.data.ui.banners = banners
-    else:
-        config_db = Config.model_validate({"data": {"ui": {"banners": banners}}})
+    config_db.data.ui.banners = banners
     session.add(config_db)
     await session.commit()
     await session.refresh(config_db)

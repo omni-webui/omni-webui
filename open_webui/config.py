@@ -50,7 +50,7 @@ from sqlmodel import SQLModel, col, func, select
 from typing_extensions import deprecated
 
 from open_webui.env import (
-    OFFLINE_MODE,
+    OLLAMA_HOST,
     OPENAI_BASE_URL,
     env,
 )
@@ -175,12 +175,21 @@ class AuthConfig(BaseSettings):
                 return v
             raise ValidationError("Invalid value")
 
+    class Admin(BaseSettings, env_prefix="ADMIN_"):
+        """Admin configuration."""
+
+        show: Annotated[
+            bool, Field(validation_alias=AliasChoices("SHOW_ADMIN_DETAILS", "show"))
+        ] = False
+        email: str = ""
+
     api_key: APIKey = Field(default_factory=APIKey)
     jwt_expiry: Annotated[
         timedelta | None,
         Field(validation_alias=AliasChoices("JWT_EXPIRES_IN", "jwt_expiry")),
         WrapValidator(validate_duration),
     ] = None
+    admin: Admin = Field(default_factory=Admin)
 
 
 class ArenaModel(BaseModel):
@@ -265,7 +274,7 @@ class OAuthConfig(BaseModel, env_prefix="OAUTH_"):
 
         tenant_id: str = ""
 
-    class OIDC(Provider, env_prefix="OAUTH_"):
+    class OIDC(Provider, env_prefix="OAUTH_", extra="allow"):
         """OIDC OAuth provider configuration."""
 
         provider_url: Annotated[
@@ -378,6 +387,12 @@ class ClientConfig(BaseModel):
 
     enable: bool = True
     prefix_id: str | None = None
+    key: str | None = None
+    models: list[str] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("model_ids", "models"),
+        serialization_alias="model_ids",
+    )
 
 
 class OllamaConfig(BaseSettings, env_prefix="OLLAMA_"):
@@ -386,6 +401,16 @@ class OllamaConfig(BaseSettings, env_prefix="OLLAMA_"):
     enable: Annotated[
         bool, Field(validation_alias=AliasChoices("ENABLE_OLLAMA_API", "enable"))
     ] = True
+    host: Annotated[
+        str,
+        Field(
+            validation_alias=AliasChoices(
+                "OLLAMA_HOST",
+                "OLLAMA_BASE_URL",  # Backward compatibility for stupid Open WebUI
+                "host",
+            )
+        ),
+    ] = OLLAMA_HOST
     base_urls: Annotated[list[str], NoDecode] = Field(default_factory=list)
     api_configs: dict[str, ClientConfig] = Field(default_factory=dict)
 
@@ -490,6 +515,7 @@ class RAGConfig(BaseModel):
         """Max file size in MB"""
 
     file: File = Field(default_factory=File)
+    chunk_size: int = 1000
     template: str = Field(
         default_factory=lambda: (
             Path(__file__).parent / "templates" / "rag.j2"
@@ -701,13 +727,15 @@ def get_config():
 
 
 async def _get_config(session: SessionDep):
-    return (await session.exec(select(Config).order_by(col(Config.id).desc()))).first()
+    return (
+        await session.exec(select(Config).order_by(col(Config.id).desc()))
+    ).first() or Config(data=ConfigData())
 
 
 ConfigDep = Annotated[
     ConfigData, Depends(lambda: ConfigData.model_validate(get_config()))
 ]
-ConfigDBDep = Annotated[Config | None, Depends(_get_config)]
+ConfigDBDep = Annotated[Config, Depends(_get_config)]
 
 
 CONFIG_DATA = {}
@@ -825,38 +853,13 @@ if frontend_splash.exists():
 else:
     logger.warning(f"Frontend splash not found at {frontend_splash}")
 
-
-STORAGE_PROVIDER = os.environ.get("STORAGE_PROVIDER", "")  # defaults to local, s3
-S3_ACCESS_KEY_ID = os.environ.get("S3_ACCESS_KEY_ID", None)
-S3_SECRET_ACCESS_KEY = os.environ.get("S3_SECRET_ACCESS_KEY", None)
-S3_REGION_NAME = os.environ.get("S3_REGION_NAME", None)
-S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME", None)
-S3_ENDPOINT_URL = os.environ.get("S3_ENDPOINT_URL", None)
-
 CACHE_DIR = env.DATA_DIR / "cache"
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-OLLAMA_API_BASE_URL = os.environ.get(
-    "OLLAMA_API_BASE_URL", "http://localhost:11434/api"
-)
-
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "")
-if OLLAMA_BASE_URL:
-    # Remove trailing slash
-    OLLAMA_BASE_URL = (
-        OLLAMA_BASE_URL[:-1] if OLLAMA_BASE_URL.endswith("/") else OLLAMA_BASE_URL
-    )
-
 
 K8S_FLAG = os.environ.get("K8S_FLAG", "")
 USE_OLLAMA_DOCKER = os.environ.get("USE_OLLAMA_DOCKER", "false")
-
-if OLLAMA_BASE_URL == "" and OLLAMA_API_BASE_URL != "":
-    OLLAMA_BASE_URL = (
-        OLLAMA_API_BASE_URL[:-4]
-        if OLLAMA_API_BASE_URL.endswith("/api")
-        else OLLAMA_API_BASE_URL
-    )
 
 if env.WEBUI_ENV == "prod":
     if OLLAMA_BASE_URL == "/ollama" and not K8S_FLAG:
@@ -869,57 +872,11 @@ if env.WEBUI_ENV == "prod":
     elif K8S_FLAG:
         OLLAMA_BASE_URL = "http://ollama-service.open-webui.svc.cluster.local:11434"
 
-
-OLLAMA_BASE_URLS = os.environ.get("OLLAMA_BASE_URLS", "")
-OLLAMA_BASE_URLS = OLLAMA_BASE_URLS if OLLAMA_BASE_URLS != "" else OLLAMA_BASE_URL
-
-OLLAMA_BASE_URLS = [url.strip() for url in OLLAMA_BASE_URLS.split(";")]
-OLLAMA_BASE_URLS = PersistentConfig(
-    "OLLAMA_BASE_URLS", "ollama.base_urls", OLLAMA_BASE_URLS
-)
-
-OLLAMA_API_CONFIGS = PersistentConfig(
-    "OLLAMA_API_CONFIGS",
-    "ollama.api_configs",
-    {},
-)
-
-OPENAI_API_KEY = env.OPENAI_API_KEY
-OPENAI_API_BASE_URL = env.OPENAI_BASE_URL
-
-
-OPENAI_API_KEYS = PersistentConfig(
-    "OPENAI_API_KEYS", "openai.api_keys", env.OPENAI_API_KEYS
-)
-
-OPENAI_API_BASE_URLS = os.environ.get("OPENAI_API_BASE_URLS", "")
-OPENAI_API_BASE_URLS = (
-    OPENAI_API_BASE_URLS if OPENAI_API_BASE_URLS != "" else OPENAI_API_BASE_URL
-)
-
-OPENAI_API_BASE_URLS = [
-    url.strip() if url != "" else OPENAI_BASE_URL
-    for url in OPENAI_API_BASE_URLS.split(";")
-]
-OPENAI_API_BASE_URLS = PersistentConfig(
-    "OPENAI_API_BASE_URLS", "openai.api_base_urls", OPENAI_API_BASE_URLS
-)
-
 OPENAI_API_CONFIGS = PersistentConfig(
     "OPENAI_API_CONFIGS",
     "openai.api_configs",
     {},
 )
-
-# Get the actual OpenAI API key based on the base URL
-OPENAI_API_KEY = ""
-try:
-    OPENAI_API_KEY = OPENAI_API_KEYS.value[
-        OPENAI_API_BASE_URLS.value.index(OPENAI_BASE_URL)  # type: ignore
-    ]
-except Exception:
-    pass
-OPENAI_API_BASE_URL = OPENAI_BASE_URL
 
 WEBUI_URL = PersistentConfig(
     "WEBUI_URL", "webui.url", os.environ.get("WEBUI_URL", "http://localhost:3000")
@@ -929,51 +886,6 @@ ENABLE_LOGIN_FORM = PersistentConfig(
     "ENABLE_LOGIN_FORM",
     "ui.ENABLE_LOGIN_FORM",
     os.environ.get("ENABLE_LOGIN_FORM", "True").lower() == "true",
-)
-
-
-DEFAULT_LOCALE = PersistentConfig(
-    "DEFAULT_LOCALE",
-    "ui.default_locale",
-    os.environ.get("DEFAULT_LOCALE", ""),
-)
-
-DEFAULT_MODELS = PersistentConfig(
-    "DEFAULT_MODELS", "ui.default_models", os.environ.get("DEFAULT_MODELS", None)
-)
-
-DEFAULT_PROMPT_SUGGESTIONS = PersistentConfig(
-    "DEFAULT_PROMPT_SUGGESTIONS",
-    "ui.prompt_suggestions",
-    [
-        {
-            "title": ["Help me study", "vocabulary for a college entrance exam"],
-            "content": "Help me study vocabulary: write a sentence for me to fill in the blank, and I'll try to pick the correct option.",
-        },
-        {
-            "title": ["Give me ideas", "for what to do with my kids' art"],
-            "content": "What are 5 creative things I could do with my kids' art? I don't want to throw them away, but it's also so much clutter.",
-        },
-        {
-            "title": ["Tell me a fun fact", "about the Roman Empire"],
-            "content": "Tell me a random fun fact about the Roman Empire",
-        },
-        {
-            "title": ["Show me a code snippet", "of a website's sticky header"],
-            "content": "Show me a code snippet of a website's sticky header in CSS and JavaScript.",
-        },
-        {
-            "title": [
-                "Explain options trading",
-                "if I'm familiar with buying and selling stocks",
-            ],
-            "content": "Explain options trading in simple terms if I'm familiar with buying and selling stocks.",
-        },
-        {
-            "title": ["Overcome procrastination", "give me tips"],
-            "content": "Could you start by asking me about instances when I procrastinate the most and then give me some suggestions to overcome it?",
-        },
-    ],
 )
 
 USER_PERMISSIONS_WORKSPACE_MODELS_ACCESS = (
@@ -1112,18 +1024,6 @@ if "*" in CORS_ALLOW_ORIGIN:
     )
 
 validate_cors_origins(CORS_ALLOW_ORIGIN)
-
-SHOW_ADMIN_DETAILS = PersistentConfig(
-    "SHOW_ADMIN_DETAILS",
-    "auth.admin.show",
-    os.environ.get("SHOW_ADMIN_DETAILS", "true").lower() == "true",
-)
-
-ADMIN_EMAIL = PersistentConfig(
-    "ADMIN_EMAIL",
-    "auth.admin.email",
-    os.environ.get("ADMIN_EMAIL", None),
-)
 
 TASK_MODEL = PersistentConfig(
     "TASK_MODEL",
@@ -1297,9 +1197,6 @@ if VECTOR_DB == "pgvector" and not env.PGVECTOR_DB_URL.startswith("postgres"):
     raise ValueError(
         "Pgvector requires setting PGVECTOR_DB_URL or using Postgres with vector extension as the primary database."
     )
-PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH = int(
-    os.environ.get("PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH", "1536")
-)
 
 # If configured, Google Drive will be available as an upload option.
 ENABLE_GOOGLE_DRIVE_INTEGRATION = PersistentConfig(
@@ -1385,15 +1282,6 @@ RAG_EMBEDDING_MODEL = PersistentConfig(
 )
 logger.info(f"Embedding model set: {RAG_EMBEDDING_MODEL.value}")
 
-RAG_EMBEDDING_MODEL_AUTO_UPDATE = (
-    not OFFLINE_MODE
-    and os.environ.get("RAG_EMBEDDING_MODEL_AUTO_UPDATE", "True").lower() == "true"
-)
-
-RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE = (
-    os.environ.get("RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE", "True").lower() == "true"
-)
-
 RAG_EMBEDDING_BATCH_SIZE = PersistentConfig(
     "RAG_EMBEDDING_BATCH_SIZE",
     "rag.embedding_batch_size",
@@ -1411,23 +1299,6 @@ RAG_RERANKING_MODEL = PersistentConfig(
 if RAG_RERANKING_MODEL.value != "":
     logger.info(f"Reranking model set: {RAG_RERANKING_MODEL.value}")
 
-RAG_RERANKING_MODEL_AUTO_UPDATE = (
-    not OFFLINE_MODE
-    and os.environ.get("RAG_RERANKING_MODEL_AUTO_UPDATE", "True").lower() == "true"
-)
-
-RAG_RERANKING_MODEL_TRUST_REMOTE_CODE = (
-    os.environ.get("RAG_RERANKING_MODEL_TRUST_REMOTE_CODE", "True").lower() == "true"
-)
-
-
-RAG_TEXT_SPLITTER = PersistentConfig(
-    "RAG_TEXT_SPLITTER",
-    "rag.text_splitter",
-    os.environ.get("RAG_TEXT_SPLITTER", ""),
-)
-
-
 TIKTOKEN_CACHE_DIR = os.environ.get("TIKTOKEN_CACHE_DIR", f"{CACHE_DIR}/tiktoken")
 TIKTOKEN_ENCODING_NAME = PersistentConfig(
     "TIKTOKEN_ENCODING_NAME",
@@ -1435,62 +1306,21 @@ TIKTOKEN_ENCODING_NAME = PersistentConfig(
     os.environ.get("TIKTOKEN_ENCODING_NAME", "cl100k_base"),
 )
 
-
-CHUNK_SIZE = PersistentConfig(
-    "CHUNK_SIZE", "rag.chunk_size", int(os.environ.get("CHUNK_SIZE", "1000"))
-)
 CHUNK_OVERLAP = PersistentConfig(
     "CHUNK_OVERLAP",
     "rag.chunk_overlap",
     int(os.environ.get("CHUNK_OVERLAP", "100")),
 )
 
-DEFAULT_RAG_TEMPLATE = """### Task:
-Respond to the user query using the provided context, incorporating inline citations in the format [source_id] **only when the <source_id> tag is explicitly provided** in the context.
-
-### Guidelines:
-- If you don't know the answer, clearly state that.
-- If uncertain, ask the user for clarification.
-- Respond in the same language as the user's query.
-- If the context is unreadable or of poor quality, inform the user and provide the best possible answer.
-- If the answer isn't present in the context but you possess the knowledge, explain this to the user and provide the answer using your own understanding.
-- **Only include inline citations using [source_id] when a <source_id> tag is explicitly provided in the context.**
-- Do not cite if the <source_id> tag is not provided in the context.
-- Do not use XML tags in your response.
-- Ensure citations are concise and directly related to the information provided.
-
-### Example of Citation:
-If the user asks about a specific topic and the information is found in "whitepaper.pdf" with a provided <source_id>, the response should include the citation like so:
-* "According to the study, the proposed method increases efficiency by 20% [whitepaper.pdf]."
-If no <source_id> is present, the response should omit the citation.
-
-### Output:
-Provide a clear and direct response to the user's query, including inline citations in the format [source_id] only when the <source_id> tag is present in the context.
-
-<context>
-{{CONTEXT}}
-</context>
-
-<user_query>
-{{QUERY}}
-</user_query>
-"""
-
-RAG_TEMPLATE = PersistentConfig(
-    "RAG_TEMPLATE",
-    "rag.template",
-    os.environ.get("RAG_TEMPLATE", DEFAULT_RAG_TEMPLATE),
-)
-
 RAG_OPENAI_API_BASE_URL = PersistentConfig(
     "RAG_OPENAI_API_BASE_URL",
     "rag.openai_api_base_url",
-    os.getenv("RAG_OPENAI_API_BASE_URL", OPENAI_API_BASE_URL),
+    os.getenv("RAG_OPENAI_API_BASE_URL", env.OPENAI_BASE_URL),
 )
 RAG_OPENAI_API_KEY = PersistentConfig(
     "RAG_OPENAI_API_KEY",
     "rag.openai_api_key",
-    os.getenv("RAG_OPENAI_API_KEY", OPENAI_API_KEY),
+    os.getenv("RAG_OPENAI_API_KEY", env.OPENAI_API_KEY),
 )
 
 RAG_OLLAMA_BASE_URL = PersistentConfig(
@@ -1842,12 +1672,12 @@ COMFYUI_WORKFLOW_NODES = PersistentConfig(
 IMAGES_OPENAI_API_BASE_URL = PersistentConfig(
     "IMAGES_OPENAI_API_BASE_URL",
     "image_generation.openai.api_base_url",
-    os.getenv("IMAGES_OPENAI_API_BASE_URL", OPENAI_API_BASE_URL),
+    os.getenv("IMAGES_OPENAI_API_BASE_URL", env.OPENAI_BASE_URL),
 )
 IMAGES_OPENAI_API_KEY = PersistentConfig(
     "IMAGES_OPENAI_API_KEY",
     "image_generation.openai.api_key",
-    os.getenv("IMAGES_OPENAI_API_KEY", OPENAI_API_KEY),
+    os.getenv("IMAGES_OPENAI_API_KEY", env.OPENAI_API_KEY),
 )
 
 IMAGE_SIZE = PersistentConfig(
@@ -1872,7 +1702,7 @@ WHISPER_MODEL = PersistentConfig(
 
 WHISPER_MODEL_DIR = os.getenv("WHISPER_MODEL_DIR", f"{CACHE_DIR}/whisper/models")
 WHISPER_MODEL_AUTO_UPDATE = (
-    not OFFLINE_MODE
+    not env.OFFLINE_MODE
     and os.environ.get("WHISPER_MODEL_AUTO_UPDATE", "").lower() == "true"
 )
 
@@ -1880,13 +1710,13 @@ WHISPER_MODEL_AUTO_UPDATE = (
 AUDIO_STT_OPENAI_API_BASE_URL = PersistentConfig(
     "AUDIO_STT_OPENAI_API_BASE_URL",
     "audio.stt.openai.api_base_url",
-    os.getenv("AUDIO_STT_OPENAI_API_BASE_URL", OPENAI_API_BASE_URL),
+    os.getenv("AUDIO_STT_OPENAI_API_BASE_URL", env.OPENAI_BASE_URL),
 )
 
 AUDIO_STT_OPENAI_API_KEY = PersistentConfig(
     "AUDIO_STT_OPENAI_API_KEY",
     "audio.stt.openai.api_key",
-    os.getenv("AUDIO_STT_OPENAI_API_KEY", OPENAI_API_KEY),
+    os.getenv("AUDIO_STT_OPENAI_API_KEY", env.OPENAI_API_KEY),
 )
 
 AUDIO_STT_ENGINE = PersistentConfig(
@@ -1904,12 +1734,12 @@ AUDIO_STT_MODEL = PersistentConfig(
 AUDIO_TTS_OPENAI_API_BASE_URL = PersistentConfig(
     "AUDIO_TTS_OPENAI_API_BASE_URL",
     "audio.tts.openai.api_base_url",
-    os.getenv("AUDIO_TTS_OPENAI_API_BASE_URL", OPENAI_API_BASE_URL),
+    os.getenv("AUDIO_TTS_OPENAI_API_BASE_URL", env.OPENAI_BASE_URL),
 )
 AUDIO_TTS_OPENAI_API_KEY = PersistentConfig(
     "AUDIO_TTS_OPENAI_API_KEY",
     "audio.tts.openai.api_key",
-    os.getenv("AUDIO_TTS_OPENAI_API_KEY", OPENAI_API_KEY),
+    os.getenv("AUDIO_TTS_OPENAI_API_KEY", env.OPENAI_API_KEY),
 )
 
 AUDIO_TTS_API_KEY = PersistentConfig(

@@ -59,6 +59,7 @@ dependencies = [
     "unstructured>=0.16.12",
     "uvicorn[standard]>=0.34.0",
     "validators>=0.34.0",
+    "valkey[libvalkey]>=6.0.2",
     "youtube-transcript-api>=0.6.3",
 ]
 classifiers = [

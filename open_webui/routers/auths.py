@@ -16,8 +16,6 @@ from ldap3.utils.conv import escape_filter_chars
 from pydantic import BaseModel
 
 from open_webui.config import (
-    Config,
-    ConfigData,
     ConfigDBDep,
     ConfigDep,
     UserRole,
@@ -348,7 +346,7 @@ async def signin(
         user = Auths.authenticate_user(form_data.email.lower(), form_data.password)
 
     if user:
-        expires_delta = config_db.data.auth.jwt_expiry if config_db else None
+        expires_delta = config_db.data.auth.jwt_expiry
         expires_at = None
         if expires_delta:
             expires_at = int(time.time()) + int(expires_delta.total_seconds())
@@ -402,11 +400,7 @@ async def signup(
     form_data: SignupForm,
 ):
     """Sign up."""
-    if config_db is None:
-        config = ConfigData()
-        config_db = Config(data=config)
-    else:
-        config = config_db.data
+    config = config_db.data
     if env.WEBUI_AUTH:
         if (
             not config.ui.enable_signup
@@ -573,10 +567,12 @@ async def add_user(form_data: AddUserForm, user=Depends(get_admin_user)):
 
 
 @router.get("/admin/details")
-async def get_admin_details(request: Request, user=Depends(get_current_user)):
+async def get_admin_details(
+    request: Request, config: ConfigDep, user=Depends(get_current_user)
+):
     """Get admin details."""
-    if request.app.state.config.SHOW_ADMIN_DETAILS:
-        admin_email = request.app.state.config.ADMIN_EMAIL
+    if config.auth.admin.show:
+        admin_email = config.auth.admin.email
         admin_name = None
 
         if admin_email:
@@ -603,7 +599,7 @@ async def get_admin_config(
 ):
     """Get admin configuration."""
     return {
-        "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
+        "SHOW_ADMIN_DETAILS": config.auth.admin.show,
         "WEBUI_URL": request.app.state.config.WEBUI_URL,
         "ENABLE_SIGNUP": config.ui.enable_signup,
         "ENABLE_API_KEY": config.auth.api_key.enable,
@@ -637,13 +633,13 @@ class AdminConfig(BaseModel):
 async def update_admin_config(
     request: Request,
     form_data: AdminConfig,
-    config: ConfigDep,
     config_db: ConfigDBDep,
     session: SessionDep,
     user=Depends(get_admin_user),
 ):
     """Update admin configuration."""
-    request.app.state.config.SHOW_ADMIN_DETAILS = form_data.SHOW_ADMIN_DETAILS
+    config = config_db.data
+    config.auth.admin.show = form_data.SHOW_ADMIN_DETAILS
     request.app.state.config.WEBUI_URL = form_data.WEBUI_URL
     config.ui.enable_signup = form_data.ENABLE_SIGNUP
 
@@ -671,15 +667,11 @@ async def update_admin_config(
         form_data.ENABLE_COMMUNITY_SHARING
     )
     request.app.state.config.ENABLE_MESSAGE_RATING = form_data.ENABLE_MESSAGE_RATING
-    if config_db is not None:
-        config_db.data = config
-    else:
-        config_db = Config(data=config)
     session.add(config_db)
     await session.commit()
 
     return {
-        "SHOW_ADMIN_DETAILS": request.app.state.config.SHOW_ADMIN_DETAILS,
+        "SHOW_ADMIN_DETAILS": config.auth.admin.show,
         "WEBUI_URL": request.app.state.config.WEBUI_URL,
         "ENABLE_SIGNUP": config.ui.enable_signup,
         "ENABLE_API_KEY": config.auth.api_key.enable,

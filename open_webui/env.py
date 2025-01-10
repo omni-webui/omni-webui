@@ -5,13 +5,16 @@ import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal
+from urllib.parse import urlparse
 
+import valkey.asyncio
 from fastapi import Depends
 from loguru import logger
-from pydantic import AliasChoices, Field, field_validator
-from pydantic_settings import BaseSettings, NoDecode
+from pydantic import AliasChoices, Field
+from pydantic_settings import BaseSettings
 
 OPENAI_BASE_URL = "https://api.openai.com/v1"
+OLLAMA_HOST = "http://127.0.0.1:11434"
 
 
 @lru_cache
@@ -41,7 +44,6 @@ class Environments(BaseSettings, case_sensitive=True):
     DOCKER: bool = False
     FRONTEND_BUILD_DIR: Path = get_package_dir("open_webui") / "frontend"
     OPENAI_API_KEY: str = ""
-    OPENAI_API_KEYS: Annotated[list[str], NoDecode] = Field(default_factory=list)
     OPENAI_BASE_URL: Annotated[
         str,
         Field(validation_alias=AliasChoices("OPENAI_BASE_URL", "OPENAI_API_BASE_URL")),
@@ -61,25 +63,24 @@ class Environments(BaseSettings, case_sensitive=True):
     REDIS_URL: Annotated[
         str, Field(validation_alias=AliasChoices("WEBSOCKET_REDIS_URL", "REDIS_URL"))
     ] = "redis://localhost:6379/0"
-
-    @field_validator("OPENAI_API_KEYS")
-    @classmethod
-    def validate_openai_api_keys(cls, value: str | list[str]) -> list[str]:
-        """Validate OpenAI API keys."""
-        if isinstance(value, str):
-            return [key.strip() for key in value.split(";") if key.strip()]
-        return value
+    RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE: bool = True
+    RAG_RERANKING_MODEL_TRUST_REMOTE_CODE: bool = True
+    RAG_EMBEDDING_MODEL_AUTO_UPDATE: bool = True
+    RAG_RERANKING_MODEL_AUTO_UPDATE: bool = True
+    OFFLINE_MODE: bool = False
+    PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH: int = 1536
 
     def model_post_init(self, __context):
         """Post init."""
-        if len(self.OPENAI_API_KEYS) == 0 and self.OPENAI_API_KEY:
-            self.OPENAI_API_KEYS = [self.OPENAI_API_KEY]
         if self.DATABASE_URL == "":
             self.DATABASE_URL = f"sqlite:///{self.DATA_DIR / 'webui.db'}"
         if self.PGVECTOR_DB_URL == "":
             self.PGVECTOR_DB_URL = self.DATABASE_URL
         if self.UPLOAD_DIR == "":
             self.UPLOAD_DIR = f"{self.DATA_DIR}/uploads"
+
+    def __hash__(self):
+        return hash(self.model_dump_json())
 
 
 env = Environments()
@@ -230,7 +231,18 @@ else:
     except Exception:
         AIOHTTP_CLIENT_TIMEOUT_OPENAI_MODEL_LIST = 5
 
-OFFLINE_MODE = os.environ.get("OFFLINE_MODE", "false").lower() == "true"
-
-if OFFLINE_MODE:
+if env.OFFLINE_MODE:
     os.environ["HF_HUB_OFFLINE"] = "1"
+
+
+def get_valkey() -> valkey.asyncio.Valkey:
+    """Get valkey."""
+    result = urlparse(env.REDIS_URL)
+    return valkey.asyncio.Valkey(
+        host=result.hostname or "localhost",
+        port=result.port or 6379,
+        db=0,
+    )
+
+
+ValkeyDep = Annotated[valkey.asyncio.Valkey, Depends(get_valkey)]

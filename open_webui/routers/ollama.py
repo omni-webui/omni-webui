@@ -30,7 +30,7 @@ from loguru import logger
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
-from open_webui.config import Config, ConfigData, ConfigDBDep, ConfigDep
+from open_webui.config import ConfigData, ConfigDBDep, ConfigDep
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import (
     AIOHTTP_CLIENT_TIMEOUT,
@@ -198,12 +198,12 @@ async def verify_connection(
 
 
 @router.get("/config")
-async def get_config(request: Request, config: ConfigDep, user=Depends(get_admin_user)):
+async def get_config(config: ConfigDep, user=Depends(get_admin_user)):
     """Get Ollama Config."""
     return {
         "ENABLE_OLLAMA_API": config.ollama.enable,
-        "OLLAMA_BASE_URLS": request.app.state.config.OLLAMA_BASE_URLS,
-        "OLLAMA_API_CONFIGS": request.app.state.config.OLLAMA_API_CONFIGS,
+        "OLLAMA_BASE_URLS": config.ollama.base_urls,
+        "OLLAMA_API_CONFIGS": config.ollama.api_configs,
     }
 
 
@@ -217,27 +217,23 @@ class OllamaConfigForm(BaseModel):
 
 @router.post("/config/update")
 async def update_config(
-    request: Request,
     form_data: OllamaConfigForm,
     session: SessionDep,
     config_db: ConfigDBDep,
     user=Depends(get_admin_user),
 ):
     """Update Ollama Config."""
-    if config_db is None:
-        config = ConfigData()
-        config_db = Config(data=config)
     config = config_db.data
     config.ollama.enable = form_data.ENABLE_OLLAMA_API or config.ollama.enable
 
-    request.app.state.config.OLLAMA_BASE_URLS = form_data.OLLAMA_BASE_URLS
-    request.app.state.config.OLLAMA_API_CONFIGS = form_data.OLLAMA_API_CONFIGS
+    config.ollama.base_urls = form_data.OLLAMA_BASE_URLS
+    config.ollama.api_configs = form_data.OLLAMA_API_CONFIGS
 
     # Remove any extra configs
-    config_urls = request.app.state.config.OLLAMA_API_CONFIGS.keys()
-    for url in list(request.app.state.config.OLLAMA_BASE_URLS):
+    config_urls = config.ollama.api_configs.keys()
+    for url in config.ollama.base_urls:
         if url not in config_urls:
-            request.app.state.config.OLLAMA_API_CONFIGS.pop(url, None)
+            config.ollama.api_configs.pop(url, None)
 
     config_db.data = config
     session.add(config_db)
@@ -246,8 +242,8 @@ async def update_config(
     config = config_db.data
     return {
         "ENABLE_OLLAMA_API": config.ollama.enable,
-        "OLLAMA_BASE_URLS": request.app.state.config.OLLAMA_BASE_URLS,
-        "OLLAMA_API_CONFIGS": request.app.state.config.OLLAMA_API_CONFIGS,
+        "OLLAMA_BASE_URLS": config.ollama.base_urls,
+        "OLLAMA_API_CONFIGS": config.ollama.api_configs,
     }
 
 
@@ -258,13 +254,13 @@ async def get_all_models(request: Request, config: ConfigDep):
     if config.ollama.enable:
         request_tasks = []
 
-        for idx, url in enumerate(request.app.state.config.OLLAMA_BASE_URLS):
-            if url not in request.app.state.config.OLLAMA_API_CONFIGS:
+        for idx, url in enumerate(config.ollama.base_urls):
+            if url not in config.ollama.api_configs:
                 request_tasks.append(send_get_request(f"{url}/api/tags"))
             else:
-                api_config = request.app.state.config.OLLAMA_API_CONFIGS.get(url, {})
-                enable = api_config.get("enable", True)
-                key = api_config.get("key", None)
+                api_config = config.ollama.api_configs.get(url)
+                enable = api_config.enable if api_config is not None else True
+                key = api_config.key if api_config is not None else None
 
                 if enable:
                     request_tasks.append(send_get_request(f"{url}/api/tags", key))
@@ -275,11 +271,11 @@ async def get_all_models(request: Request, config: ConfigDep):
 
         for idx, response in enumerate(responses):
             if response:
-                url = request.app.state.config.OLLAMA_BASE_URLS[idx]
-                api_config = request.app.state.config.OLLAMA_API_CONFIGS.get(url, {})
+                url = config.ollama.base_urls[idx]
+                api_config = config.ollama.api_configs.get(url)
 
-                prefix_id = api_config.get("prefix_id", None)
-                model_ids = api_config.get("model_ids", [])
+                prefix_id = api_config.prefix_id if api_config else None
+                model_ids = api_config.models if api_config else []
 
                 if len(model_ids) != 0 and "models" in response:
                     response["models"] = list(
@@ -345,7 +341,7 @@ async def get_ollama_tags(
     *,
     request: Request,
     url_idx: Optional[int] = None,
-    config: Config,
+    config: ConfigDep,
     user=Depends(get_verified_user),
 ):
     """Get Ollama Tags."""
@@ -354,8 +350,8 @@ async def get_ollama_tags(
     if url_idx is None:
         models = await get_all_models(request, config)
     else:
-        url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
-        key = get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS)
+        url = config.ollama.base_urls[url_idx]
+        key = get_api_key(url, config.ollama.api_configs)
 
         r = None
         try:
@@ -392,9 +388,7 @@ async def get_ollama_tags(
 
 @router.get("/api/version")
 @router.get("/api/version/{url_idx}")
-async def get_ollama_versions(
-    *, request: Request, url_idx: Optional[int] = None, config: ConfigDep
-):
+async def get_ollama_versions(*, url_idx: Optional[int] = None, config: ConfigDep):
     """Get Ollama Version."""
     if config.ollama.enable:
         if url_idx is None:
@@ -402,11 +396,9 @@ async def get_ollama_versions(
             request_tasks = [
                 send_get_request(
                     f"{url}/api/version",
-                    request.app.state.config.OLLAMA_API_CONFIGS.get(url, {}).get(
-                        "key", None
-                    ),
+                    get_api_key(url, config.ollama.api_configs),
                 )
-                for url in request.app.state.config.OLLAMA_BASE_URLS
+                for url in config.ollama.base_urls
             ]
             responses = [
                 x for x in await asyncio.gather(*request_tasks) if x is not None
@@ -427,7 +419,7 @@ async def get_ollama_versions(
                     detail=ERROR_MESSAGES.OLLAMA_NOT_FOUND,
                 )
         else:
-            url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
+            url = config.ollama.base_urls[url_idx]
 
             r = None
             try:
@@ -464,15 +456,13 @@ async def get_ollama_loaded_models(
         request_tasks = [
             send_get_request(
                 f"{url}/api/ps",
-                request.app.state.config.OLLAMA_API_CONFIGS.get(url, {}).get(
-                    "key", None
-                ),
+                get_api_key(url, config.ollama.api_configs),
             )
-            for url in request.app.state.config.OLLAMA_BASE_URLS
+            for url in config.ollama.base_urls
         ]
         responses = await asyncio.gather(*request_tasks)
 
-        return dict(zip(request.app.state.config.OLLAMA_BASE_URLS, responses))
+        return dict(zip(config.ollama.base_urls, responses))
     else:
         return {}
 
@@ -486,13 +476,15 @@ class ModelNameForm(BaseModel):
 @router.post("/api/pull")
 @router.post("/api/pull/{url_idx}")
 async def pull_model(
+    *,
     request: Request,
     form_data: ModelNameForm,
     url_idx: int = 0,
+    config: ConfigDep,
     user=Depends(get_admin_user),
 ):
     """Pull Model."""
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
+    url = config.ollama.base_urls[url_idx]
     logger.info(f"url: {url}")
 
     # Admin should be able to pull models from any source
@@ -501,7 +493,7 @@ async def pull_model(
     return await send_post_request(
         url=f"{url}/api/pull",
         payload=json.dumps(payload),
-        key=get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS),
+        key=get_api_key(url, config.ollama.api_configs),
     )
 
 
@@ -519,7 +511,7 @@ async def push_model(
     *,
     request: Request,
     form_data: PushModelForm,
-    url_idx: Optional[int] = None,
+    url_idx: int | None = None,
     config: ConfigDep,
     user=Depends(get_admin_user),
 ):
@@ -535,14 +527,14 @@ async def push_model(
                 status_code=400,
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.name),
             )
-
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
+    assert url_idx is not None
+    url = config.ollama.base_urls[url_idx]
     logger.debug(f"url: {url}")
 
     return await send_post_request(
         url=f"{url}/api/push",
         payload=form_data.model_dump_json(exclude_none=True).encode(),
-        key=get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS),
+        key=get_api_key(url, config.ollama.api_configs),
     )
 
 
@@ -558,19 +550,21 @@ class CreateModelForm(BaseModel):
 @router.post("/api/create")
 @router.post("/api/create/{url_idx}")
 async def create_model(
+    *,
     request: Request,
     form_data: CreateModelForm,
     url_idx: int = 0,
+    config: ConfigDep,
     user=Depends(get_admin_user),
 ):
     """Create Model."""
     logger.debug(f"form_data: {form_data}")
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
+    url = config.ollama.base_urls[url_idx]
 
     return await send_post_request(
         url=f"{url}/api/create",
         payload=form_data.model_dump_json(exclude_none=True).encode(),
-        key=get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS),
+        key=get_api_key(url, config.ollama.api_configs),
     )
 
 
@@ -603,9 +597,9 @@ async def copy_model(
                 status_code=400,
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.source),
             )
-
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
-    key = get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS)
+    assert url_idx is not None
+    url = config.ollama.base_urls[url_idx]
+    key = get_api_key(url, config.ollama.api_configs)
 
     r: requests.Response | None = None
     try:
@@ -663,8 +657,9 @@ async def delete_model(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.name),
             )
 
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
-    key = get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS)
+    assert url_idx is not None
+    url = config.ollama.base_urls[url_idx]
+    key = get_api_key(url, config.ollama.api_configs)
 
     r: requests.Response | None = None
     try:
@@ -718,8 +713,8 @@ async def show_model_info(
 
     url_idx = random.choice(models[form_data.name]["urls"])
 
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
-    key = get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS)
+    url = config.ollama.base_urls[url_idx]
+    key = get_api_key(url, config.ollama.api_configs)
 
     r: requests.Response | None = None
     try:
@@ -793,8 +788,8 @@ async def embed(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.model),
             )
 
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
-    key = get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS)
+    url = config.ollama.base_urls[url_idx]
+    key = get_api_key(url, config.ollama.api_configs)
 
     r: requests.Response | None = None
     try:
@@ -868,8 +863,8 @@ async def embeddings(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.model),
             )
 
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
-    key = get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS)
+    url = config.ollama.base_urls[url_idx]
+    key = get_api_key(url, config.ollama.api_configs)
 
     r: requests.Response | None = None
     try:
@@ -949,17 +944,17 @@ async def generate_completion(
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(form_data.model),
             )
 
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
-    api_config = request.app.state.config.OLLAMA_API_CONFIGS.get(url, {})
+    url = config.ollama.base_urls[url_idx]
+    api_config = config.ollama.api_configs.get(url)
 
-    prefix_id = api_config.get("prefix_id", None)
+    prefix_id = api_config.prefix_id if api_config else None
     if prefix_id:
         form_data.model = form_data.model.replace(f"{prefix_id}.", "")
 
     return await send_post_request(
         url=f"{url}/api/generate",
         payload=form_data.model_dump_json(exclude_none=True).encode(),
-        key=get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS),
+        key=get_api_key(url, config.ollama.api_configs),
     )
 
 
@@ -983,7 +978,9 @@ class GenerateChatCompletionForm(BaseModel):
     keep_alive: Optional[Union[int, str]] = None
 
 
-async def get_ollama_url(request: Request, model: str, url_idx: Optional[int] = None):
+async def get_ollama_url(
+    request: Request, model: str, config: ConfigData, url_idx: int | None = None
+):
     """Get Ollama URL based on model name."""
     if url_idx is None:
         models = request.app.state.OLLAMA_MODELS
@@ -993,16 +990,18 @@ async def get_ollama_url(request: Request, model: str, url_idx: Optional[int] = 
                 detail=ERROR_MESSAGES.MODEL_NOT_FOUND(model),
             )
         url_idx = random.choice(models[model].get("urls", []))
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
+    url = config.ollama.base_urls[url_idx]
     return url
 
 
 @router.post("/api/chat")
 @router.post("/api/chat/{url_idx}")
 async def generate_chat_completion(
+    *,
     request: Request,
     form_data: GenerateChatCompletionForm,
     url_idx: Optional[int] = None,
+    config: ConfigDep,
     user=Depends(get_verified_user),
     bypass_filter: Optional[bool] = False,
 ):
@@ -1054,10 +1053,10 @@ async def generate_chat_completion(
     if ":" not in payload["model"]:
         payload["model"] = f"{payload['model']}:latest"
 
-    url = await get_ollama_url(request, payload["model"], url_idx)
-    api_config = request.app.state.config.OLLAMA_API_CONFIGS.get(url, {})
+    url = await get_ollama_url(request, payload["model"], config, url_idx)
+    api_config = config.ollama.api_configs.get(url)
 
-    prefix_id = api_config.get("prefix_id", None)
+    prefix_id = api_config.prefix_id if api_config else None
     if prefix_id:
         payload["model"] = payload["model"].replace(f"{prefix_id}.", "")
 
@@ -1065,7 +1064,7 @@ async def generate_chat_completion(
         url=f"{url}/api/chat",
         payload=json.dumps(payload),
         stream=form_data.stream or False,
-        key=get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS),
+        key=get_api_key(url, config.ollama.api_configs),
         content_type="application/x-ndjson",
     )
 
@@ -1101,9 +1100,11 @@ class OpenAICompletionForm(BaseModel, extra="allow"):
 @router.post("/v1/completions")
 @router.post("/v1/completions/{url_idx}")
 async def generate_openai_completion(
+    *,
     request: Request,
     form_data: OpenAICompletionForm,
     url_idx: Optional[int] = None,
+    config: ConfigDep,
     user=Depends(get_verified_user),
 ):
     """Generate completions using Ollama."""
@@ -1143,10 +1144,10 @@ async def generate_openai_completion(
     if ":" not in payload["model"]:
         payload["model"] = f"{payload['model']}:latest"
 
-    url = await get_ollama_url(request, payload["model"], url_idx)
-    api_config = request.app.state.config.OLLAMA_API_CONFIGS.get(url, {})
+    url = await get_ollama_url(request, payload["model"], config, url_idx)
+    api_config = config.ollama.api_configs.get(url)
 
-    prefix_id = api_config.get("prefix_id", None)
+    prefix_id = api_config.prefix_id if api_config else None
 
     if prefix_id:
         payload["model"] = payload["model"].replace(f"{prefix_id}.", "")
@@ -1155,16 +1156,18 @@ async def generate_openai_completion(
         url=f"{url}/v1/completions",
         payload=json.dumps(payload),
         stream=payload.get("stream", False),
-        key=get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS),
+        key=get_api_key(url, config.ollama.api_configs),
     )
 
 
 @router.post("/v1/chat/completions")
 @router.post("/v1/chat/completions/{url_idx}")
 async def generate_openai_chat_completion(
+    *,
     request: Request,
     form_data: dict,
     url_idx: int | None = None,
+    config: ConfigDep,
     user=Depends(get_verified_user),
 ):
     """Generate chat completions using Ollama."""
@@ -1216,10 +1219,10 @@ async def generate_openai_chat_completion(
     if ":" not in payload["model"]:
         payload["model"] = f"{payload['model']}:latest"
 
-    url = await get_ollama_url(request, payload["model"], url_idx)
-    api_config = request.app.state.config.OLLAMA_API_CONFIGS.get(url, {})
+    url = await get_ollama_url(request, payload["model"], config, url_idx)
+    api_config = config.ollama.api_configs.get(url)
 
-    prefix_id = api_config.get("prefix_id", None)
+    prefix_id = api_config.prefix_id if api_config else None
     if prefix_id:
         payload["model"] = payload["model"].replace(f"{prefix_id}.", "")
 
@@ -1227,7 +1230,7 @@ async def generate_openai_chat_completion(
         url=f"{url}/v1/chat/completions",
         payload=json.dumps(payload),
         stream=payload.get("stream", False),
-        key=get_api_key(url, request.app.state.config.OLLAMA_API_CONFIGS),
+        key=get_api_key(url, config.ollama.api_configs),
     )
 
 
@@ -1255,7 +1258,7 @@ async def get_openai_models(
         ]
 
     else:
-        url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
+        url = config.ollama.base_urls[url_idx]
         r: requests.Response | None = None
         try:
             r = requests.request(method="GET", url=f"{url}/api/tags")
@@ -1391,9 +1394,11 @@ async def download_file_stream(
 @router.post("/models/download")
 @router.post("/models/download/{url_idx}")
 async def download_model(
+    *,
     request: Request,
     form_data: UrlForm,
     url_idx: Optional[int] = None,
+    config: ConfigDep,
     user=Depends(get_admin_user),
 ):
     """Download a model from a URL and upload it to Ollama."""
@@ -1407,7 +1412,7 @@ async def download_model(
 
     if url_idx is None:
         url_idx = 0
-    url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
+    url = config.ollama.base_urls[url_idx]
 
     file_name = parse_huggingface_url(form_data.url)
 
@@ -1424,15 +1429,16 @@ async def download_model(
 @router.post("/models/upload")
 @router.post("/models/upload/{url_idx}")
 def upload_model(
-    request: Request,
+    *,
     file: UploadFile = File(...),
     url_idx: Optional[int] = None,
+    config: ConfigDep,
     user=Depends(get_admin_user),
 ):
     """Upload a model to Ollama."""
     if url_idx is None:
         url_idx = 0
-    ollama_url = request.app.state.config.OLLAMA_BASE_URLS[url_idx]
+    ollama_url = config.ollama.base_urls[url_idx]
 
     file_path = f"{env.UPLOAD_DIR}/{file.filename}"
 

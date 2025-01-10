@@ -21,11 +21,7 @@ from langchain_core.documents import Document
 from loguru import logger
 from pydantic import BaseModel
 
-from open_webui.config import (
-    DEFAULT_LOCALE,
-    RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE,
-    RAG_RERANKING_MODEL_TRUST_REMOTE_CODE,
-)
+from open_webui.config import ConfigData, ConfigDBDep, ConfigDep
 from open_webui.constants import ERROR_MESSAGES
 from open_webui.env import DEVICE_TYPE, env
 from open_webui.models import SessionDep
@@ -78,7 +74,7 @@ def get_ef(
             ef = SentenceTransformer(
                 get_model_path(embedding_model, auto_update),
                 device=DEVICE_TYPE,
-                trust_remote_code=RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE,
+                trust_remote_code=env.RAG_EMBEDDING_MODEL_TRUST_REMOTE_CODE,
             )
         except Exception as e:
             logger.debug(f"Error loading SentenceTransformer: {e}")
@@ -112,7 +108,7 @@ def get_rf(
                 rf = sentence_transformers.CrossEncoder(
                     get_model_path(reranking_model, auto_update),
                     device=DEVICE_TYPE,
-                    trust_remote_code=RAG_RERANKING_MODEL_TRUST_REMOTE_CODE,
+                    trust_remote_code=env.RAG_RERANKING_MODEL_TRUST_REMOTE_CODE,
                 )
             except Exception as e:
                 logger.error("CrossEncoder error")
@@ -142,13 +138,13 @@ class SearchForm(CollectionNameForm):
 
 
 @router.get("/")
-async def get_status(request: Request):
+async def get_status(request: Request, config: ConfigDep):
     """Get status."""
     return {
         "status": True,
-        "chunk_size": request.app.state.config.CHUNK_SIZE,
+        "chunk_size": config.rag.chunk_size,
         "chunk_overlap": request.app.state.config.CHUNK_OVERLAP,
-        "template": request.app.state.config.RAG_TEMPLATE,
+        "template": config.rag.template,
         "embedding_engine": request.app.state.config.RAG_EMBEDDING_ENGINE,
         "embedding_model": request.app.state.config.RAG_EMBEDDING_MODEL,
         "reranking_model": request.app.state.config.RAG_RERANKING_MODEL,
@@ -324,7 +320,9 @@ async def update_reranking_config(
 
 
 @router.get("/config")
-async def get_rag_config(request: Request, user=Depends(get_admin_user)):
+async def get_rag_config(
+    request: Request, config: ConfigDep, user=Depends(get_admin_user)
+):
     """Get RAG config."""
     return {
         "status": True,
@@ -336,7 +334,7 @@ async def get_rag_config(request: Request, user=Depends(get_admin_user)):
         },
         "chunk": {
             "text_splitter": request.app.state.config.TEXT_SPLITTER,
-            "chunk_size": request.app.state.config.CHUNK_SIZE,
+            "chunk_size": config.rag.chunk_size,
             "chunk_overlap": request.app.state.config.CHUNK_OVERLAP,
         },
         "file": {
@@ -453,9 +451,14 @@ class ConfigUpdateForm(BaseModel):
 
 @router.post("/config/update")
 async def update_rag_config(
-    request: Request, form_data: ConfigUpdateForm, user=Depends(get_admin_user)
+    request: Request,
+    form_data: ConfigUpdateForm,
+    session: SessionDep,
+    config_db: ConfigDBDep,
+    user=Depends(get_admin_user),
 ):
     """Update RAG config."""
+    config = config_db.data
     request.app.state.config.PDF_EXTRACT_IMAGES = (
         form_data.pdf_extract_images
         if form_data.pdf_extract_images is not None
@@ -483,7 +486,7 @@ async def update_rag_config(
 
     if form_data.chunk is not None:
         request.app.state.config.TEXT_SPLITTER = form_data.chunk.text_splitter
-        request.app.state.config.CHUNK_SIZE = form_data.chunk.chunk_size
+        config.rag.chunk_size = form_data.chunk.chunk_size
         request.app.state.config.CHUNK_OVERLAP = form_data.chunk.chunk_overlap
 
     if form_data.youtube is not None:
@@ -546,6 +549,10 @@ async def update_rag_config(
             form_data.web.search.concurrent_requests
         )
 
+    session.add(config_db)
+    await session.commit()
+    await session.refresh(config_db)
+    config = config_db.data
     return {
         "status": True,
         "pdf_extract_images": request.app.state.config.PDF_EXTRACT_IMAGES,
@@ -559,7 +566,7 @@ async def update_rag_config(
         },
         "chunk": {
             "text_splitter": request.app.state.config.TEXT_SPLITTER,
-            "chunk_size": request.app.state.config.CHUNK_SIZE,
+            "chunk_size": config.rag.chunk_size,
             "chunk_overlap": request.app.state.config.CHUNK_OVERLAP,
         },
         "youtube": {
@@ -596,20 +603,22 @@ async def update_rag_config(
 
 
 @router.get("/template")
-async def get_rag_template(request: Request, user=Depends(get_verified_user)):
+async def get_rag_template(config: ConfigDep, user=Depends(get_verified_user)):
     """Get RAG template."""
     return {
         "status": True,
-        "template": request.app.state.config.RAG_TEMPLATE,
+        "template": config.rag.template,
     }
 
 
 @router.get("/query/settings")
-async def get_query_settings(request: Request, user=Depends(get_admin_user)):
+async def get_query_settings(
+    request: Request, config: ConfigDep, user=Depends(get_admin_user)
+):
     """Get query settings."""
     return {
         "status": True,
-        "template": request.app.state.config.RAG_TEMPLATE,
+        "template": config.rag.template,
         "k": request.app.state.config.TOP_K,
         "r": request.app.state.config.RELEVANCE_THRESHOLD,
         "hybrid": request.app.state.config.ENABLE_RAG_HYBRID_SEARCH,
@@ -619,28 +628,36 @@ async def get_query_settings(request: Request, user=Depends(get_admin_user)):
 class QuerySettingsForm(BaseModel):
     """Query settings form."""
 
-    k: Optional[int] = None
-    r: Optional[float] = None
-    template: Optional[str] = None
-    hybrid: Optional[bool] = None
+    k: int = 4
+    r: float = 0.0
+    template: str | None = None
+    hybrid: bool = False
 
 
 @router.post("/query/settings/update")
 async def update_query_settings(
-    request: Request, form_data: QuerySettingsForm, user=Depends(get_admin_user)
+    request: Request,
+    form_data: QuerySettingsForm,
+    session: SessionDep,
+    config_db: ConfigDBDep,
+    user=Depends(get_admin_user),
 ):
     """Update query settings."""
-    request.app.state.config.RAG_TEMPLATE = form_data.template
-    request.app.state.config.TOP_K = form_data.k if form_data.k else 4
-    request.app.state.config.RELEVANCE_THRESHOLD = form_data.r if form_data.r else 0.0
+    config = config_db.data
+    config.rag.template = form_data.template or config.rag.template
+    request.app.state.config.TOP_K = form_data.k
+    request.app.state.config.RELEVANCE_THRESHOLD = form_data.r
 
-    request.app.state.config.ENABLE_RAG_HYBRID_SEARCH = (
-        form_data.hybrid if form_data.hybrid else False
-    )
+    request.app.state.config.ENABLE_RAG_HYBRID_SEARCH = form_data.hybrid
 
+    config_db.data = config
+    session.add(config_db)
+    await session.commit()
+    await session.refresh(config_db)
+    config = config_db.data
     return {
         "status": True,
-        "template": request.app.state.config.RAG_TEMPLATE,
+        "template": config.rag.template,
         "k": request.app.state.config.TOP_K,
         "r": request.app.state.config.RELEVANCE_THRESHOLD,
         "hybrid": request.app.state.config.ENABLE_RAG_HYBRID_SEARCH,
@@ -651,6 +668,7 @@ def save_docs_to_vector_db(
     request: Request,
     docs,
     collection_name,
+    config: ConfigData,
     metadata: Optional[dict] = None,
     overwrite: bool = False,
     split: bool = True,
@@ -694,7 +712,7 @@ def save_docs_to_vector_db(
     if split:
         if request.app.state.config.TEXT_SPLITTER in ["", "character"]:
             text_splitter = RecursiveCharacterTextSplitter(
-                chunk_size=request.app.state.config.CHUNK_SIZE,
+                chunk_size=config.rag.chunk_size,
                 chunk_overlap=request.app.state.config.CHUNK_OVERLAP,
                 add_start_index=True,
             )
@@ -706,7 +724,7 @@ def save_docs_to_vector_db(
             tiktoken.get_encoding(str(request.app.state.config.TIKTOKEN_ENCODING_NAME))
             text_splitter = TokenTextSplitter(
                 encoding_name=str(request.app.state.config.TIKTOKEN_ENCODING_NAME),
-                chunk_size=request.app.state.config.CHUNK_SIZE,
+                chunk_size=config.rag.chunk_size,
                 chunk_overlap=request.app.state.config.CHUNK_OVERLAP,
                 add_start_index=True,
             )
@@ -811,6 +829,7 @@ async def process_file(
     request: Request,
     form_data: ProcessFileForm,
     session: SessionDep,
+    config: ConfigDep,
     user=Depends(get_verified_user),
 ):
     """Process file and save the content to the database."""
@@ -935,6 +954,7 @@ async def process_file(
                 request,
                 docs=docs,
                 collection_name=collection_name,
+                config=config,
                 metadata={
                     "file_id": file.id,
                     "name": file.filename,
@@ -976,6 +996,7 @@ class ProcessTextForm(BaseModel):
 def process_text(
     request: Request,
     form_data: ProcessTextForm,
+    config: ConfigDep,
     user=Depends(get_verified_user),
 ):
     """Process text and save the content to the database."""
@@ -992,7 +1013,7 @@ def process_text(
     text_content = form_data.content
     logger.debug(f"text_content: {text_content}")
 
-    if save_docs_to_vector_db(request, docs, collection_name):
+    if save_docs_to_vector_db(request, docs, collection_name, config):
         return {
             "status": True,
             "collection_name": collection_name,
@@ -1007,7 +1028,10 @@ def process_text(
 
 @router.post("/process/youtube")
 def process_youtube_video(
-    request: Request, form_data: ProcessUrlForm, user=Depends(get_verified_user)
+    request: Request,
+    form_data: ProcessUrlForm,
+    config: ConfigDep,
+    user=Depends(get_verified_user),
 ):
     """Process a YouTube video URL and save the content to the database."""
     try:
@@ -1025,7 +1049,7 @@ def process_youtube_video(
         content = " ".join([doc.page_content for doc in docs])
         logger.debug(f"text_content: {content}")
 
-        save_docs_to_vector_db(request, docs, collection_name, overwrite=True)
+        save_docs_to_vector_db(request, docs, collection_name, config, overwrite=True)
 
         return {
             "status": True,
@@ -1050,7 +1074,10 @@ def process_youtube_video(
 
 @router.post("/process/web")
 def process_web(
-    request: Request, form_data: ProcessUrlForm, user=Depends(get_verified_user)
+    request: Request,
+    form_data: ProcessUrlForm,
+    config: ConfigDep,
+    user=Depends(get_verified_user),
 ):
     """Process a web URL and save the content to the database."""
     try:
@@ -1067,7 +1094,7 @@ def process_web(
         content = " ".join([doc.page_content for doc in docs])
 
         logger.debug(f"text_content: {content}")
-        save_docs_to_vector_db(request, docs, collection_name, overwrite=True)
+        save_docs_to_vector_db(request, docs, collection_name, config, overwrite=True)
 
         return {
             "status": True,
@@ -1090,7 +1117,9 @@ def process_web(
         )
 
 
-def search_web(request: Request, engine: str, query: str) -> list[SearchResult]:
+def search_web(
+    request: Request, engine: str, query: str, config: ConfigData
+) -> list[SearchResult]:
     """Search the web using a search engine and return the results as a list of SearchResult objects.
 
     Will look for a search engine API key in environment variables in the following order:
@@ -1109,6 +1138,7 @@ def search_web(request: Request, engine: str, query: str) -> list[SearchResult]:
         request (Request): The request object
         engine (str): The search engine to use
         query (str): The query to search for
+        config (ConfigData): The configuration data
 
     """
     # TODO: add playwright to search the web
@@ -1235,7 +1265,7 @@ def search_web(request: Request, engine: str, query: str) -> list[SearchResult]:
         return search_bing(
             request.app.state.config.BING_SEARCH_V7_SUBSCRIPTION_KEY,
             request.app.state.config.BING_SEARCH_V7_ENDPOINT,
-            str(DEFAULT_LOCALE),
+            config.ui.default_locale,
             query,
             request.app.state.config.RAG_WEB_SEARCH_RESULT_COUNT,
             request.app.state.config.RAG_WEB_SEARCH_DOMAIN_FILTER_LIST,
@@ -1246,7 +1276,10 @@ def search_web(request: Request, engine: str, query: str) -> list[SearchResult]:
 
 @router.post("/process/web/search")
 def process_web_search(
-    request: Request, form_data: SearchForm, user=Depends(get_verified_user)
+    request: Request,
+    form_data: SearchForm,
+    config: ConfigDep,
+    user=Depends(get_verified_user),
 ):
     """Process a web search query and save the results to the vector database."""
     try:
@@ -1254,7 +1287,10 @@ def process_web_search(
             f"trying to web search with {request.app.state.config.RAG_WEB_SEARCH_ENGINE, form_data.query}"
         )
         web_results = search_web(
-            request, request.app.state.config.RAG_WEB_SEARCH_ENGINE, form_data.query
+            request,
+            request.app.state.config.RAG_WEB_SEARCH_ENGINE,
+            form_data.query,
+            config,
         )
     except Exception as e:
         logger.exception(e)
@@ -1280,7 +1316,7 @@ def process_web_search(
             requests_per_second=request.app.state.config.RAG_WEB_SEARCH_CONCURRENT_REQUESTS,
         )
         docs = loader.load()
-        save_docs_to_vector_db(request, docs, collection_name, overwrite=True)
+        save_docs_to_vector_db(request, docs, collection_name, config, overwrite=True)
 
         return {
             "status": True,
@@ -1483,6 +1519,7 @@ async def process_files_batch(
     request: Request,
     form_data: BatchProcessFilesForm,
     session: SessionDep,
+    config: ConfigDep,
     user=Depends(get_verified_user),
 ) -> BatchProcessFilesResponse:
     """Process a batch of files and save them to the vector database."""
@@ -1532,6 +1569,7 @@ async def process_files_batch(
                 request=request,
                 docs=all_docs,
                 collection_name=collection_name,
+                config=config,
                 add=True,
             )
 

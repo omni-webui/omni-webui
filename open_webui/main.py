@@ -34,7 +34,6 @@ from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import Response
 
 from open_webui.config import (
-    ADMIN_EMAIL,
     # Audio
     AUDIO_STT_ENGINE,
     AUDIO_STT_MODEL,
@@ -60,16 +59,12 @@ from open_webui.config import (
     BRAVE_SEARCH_API_KEY,
     CACHE_DIR,
     CHUNK_OVERLAP,
-    CHUNK_SIZE,
     COMFYUI_API_KEY,
     COMFYUI_BASE_URL,
     COMFYUI_WORKFLOW,
     COMFYUI_WORKFLOW_NODES,
     CONTENT_EXTRACTION_ENGINE,
     CORS_ALLOW_ORIGIN,
-    DEFAULT_LOCALE,
-    DEFAULT_MODELS,
-    DEFAULT_PROMPT_SUGGESTIONS,
     # Admin
     ENABLE_ADMIN_CHAT_ACCESS,
     ENABLE_ADMIN_EXPORT,
@@ -114,17 +109,11 @@ from open_webui.config import (
     LDAP_SERVER_PORT,
     LDAP_USE_TLS,
     MOJEEK_SEARCH_API_KEY,
-    OLLAMA_API_CONFIGS,
-    OLLAMA_BASE_URLS,
-    OPENAI_API_BASE_URLS,
-    OPENAI_API_CONFIGS,
-    OPENAI_API_KEYS,
     PDF_EXTRACT_IMAGES,
     QUERY_GENERATION_PROMPT_TEMPLATE,
     RAG_EMBEDDING_BATCH_SIZE,
     RAG_EMBEDDING_ENGINE,
     RAG_EMBEDDING_MODEL,
-    RAG_EMBEDDING_MODEL_AUTO_UPDATE,
     RAG_FILE_MAX_COUNT,
     RAG_FILE_MAX_SIZE,
     RAG_OLLAMA_API_KEY,
@@ -133,9 +122,6 @@ from open_webui.config import (
     RAG_OPENAI_API_KEY,
     RAG_RELEVANCE_THRESHOLD,
     RAG_RERANKING_MODEL,
-    RAG_RERANKING_MODEL_AUTO_UPDATE,
-    RAG_TEMPLATE,
-    RAG_TEXT_SPLITTER,
     RAG_TOP_K,
     RAG_WEB_SEARCH_CONCURRENT_REQUESTS,
     RAG_WEB_SEARCH_DOMAIN_FILTER_LIST,
@@ -149,7 +135,6 @@ from open_webui.config import (
     SERPLY_API_KEY,
     SERPSTACK_API_KEY,
     SERPSTACK_HTTPS,
-    SHOW_ADMIN_DETAILS,
     TAGS_GENERATION_PROMPT_TEMPLATE,
     # Tasks
     TASK_MODEL,
@@ -166,8 +151,6 @@ from open_webui.config import (
     YOUTUBE_LOADER_LANGUAGE,
     YOUTUBE_LOADER_PROXY_URL,
     AppConfig,
-    Config,
-    ConfigData,
     ConfigDBDep,
     ConfigDep,
     reset_config,
@@ -175,7 +158,6 @@ from open_webui.config import (
 from open_webui.env import (
     BYPASS_MODEL_ACCESS_CONTROL,
     ENABLE_WEBSOCKET_SUPPORT,
-    OFFLINE_MODE,
     RESET_CONFIG_ON_START,
     VERSION,
     WEBUI_AUTH_TRUSTED_EMAIL_HEADER,
@@ -269,19 +251,9 @@ app = FastAPI(
 )
 
 app.state.config = AppConfig()
-app.state.config.OLLAMA_BASE_URLS = OLLAMA_BASE_URLS
-app.state.config.OLLAMA_API_CONFIGS = OLLAMA_API_CONFIGS
 app.state.OLLAMA_MODELS = {}
-app.state.config.OPENAI_API_BASE_URLS = OPENAI_API_BASE_URLS
-app.state.config.OPENAI_API_KEYS = OPENAI_API_KEYS
-app.state.config.OPENAI_API_CONFIGS = OPENAI_API_CONFIGS
-app.state.OPENAI_MODELS = {}
 app.state.config.WEBUI_URL = WEBUI_URL
 app.state.config.ENABLE_LOGIN_FORM = ENABLE_LOGIN_FORM
-app.state.config.SHOW_ADMIN_DETAILS = SHOW_ADMIN_DETAILS
-app.state.config.ADMIN_EMAIL = ADMIN_EMAIL
-app.state.config.DEFAULT_MODELS = DEFAULT_MODELS
-app.state.config.DEFAULT_PROMPT_SUGGESTIONS = DEFAULT_PROMPT_SUGGESTIONS
 app.state.config.USER_PERMISSIONS = USER_PERMISSIONS
 app.state.config.ENABLE_CHANNELS = ENABLE_CHANNELS
 app.state.config.ENABLE_COMMUNITY_SHARING = ENABLE_COMMUNITY_SHARING
@@ -314,15 +286,12 @@ app.state.config.ENABLE_RAG_WEB_LOADER_SSL_VERIFICATION = (
 )
 app.state.config.CONTENT_EXTRACTION_ENGINE = CONTENT_EXTRACTION_ENGINE
 app.state.config.TIKA_SERVER_URL = TIKA_SERVER_URL
-app.state.config.TEXT_SPLITTER = RAG_TEXT_SPLITTER
 app.state.config.TIKTOKEN_ENCODING_NAME = TIKTOKEN_ENCODING_NAME
-app.state.config.CHUNK_SIZE = CHUNK_SIZE
 app.state.config.CHUNK_OVERLAP = CHUNK_OVERLAP
 app.state.config.RAG_EMBEDDING_ENGINE = RAG_EMBEDDING_ENGINE
 app.state.config.RAG_EMBEDDING_MODEL = RAG_EMBEDDING_MODEL
 app.state.config.RAG_EMBEDDING_BATCH_SIZE = RAG_EMBEDDING_BATCH_SIZE
 app.state.config.RAG_RERANKING_MODEL = RAG_RERANKING_MODEL
-app.state.config.RAG_TEMPLATE = RAG_TEMPLATE
 app.state.config.RAG_OPENAI_API_BASE_URL = RAG_OPENAI_API_BASE_URL
 app.state.config.RAG_OPENAI_API_KEY = RAG_OPENAI_API_KEY
 app.state.config.RAG_OLLAMA_BASE_URL = RAG_OLLAMA_BASE_URL
@@ -362,12 +331,12 @@ try:
     app.state.ef = get_ef(
         app.state.config.RAG_EMBEDDING_ENGINE,  # type: ignore
         app.state.config.RAG_EMBEDDING_MODEL,  # type: ignore
-        RAG_EMBEDDING_MODEL_AUTO_UPDATE,
+        not env.OFFLINE_MODE and env.RAG_EMBEDDING_MODEL_AUTO_UPDATE,
     )
 
     app.state.rf = get_rf(
         app.state.config.RAG_RERANKING_MODEL,  # type: ignore
-        RAG_RERANKING_MODEL_AUTO_UPDATE,
+        not env.OFFLINE_MODE and env.RAG_RERANKING_MODEL_AUTO_UPDATE,
     )
 except Exception as e:
     logger.error(f"Error updating models: {e}")
@@ -731,7 +700,7 @@ async def get_app_config(
         "status": True,
         "name": env.WEBUI_NAME,
         "version": VERSION,
-        "default_locale": str(DEFAULT_LOCALE),
+        "default_locale": config.ui.default_locale,
         "oauth": {
             "providers": {
                 k: v.get("name", k) for k, v in config.oauth.providers.items()
@@ -766,8 +735,8 @@ async def get_app_config(
         },
         **(
             {
-                "default_models": app.state.config.DEFAULT_MODELS,
-                "default_prompt_suggestions": app.state.config.DEFAULT_PROMPT_SUGGESTIONS,
+                "default_models": config.ui.default_models,
+                "default_prompt_suggestions": config.ui.prompt_suggestions,
                 "audio": {
                     "tts": {
                         "engine": app.state.config.TTS_ENGINE,
@@ -810,8 +779,6 @@ async def update_webhook_url(
     user=Depends(get_admin_user),
 ):
     """Update the webhook URL."""
-    if config_db is None:
-        config_db = Config(data=ConfigData())
     config_db.data.webhook_url = form_data.url
     session.add(config_db)
     await session.commit()
@@ -828,7 +795,7 @@ async def get_app_version():
 @app.get("/api/version/updates")
 async def get_app_latest_release_version():
     """Get the latest release version from GitHub."""
-    if OFFLINE_MODE:
+    if env.OFFLINE_MODE:
         logger.debug(
             "Offline mode is enabled, returning current version as latest version"
         )

@@ -21,7 +21,7 @@ async def get_all_base_models(request: Request, config: ConfigDep):
     ollama_models = []
 
     if config.openai.enable:
-        openai_models = await openai.get_all_models(request, config)
+        openai_models = await openai.get_all_models(config)
         openai_models = openai_models["data"]
 
     if config.ollama.enable:

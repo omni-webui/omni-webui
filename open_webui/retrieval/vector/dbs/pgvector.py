@@ -22,11 +22,10 @@ from sqlalchemy.orm import declarative_base, scoped_session, sessionmaker
 from sqlalchemy.pool import NullPool
 from sqlalchemy.sql import true
 
-from open_webui.config import PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH
 from open_webui.env import env
 from open_webui.retrieval.vector.main import GetResult, SearchResult, VectorItem
 
-VECTOR_LENGTH = PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH
+VECTOR_LENGTH = env.PGVECTOR_INITIALIZE_MAX_VECTOR_LENGTH
 Base = declarative_base()
 
 
