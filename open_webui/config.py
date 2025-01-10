@@ -19,12 +19,14 @@ from typing import (
     Optional,
     TypedDict,
     TypeVar,
+    cast,
     get_args,
     get_type_hints,
 )
 from urllib.parse import urlparse
 
 import chromadb.config
+import fsspec
 from fastapi import Depends
 from loguru import logger
 from ollama import AsyncClient
@@ -274,7 +276,7 @@ class OAuthConfig(BaseModel, env_prefix="OAUTH_"):
 
         tenant_id: str = ""
 
-    class OIDC(Provider, env_prefix="OAUTH_", extra="allow"):
+    class OIDC(Provider, env_prefix="OAUTH_", extra="ignore"):
         """OIDC OAuth provider configuration."""
 
         provider_url: Annotated[
@@ -642,6 +644,12 @@ class UserConfig(BaseModel):
     permissions: Permissions = Field(default_factory=Permissions)
 
 
+class WebUIConfig(BaseSettings, env_prefix="WEBUI_"):
+    """WebUI configuration."""
+
+    url: str = "http://localhost:3000"
+
+
 @deprecated("Backward compatibility with Open WebUI, will be removed >= 1.0")
 class ConfigData(BaseModel, nested_model_default_partial_update=True):
     """Config data model."""
@@ -661,6 +669,7 @@ class ConfigData(BaseModel, nested_model_default_partial_update=True):
     task: TaskConfig = Field(default_factory=TaskConfig)
     ui: UIConfig = Field(default_factory=UIConfig)
     user: UserConfig = Field(default_factory=UserConfig)
+    webui: WebUIConfig = Field(default_factory=WebUIConfig)
     webhook_url: str = ""
 
 
@@ -689,7 +698,8 @@ class Config(SQLModel, table=True):
 
 def load_json_config():
     """Load the JSON config."""
-    return json.loads((env.DATA_DIR / "config.json").read_text())
+    with fsspec.open(f"{env.DATA_DIR}/config.json", "r") as f:
+        return json.load(f)  # type: ignore
 
 
 def save_to_db(data):
@@ -713,10 +723,12 @@ def reset_config():
         db.commit()
 
 
-if (env.DATA_DIR / "config.json").exists():
+fs = cast(fsspec.AbstractFileSystem, fsspec.open(env.DATA_DIR).fs)
+
+if fs.exists(f"{env.DATA_DIR}/config.json"):
     data = load_json_config()
     save_to_db(data)
-    os.rename(env.DATA_DIR / "config.json", env.DATA_DIR / "old_config.json")
+    fs.mv(f"{env.DATA_DIR}/old_config.json", f"{env.DATA_DIR}/old_config.json.bak")
 
 
 def get_config():
@@ -853,8 +865,8 @@ if frontend_splash.exists():
 else:
     logger.warning(f"Frontend splash not found at {frontend_splash}")
 
-CACHE_DIR = env.DATA_DIR / "cache"
-CACHE_DIR.mkdir(parents=True, exist_ok=True)
+CACHE_DIR = f"{env.DATA_DIR}/cache"
+fs.makedirs(CACHE_DIR, exist_ok=True)
 
 OLLAMA_BASE_URL = os.environ.get("OLLAMA_BASE_URL", "")
 
@@ -1159,7 +1171,7 @@ Responses from models: {{responses}}"""
 VECTOR_DB = os.environ.get("VECTOR_DB", "chroma")
 
 # Chroma
-CHROMA_DATA_PATH = str(env.DATA_DIR / "vector_db")
+CHROMA_DATA_PATH = str(env.data_path / "vector_db")
 CHROMA_TENANT = os.environ.get("CHROMA_TENANT", chromadb.config.DEFAULT_TENANT)
 CHROMA_DATABASE = os.environ.get("CHROMA_DATABASE", chromadb.config.DEFAULT_DATABASE)
 CHROMA_HTTP_HOST = os.environ.get("CHROMA_HTTP_HOST", "")
@@ -1179,7 +1191,9 @@ CHROMA_HTTP_SSL = os.environ.get("CHROMA_HTTP_SSL", "false").lower() == "true"
 
 # Milvus
 
-MILVUS_URI = os.environ.get("MILVUS_URI", str(env.DATA_DIR / "vector_db" / "milvus.db"))
+MILVUS_URI = os.environ.get(
+    "MILVUS_URI", str(env.data_path / "vector_db" / "milvus.db")
+)
 
 # Qdrant
 QDRANT_URI = os.environ.get("QDRANT_URI", None)

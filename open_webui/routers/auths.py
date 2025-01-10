@@ -600,7 +600,7 @@ async def get_admin_config(
     """Get admin configuration."""
     return {
         "SHOW_ADMIN_DETAILS": config.auth.admin.show,
-        "WEBUI_URL": request.app.state.config.WEBUI_URL,
+        "WEBUI_URL": config.webui.url,
         "ENABLE_SIGNUP": config.ui.enable_signup,
         "ENABLE_API_KEY": config.auth.api_key.enable,
         "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS": config.auth.api_key.endpoint_restrictions,
@@ -640,7 +640,7 @@ async def update_admin_config(
     """Update admin configuration."""
     config = config_db.data
     config.auth.admin.show = form_data.SHOW_ADMIN_DETAILS
-    request.app.state.config.WEBUI_URL = form_data.WEBUI_URL
+    config.webui.url = form_data.WEBUI_URL
     config.ui.enable_signup = form_data.ENABLE_SIGNUP
 
     config.auth.api_key.enable = form_data.ENABLE_API_KEY
@@ -672,7 +672,7 @@ async def update_admin_config(
 
     return {
         "SHOW_ADMIN_DETAILS": config.auth.admin.show,
-        "WEBUI_URL": request.app.state.config.WEBUI_URL,
+        "WEBUI_URL": config.webui.url,
         "ENABLE_SIGNUP": config.ui.enable_signup,
         "ENABLE_API_KEY": config.auth.api_key.enable,
         "ENABLE_API_KEY_ENDPOINT_RESTRICTIONS": config.auth.api_key.endpoint_restrictions,

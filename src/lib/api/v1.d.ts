@@ -4,41 +4,6 @@
  */
 
 export interface paths {
-    "/api/v1/users": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Users */
-        get: operations["list_users_api_v1_users_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Files */
-        get: operations["list_files_api_v1_files_get"];
-        put?: never;
-        /** Upload File */
-        post: operations["upload_file_api_v1_files_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/mcp/servers": {
         parameters: {
             query?: never;
@@ -51,6 +16,5004 @@ export interface paths {
         put?: never;
         /** Create Server */
         post: operations["create_server_mcp_servers_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Status
+         * @description Get Status.
+         */
+        get: operations["get_status_ollama__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        /**
+         * Get Status
+         * @description Get Status.
+         */
+        head: operations["get_status_ollama__head"];
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Connection
+         * @description Verify Connection.
+         */
+        post: operations["verify_connection_ollama_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Config
+         * @description Get Ollama Config.
+         */
+        get: operations["get_config_ollama_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/config/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Config
+         * @description Update Ollama Config.
+         */
+        post: operations["update_config_ollama_config_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/tags/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ollama Tags
+         * @description Get Ollama Tags.
+         */
+        get: operations["get_ollama_tags_ollama_api_tags__url_idx__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ollama Tags
+         * @description Get Ollama Tags.
+         */
+        get: operations["get_ollama_tags_ollama_api_tags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/version/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ollama Versions
+         * @description Get Ollama Version.
+         */
+        get: operations["get_ollama_versions_ollama_api_version__url_idx__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ollama Versions
+         * @description Get Ollama Version.
+         */
+        get: operations["get_ollama_versions_ollama_api_version_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/ps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ollama Loaded Models
+         * @description List models that are currently loaded into Ollama memory, and which node they are loaded on.
+         */
+        get: operations["get_ollama_loaded_models_ollama_api_ps_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/pull/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pull Model
+         * @description Pull Model.
+         */
+        post: operations["pull_model_ollama_api_pull__url_idx__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/pull": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pull Model
+         * @description Pull Model.
+         */
+        post: operations["pull_model_ollama_api_pull_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/push/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Push Model
+         * @description Push Model.
+         */
+        delete: operations["push_model_ollama_api_push__url_idx__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Push Model
+         * @description Push Model.
+         */
+        delete: operations["push_model_ollama_api_push_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/create/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Model
+         * @description Create Model.
+         */
+        post: operations["create_model_ollama_api_create__url_idx__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Model
+         * @description Create Model.
+         */
+        post: operations["create_model_ollama_api_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/copy/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copy Model
+         * @description Copy Model.
+         */
+        post: operations["copy_model_ollama_api_copy__url_idx__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Copy Model
+         * @description Copy Model.
+         */
+        post: operations["copy_model_ollama_api_copy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/delete/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Model
+         * @description Delete Model.
+         */
+        delete: operations["delete_model_ollama_api_delete__url_idx__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Model
+         * @description Delete Model.
+         */
+        delete: operations["delete_model_ollama_api_delete_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/show": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Show Model Info
+         * @description Show Model Info.
+         */
+        post: operations["show_model_info_ollama_api_show_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/embed/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Embed
+         * @description Generate Embed.
+         */
+        post: operations["embed_ollama_api_embed__url_idx__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/embed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Embed
+         * @description Generate Embed.
+         */
+        post: operations["embed_ollama_api_embed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/embeddings/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Embeddings
+         * @description Generate Embeddings.
+         */
+        post: operations["embeddings_ollama_api_embeddings__url_idx__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/embeddings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Embeddings
+         * @description Generate Embeddings.
+         */
+        post: operations["embeddings_ollama_api_embeddings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/generate/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Completion
+         * @description Generate Completion.
+         */
+        post: operations["generate_completion_ollama_api_generate__url_idx__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Completion
+         * @description Generate Completion.
+         */
+        post: operations["generate_completion_ollama_api_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/chat/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Chat Completion
+         * @description Generate chat completions using Ollama.
+         */
+        post: operations["generate_chat_completion_ollama_api_chat__url_idx__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/api/chat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Chat Completion
+         * @description Generate chat completions using Ollama.
+         */
+        post: operations["generate_chat_completion_ollama_api_chat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/v1/completions/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Openai Completion
+         * @description Generate completions using Ollama.
+         */
+        post: operations["generate_openai_completion_ollama_v1_completions__url_idx__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/v1/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Openai Completion
+         * @description Generate completions using Ollama.
+         */
+        post: operations["generate_openai_completion_ollama_v1_completions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/v1/chat/completions/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Openai Chat Completion
+         * @description Generate chat completions using Ollama.
+         */
+        post: operations["generate_openai_chat_completion_ollama_v1_chat_completions__url_idx__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/v1/chat/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Openai Chat Completion
+         * @description Generate chat completions using Ollama.
+         */
+        post: operations["generate_openai_chat_completion_ollama_v1_chat_completions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/v1/models/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Openai Models
+         * @description Get a list of models available in Ollama.
+         */
+        get: operations["get_openai_models_ollama_v1_models__url_idx__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/v1/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Openai Models
+         * @description Get a list of models available in Ollama.
+         */
+        get: operations["get_openai_models_ollama_v1_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/models/download/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Model
+         * @description Download a model from a URL and upload it to Ollama.
+         */
+        post: operations["download_model_ollama_models_download__url_idx__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/models/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Model
+         * @description Download a model from a URL and upload it to Ollama.
+         */
+        post: operations["download_model_ollama_models_download_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/models/upload/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Model
+         * @description Upload a model to Ollama.
+         */
+        post: operations["upload_model_ollama_models_upload__url_idx__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/ollama/models/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Model
+         * @description Upload a model to Ollama.
+         */
+        post: operations["upload_model_ollama_models_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/openai/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Config
+         * @description Get OpenAI API configuration.
+         */
+        get: operations["get_config_openai_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/openai/config/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Config
+         * @description Update OpenAI API configuration.
+         */
+        post: operations["update_config_openai_config_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/openai/audio/speech": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Speech
+         * @description Generate speech from text.
+         */
+        post: operations["speech_openai_audio_speech_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/openai/models/{url_idx}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Models
+         * @description Get all models from OpenAI API.
+         */
+        get: operations["get_models_openai_models__url_idx__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/openai/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Models
+         * @description Get all models from OpenAI API.
+         */
+        get: operations["get_models_openai_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/openai/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Verify Connection
+         * @description Verify connection to the OpenAI API.
+         */
+        post: operations["verify_connection_openai_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/openai/chat/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Chat Completion
+         * @description Generate chat completions.
+         */
+        post: operations["generate_chat_completion_openai_chat_completions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Task Config
+         * @description Get task config.
+         */
+        get: operations["get_task_config_api_v1_tasks_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/config/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Task Config
+         * @description Update task config.
+         */
+        post: operations["update_task_config_api_v1_tasks_config_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/title/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Title
+         * @description Generate chat title.
+         */
+        post: operations["generate_title_api_v1_tasks_title_completions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/tags/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Chat Tags
+         * @description Generate chat tags.
+         */
+        post: operations["generate_chat_tags_api_v1_tasks_tags_completions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/queries/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Queries
+         * @description Generate queries.
+         */
+        post: operations["generate_queries_api_v1_tasks_queries_completions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/auto/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Autocompletion
+         * @description Generate autocompletion.
+         */
+        post: operations["generate_autocompletion_api_v1_tasks_auto_completions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/emoji/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Emoji
+         * @description Generate emoji.
+         */
+        post: operations["generate_emoji_api_v1_tasks_emoji_completions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tasks/moa/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Generate Moa Response
+         * @description Generate MOA response.
+         */
+        post: operations["generate_moa_response_api_v1_tasks_moa_completions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/images/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Config
+         * @description Get config.
+         */
+        get: operations["get_config_api_v1_images_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/images/config/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Config
+         * @description Update config.
+         */
+        post: operations["update_config_api_v1_images_config_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/images/config/url/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Verify Url
+         * @description Verify URL.
+         */
+        get: operations["verify_url_api_v1_images_config_url_verify_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/images/image/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Image Config
+         * @description Get image config.
+         */
+        get: operations["get_image_config_api_v1_images_image_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/images/image/config/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Image Config
+         * @description Update image config.
+         */
+        post: operations["update_image_config_api_v1_images_image_config_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/images/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Models
+         * @description Get models.
+         */
+        get: operations["get_models_api_v1_images_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/images/generations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Image Generations
+         * @description Generate images.
+         */
+        post: operations["image_generations_api_v1_images_generations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audio/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Audio Config
+         * @description Get audio config.
+         */
+        get: operations["get_audio_config_api_v1_audio_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audio/config/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Audio Config
+         * @description Update audio config.
+         */
+        post: operations["update_audio_config_api_v1_audio_config_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audio/speech": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Speech
+         * @description Convert text to speech.
+         */
+        post: operations["speech_api_v1_audio_speech_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audio/transcriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Transcription
+         * @description Transcribe an audio file.
+         */
+        post: operations["transcription_api_v1_audio_transcriptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audio/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Models
+         * @description Get available models for the current TTS engine.
+         */
+        get: operations["get_models_api_v1_audio_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/audio/voices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Voices
+         * @description Get available voices for the current TTS engine.
+         */
+        get: operations["get_voices_api_v1_audio_voices_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Status
+         * @description Get status.
+         */
+        get: operations["get_status_api_v1_retrieval__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/embedding": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Embedding Config
+         * @description Get embedding config.
+         */
+        get: operations["get_embedding_config_api_v1_retrieval_embedding_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/reranking": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Reraanking Config
+         * @description Get reranking config.
+         */
+        get: operations["get_reraanking_config_api_v1_retrieval_reranking_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/embedding/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Embedding Config
+         * @description Update embedding config.
+         */
+        post: operations["update_embedding_config_api_v1_retrieval_embedding_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/reranking/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Reranking Config
+         * @description Update reranking config.
+         */
+        post: operations["update_reranking_config_api_v1_retrieval_reranking_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rag Config
+         * @description Get RAG config.
+         */
+        get: operations["get_rag_config_api_v1_retrieval_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/config/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Rag Config
+         * @description Update RAG config.
+         */
+        post: operations["update_rag_config_api_v1_retrieval_config_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/template": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Rag Template
+         * @description Get RAG template.
+         */
+        get: operations["get_rag_template_api_v1_retrieval_template_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/query/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Query Settings
+         * @description Get query settings.
+         */
+        get: operations["get_query_settings_api_v1_retrieval_query_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/query/settings/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Query Settings
+         * @description Update query settings.
+         */
+        post: operations["update_query_settings_api_v1_retrieval_query_settings_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/process/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process File
+         * @description Process file and save the content to the database.
+         */
+        post: operations["process_file_api_v1_retrieval_process_file_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/process/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process Text
+         * @description Process text and save the content to the database.
+         */
+        post: operations["process_text_api_v1_retrieval_process_text_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/process/youtube": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process Youtube Video
+         * @description Process a YouTube video URL and save the content to the database.
+         */
+        post: operations["process_youtube_video_api_v1_retrieval_process_youtube_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/process/web": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process Web
+         * @description Process a web URL and save the content to the database.
+         */
+        post: operations["process_web_api_v1_retrieval_process_web_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/process/web/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process Web Search
+         * @description Process a web search query and save the results to the vector database.
+         */
+        post: operations["process_web_search_api_v1_retrieval_process_web_search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/query/doc": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Query Doc Handler
+         * @description Query a collection in the vector database.
+         */
+        post: operations["query_doc_handler_api_v1_retrieval_query_doc_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/query/collection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Query Collection Handler
+         * @description Query collections in the vector database.
+         */
+        post: operations["query_collection_handler_api_v1_retrieval_query_collection_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Entries From Collection
+         * @description Delete entries from a collection in the vector database.
+         */
+        post: operations["delete_entries_from_collection_api_v1_retrieval_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/reset/db": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Vector Db
+         * @description Reset the vector database.
+         */
+        post: operations["reset_vector_db_api_v1_retrieval_reset_db_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/reset/uploads": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Upload Dir
+         * @description Reset the upload directory.
+         */
+        post: operations["reset_upload_dir_api_v1_retrieval_reset_uploads_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/ef/{text}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Embeddings
+         * @description Get the embeddings for a given text.
+         */
+        get: operations["get_embeddings_api_v1_retrieval_ef__text__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/retrieval/process/files/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Process Files Batch
+         * @description Process a batch of files and save them to the vector database.
+         */
+        post: operations["process_files_batch_api_v1_retrieval_process_files_batch_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configs/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Config
+         * @description Import config.
+         */
+        post: operations["import_config_api_v1_configs_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configs/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Config
+         * @description Export config.
+         */
+        get: operations["export_config_api_v1_configs_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configs/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Models Config
+         * @description Get models config.
+         */
+        get: operations["get_models_config_api_v1_configs_models_get"];
+        put?: never;
+        /**
+         * Set Models Config
+         * @description Set models config.
+         */
+        post: operations["set_models_config_api_v1_configs_models_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configs/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Set Default Suggestions
+         * @description Set default suggestions.
+         */
+        post: operations["set_default_suggestions_api_v1_configs_suggestions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/configs/banners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Banners
+         * @description Get banners.
+         */
+        get: operations["get_banners_api_v1_configs_banners_get"];
+        put?: never;
+        /**
+         * Set Banners
+         * @description Set banners.
+         */
+        post: operations["set_banners_api_v1_configs_banners_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Session User
+         * @description Get session user.
+         */
+        get: operations["get_session_user_api_v1_auths__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/update/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Profile
+         * @description Update profile.
+         */
+        post: operations["update_profile_api_v1_auths_update_profile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/update/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Password
+         * @description Update password.
+         */
+        post: operations["update_password_api_v1_auths_update_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/ldap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ldap Auth
+         * @description LDAP authentication.
+         */
+        post: operations["ldap_auth_api_v1_auths_ldap_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/signin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signin
+         * @description Sign in.
+         */
+        post: operations["signin_api_v1_auths_signin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/signup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Signup
+         * @description Sign up.
+         */
+        post: operations["signup_api_v1_auths_signup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/signout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Signout
+         * @description Sign out.
+         */
+        get: operations["signout_api_v1_auths_signout_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add User
+         * @description Add user.
+         */
+        post: operations["add_user_api_v1_auths_add_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/admin/details": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Admin Details
+         * @description Get admin details.
+         */
+        get: operations["get_admin_details_api_v1_auths_admin_details_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/admin/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Admin Config
+         * @description Get admin configuration.
+         */
+        get: operations["get_admin_config_api_v1_auths_admin_config_get"];
+        put?: never;
+        /**
+         * Update Admin Config
+         * @description Update admin configuration.
+         */
+        post: operations["update_admin_config_api_v1_auths_admin_config_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/admin/config/ldap/server": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ldap Server
+         * @description Get LDAP server configuration.
+         */
+        get: operations["get_ldap_server_api_v1_auths_admin_config_ldap_server_get"];
+        put?: never;
+        /**
+         * Update Ldap Server
+         * @description Update LDAP server configuration.
+         */
+        post: operations["update_ldap_server_api_v1_auths_admin_config_ldap_server_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/admin/config/ldap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ldap Config
+         * @description Get LDAP configuration.
+         */
+        get: operations["get_ldap_config_api_v1_auths_admin_config_ldap_get"];
+        put?: never;
+        /**
+         * Update Ldap Config
+         * @description Update LDAP configuration.
+         */
+        post: operations["update_ldap_config_api_v1_auths_admin_config_ldap_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auths/api_key": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Api Key
+         * @description Get api key.
+         */
+        get: operations["get_api_key_api_v1_auths_api_key_get"];
+        put?: never;
+        /**
+         * Generate Api Key
+         * @description Create api key.
+         */
+        post: operations["generate_api_key_api_v1_auths_api_key_post"];
+        /**
+         * Delete Api Key
+         * @description Delete api key.
+         */
+        delete: operations["delete_api_key_api_v1_auths_api_key_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Users */
+        get: operations["get_users_api_v1_users__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Groups */
+        get: operations["get_user_groups_api_v1_users_groups_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Permissisions */
+        get: operations["get_user_permissisions_api_v1_users_permissions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/default/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Permissions */
+        get: operations["get_user_permissions_api_v1_users_default_permissions_get"];
+        put?: never;
+        /** Update User Permissions */
+        post: operations["update_user_permissions_api_v1_users_default_permissions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/update/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update User Role */
+        post: operations["update_user_role_api_v1_users_update_role_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/user/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Settings By Session User */
+        get: operations["get_user_settings_by_session_user_api_v1_users_user_settings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/user/settings/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update User Settings By Session User */
+        post: operations["update_user_settings_by_session_user_api_v1_users_user_settings_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/user/info": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User Info By Session User */
+        get: operations["get_user_info_by_session_user_api_v1_users_user_info_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/user/info/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update User Info By Session User */
+        post: operations["update_user_info_by_session_user_api_v1_users_user_info_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get User By Id */
+        get: operations["get_user_by_id_api_v1_users__user_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete User By Id */
+        delete: operations["delete_user_by_id_api_v1_users__user_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/users/{user_id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update User By Id */
+        post: operations["update_user_by_id_api_v1_users__user_id__update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Channels */
+        get: operations["get_channels_api_v1_channels__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create New Channel */
+        post: operations["create_new_channel_api_v1_channels_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Channel By Id */
+        get: operations["get_channel_by_id_api_v1_channels__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/{id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Channel By Id */
+        post: operations["update_channel_by_id_api_v1_channels__id__update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/{id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Channel By Id */
+        delete: operations["delete_channel_by_id_api_v1_channels__id__delete_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/{id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Channel Messages */
+        get: operations["get_channel_messages_api_v1_channels__id__messages_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/{id}/messages/post": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post New Message */
+        post: operations["post_new_message_api_v1_channels__id__messages_post_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/{id}/messages/{message_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Channel Message */
+        get: operations["get_channel_message_api_v1_channels__id__messages__message_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/{id}/messages/{message_id}/thread": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Channel Thread Messages */
+        get: operations["get_channel_thread_messages_api_v1_channels__id__messages__message_id__thread_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/{id}/messages/{message_id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Message By Id */
+        post: operations["update_message_by_id_api_v1_channels__id__messages__message_id__update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/{id}/messages/{message_id}/reactions/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Reaction To Message */
+        post: operations["add_reaction_to_message_api_v1_channels__id__messages__message_id__reactions_add_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/{id}/messages/{message_id}/reactions/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Remove Reaction By Id And User Id And Name */
+        post: operations["remove_reaction_by_id_and_user_id_and_name_api_v1_channels__id__messages__message_id__reactions_remove_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/channels/{id}/messages/{message_id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Message By Id */
+        delete: operations["delete_message_by_id_api_v1_channels__id__messages__message_id__delete_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Session User Chat List
+         * @description Get chat list by user ID.
+         */
+        get: operations["get_session_user_chat_list_api_v1_chats_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Session User Chat List
+         * @description Get chat list by user ID.
+         */
+        get: operations["get_session_user_chat_list_api_v1_chats__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete All User Chats
+         * @description Delete all chats by user ID.
+         */
+        delete: operations["delete_all_user_chats_api_v1_chats__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/list/user/{user_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User Chat List By User Id
+         * @description Get chat list by user ID.
+         */
+        get: operations["get_user_chat_list_by_user_id_api_v1_chats_list_user__user_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/new": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create New Chat
+         * @description Create new chat.
+         */
+        post: operations["create_new_chat_api_v1_chats_new_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import Chat
+         * @description Import chat.
+         */
+        post: operations["import_chat_api_v1_chats_import_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search User Chats
+         * @description Search chat list by text.
+         */
+        get: operations["search_user_chats_api_v1_chats_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/folder/{folder_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Chats By Folder Id
+         * @description Get chat list by folder ID.
+         */
+        get: operations["get_chats_by_folder_id_api_v1_chats_folder__folder_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/pinned": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User Pinned Chats
+         * @description Get pinned chat list by user ID.
+         */
+        get: operations["get_user_pinned_chats_api_v1_chats_pinned_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User Chats
+         * @description Get all chat list by user ID.
+         */
+        get: operations["get_user_chats_api_v1_chats_all_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/all/archived": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get User Archived Chats
+         * @description Get all archived chat list by user ID.
+         */
+        get: operations["get_user_archived_chats_api_v1_chats_all_archived_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/all/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get All User Tags
+         * @description Get all tags by user ID.
+         */
+        get: operations["get_all_user_tags_api_v1_chats_all_tags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/all/db": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get All User Chats In Db
+         * @description Get all chat list in the database.
+         */
+        get: operations["get_all_user_chats_in_db_api_v1_chats_all_db_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/archived": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Archived Session User Chat List
+         * @description Get archived chat list by user ID.
+         */
+        get: operations["get_archived_session_user_chat_list_api_v1_chats_archived_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/archive/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive All Chats
+         * @description Archive all chats by user ID.
+         */
+        post: operations["archive_all_chats_api_v1_chats_archive_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/share/{share_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Shared Chat By Id
+         * @description Get shared chat by ID.
+         */
+        get: operations["get_shared_chat_by_id_api_v1_chats_share__share_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get User Chat List By Tag Name
+         * @description Get chat list by tag name.
+         */
+        post: operations["get_user_chat_list_by_tag_name_api_v1_chats_tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Chat By Id
+         * @description Get chat by ID.
+         */
+        get: operations["get_chat_by_id_api_v1_chats__id__get"];
+        put?: never;
+        /**
+         * Update Chat By Id
+         * @description Update chat by ID.
+         */
+        post: operations["update_chat_by_id_api_v1_chats__id__post"];
+        /**
+         * Delete Chat By Id
+         * @description Delete chat by ID.
+         */
+        delete: operations["delete_chat_by_id_api_v1_chats__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{id}/pinned": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Pinned Status By Id
+         * @description Get pinned status by ID.
+         */
+        get: operations["get_pinned_status_by_id_api_v1_chats__id__pinned_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{id}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Pin Chat By Id
+         * @description Pin chat by ID.
+         */
+        post: operations["pin_chat_by_id_api_v1_chats__id__pin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{id}/clone": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clone Chat By Id
+         * @description Clone chat by ID.
+         */
+        post: operations["clone_chat_by_id_api_v1_chats__id__clone_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{id}/clone/shared": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clone Shared Chat By Id
+         * @description Clone shared chat by ID.
+         */
+        post: operations["clone_shared_chat_by_id_api_v1_chats__id__clone_shared_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Archive Chat By Id
+         * @description Archive chat by ID.
+         */
+        post: operations["archive_chat_by_id_api_v1_chats__id__archive_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{id}/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Share Chat By Id
+         * @description Share chat by ID.
+         */
+        post: operations["share_chat_by_id_api_v1_chats__id__share_post"];
+        /**
+         * Delete Shared Chat By Id
+         * @description Delete shared chat by ID.
+         */
+        delete: operations["delete_shared_chat_by_id_api_v1_chats__id__share_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{id}/folder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Chat Folder Id By Id
+         * @description Update folder ID of a chat.
+         */
+        post: operations["update_chat_folder_id_by_id_api_v1_chats__id__folder_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Chat Tags By Id
+         * @description Get tags of a chat.
+         */
+        get: operations["get_chat_tags_by_id_api_v1_chats__id__tags_get"];
+        put?: never;
+        /**
+         * Add Tag By Id And Tag Name
+         * @description Add tag to a chat.
+         */
+        post: operations["add_tag_by_id_and_tag_name_api_v1_chats__id__tags_post"];
+        /**
+         * Delete Tag By Id And Tag Name
+         * @description Delete tag of a chat.
+         */
+        delete: operations["delete_tag_by_id_and_tag_name_api_v1_chats__id__tags_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/chats/{id}/tags/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete All Tags By Id
+         * @description Delete all tags of a chat.
+         */
+        delete: operations["delete_all_tags_by_id_api_v1_chats__id__tags_all_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Models */
+        get: operations["get_models_api_v1_models__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/base": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Base Models */
+        get: operations["get_base_models_api_v1_models_base_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create New Model */
+        post: operations["create_new_model_api_v1_models_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/model": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Model By Id */
+        get: operations["get_model_by_id_api_v1_models_model_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/model/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Toggle Model By Id */
+        post: operations["toggle_model_by_id_api_v1_models_model_toggle_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/model/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Model By Id */
+        post: operations["update_model_by_id_api_v1_models_model_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/model/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Model By Id */
+        delete: operations["delete_model_by_id_api_v1_models_model_delete_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/models/delete/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete All Models */
+        delete: operations["delete_all_models_api_v1_models_delete_all_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Knowledge
+         * @description Get knowledge bases.
+         */
+        get: operations["get_knowledge_api_v1_knowledge__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Knowledge List
+         * @description Get a list of knowledge bases.
+         */
+        get: operations["get_knowledge_list_api_v1_knowledge_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create New Knowledge
+         * @description Create a new knowledge base.
+         */
+        post: operations["create_new_knowledge_api_v1_knowledge_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Knowledge By Id
+         * @description Get a knowledge base by ID.
+         */
+        get: operations["get_knowledge_by_id_api_v1_knowledge__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Knowledge By Id
+         * @description Update a knowledge base by ID.
+         */
+        post: operations["update_knowledge_by_id_api_v1_knowledge__id__update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{id}/file/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add File To Knowledge By Id
+         * @description Add a file to a knowledge base.
+         */
+        post: operations["add_file_to_knowledge_by_id_api_v1_knowledge__id__file_add_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{id}/file/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update File From Knowledge By Id
+         * @description Update a file in a knowledge base.
+         */
+        post: operations["update_file_from_knowledge_by_id_api_v1_knowledge__id__file_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{id}/file/remove": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Remove File From Knowledge By Id
+         * @description Remove a file from a knowledge base.
+         */
+        post: operations["remove_file_from_knowledge_by_id_api_v1_knowledge__id__file_remove_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Knowledge By Id
+         * @description Delete a knowledge base by ID.
+         */
+        delete: operations["delete_knowledge_by_id_api_v1_knowledge__id__delete_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{id}/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reset Knowledge By Id
+         * @description Reset a knowledge base by ID.
+         */
+        post: operations["reset_knowledge_by_id_api_v1_knowledge__id__reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/knowledge/{id}/files/batch/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add Files To Knowledge Batch
+         * @description Add multiple files to a knowledge base.
+         */
+        post: operations["add_files_to_knowledge_batch_api_v1_knowledge__id__files_batch_add_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prompts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Prompts */
+        get: operations["get_prompts_api_v1_prompts__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prompts/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Prompt List */
+        get: operations["get_prompt_list_api_v1_prompts_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prompts/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create New Prompt */
+        post: operations["create_new_prompt_api_v1_prompts_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prompts/command/{command}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Prompt By Command */
+        get: operations["get_prompt_by_command_api_v1_prompts_command__command__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prompts/command/{command}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Prompt By Command */
+        post: operations["update_prompt_by_command_api_v1_prompts_command__command__update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/prompts/command/{command}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Prompt By Command */
+        delete: operations["delete_prompt_by_command_api_v1_prompts_command__command__delete_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tools */
+        get: operations["get_tools_api_v1_tools__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tool List */
+        get: operations["get_tool_list_api_v1_tools_list_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Tools */
+        get: operations["export_tools_api_v1_tools_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create New Tools */
+        post: operations["create_new_tools_api_v1_tools_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/id/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tools By Id */
+        get: operations["get_tools_by_id_api_v1_tools_id__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/id/{id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Tools By Id */
+        post: operations["update_tools_by_id_api_v1_tools_id__id__update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/id/{id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Tools By Id */
+        delete: operations["delete_tools_by_id_api_v1_tools_id__id__delete_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/id/{id}/valves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tools Valves By Id */
+        get: operations["get_tools_valves_by_id_api_v1_tools_id__id__valves_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/id/{id}/valves/spec": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tools Valves Spec By Id */
+        get: operations["get_tools_valves_spec_by_id_api_v1_tools_id__id__valves_spec_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/id/{id}/valves/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Tools Valves By Id */
+        post: operations["update_tools_valves_by_id_api_v1_tools_id__id__valves_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/id/{id}/valves/user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tools User Valves By Id */
+        get: operations["get_tools_user_valves_by_id_api_v1_tools_id__id__valves_user_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/id/{id}/valves/user/spec": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Tools User Valves Spec By Id */
+        get: operations["get_tools_user_valves_spec_by_id_api_v1_tools_id__id__valves_user_spec_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/tools/id/{id}/valves/user/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Tools User Valves By Id */
+        post: operations["update_tools_user_valves_by_id_api_v1_tools_id__id__valves_user_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memories/ef": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Embeddings */
+        get: operations["get_embeddings_api_v1_memories_ef_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memories/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Memories */
+        get: operations["get_memories_api_v1_memories__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memories/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Memory */
+        post: operations["add_memory_api_v1_memories_add_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memories/query": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Query Memory */
+        post: operations["query_memory_api_v1_memories_query_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memories/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset Memory From Vector Db */
+        post: operations["reset_memory_from_vector_db_api_v1_memories_reset_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memories/delete/user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Memory By User Id */
+        delete: operations["delete_memory_by_user_id_api_v1_memories_delete_user_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memories/{memory_id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Memory By Id */
+        post: operations["update_memory_by_id_api_v1_memories__memory_id__update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/memories/{memory_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Memory By Id */
+        delete: operations["delete_memory_by_id_api_v1_memories__memory_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/folders/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Folders
+         * @description Get folders.
+         */
+        get: operations["get_folders_api_v1_folders__get"];
+        put?: never;
+        /**
+         * Create Folder
+         * @description Create folder.
+         */
+        post: operations["create_folder_api_v1_folders__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/folders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Folder By Id
+         * @description Get folder by id.
+         */
+        get: operations["get_folder_by_id_api_v1_folders__id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Folder By Id
+         * @description Delete folder by id.
+         */
+        delete: operations["delete_folder_by_id_api_v1_folders__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/folders/{id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Folder Name By Id
+         * @description Update folder name by id.
+         */
+        post: operations["update_folder_name_by_id_api_v1_folders__id__update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/folders/{id}/update/parent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Folder Parent Id By Id
+         * @description Update folder parent id by id.
+         */
+        post: operations["update_folder_parent_id_by_id_api_v1_folders__id__update_parent_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/folders/{id}/update/expanded": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update Folder Is Expanded By Id
+         * @description Update folder is expanded by id.
+         */
+        post: operations["update_folder_is_expanded_by_id_api_v1_folders__id__update_expanded_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/groups/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Groups */
+        get: operations["get_groups_api_v1_groups__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/groups/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create New Function */
+        post: operations["create_new_function_api_v1_groups_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/groups/id/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Group By Id */
+        get: operations["get_group_by_id_api_v1_groups_id__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/groups/id/{id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Group By Id */
+        post: operations["update_group_by_id_api_v1_groups_id__id__update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/groups/id/{id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Group By Id */
+        delete: operations["delete_group_by_id_api_v1_groups_id__id__delete_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Files
+         * @description List files.
+         */
+        get: operations["list_files_api_v1_files__get"];
+        put?: never;
+        /**
+         * Upload File
+         * @description Upload file.
+         */
+        post: operations["upload_file_api_v1_files__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get File By Id
+         * @description Get file by id.
+         */
+        get: operations["get_file_by_id_api_v1_files__id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete File By Id
+         * @description Delete file by id.
+         */
+        delete: operations["delete_file_by_id_api_v1_files__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files/{id}/data/content/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Update File Data Content By Id
+         * @description Update file data content by id.
+         */
+        post: operations["update_file_data_content_by_id_api_v1_files__id__data_content_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files/{id}/content": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get File Content By Id
+         * @description Get file content by id.
+         */
+        get: operations["get_file_content_by_id_api_v1_files__id__content_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Functions */
+        get: operations["get_functions_api_v1_functions__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Functions */
+        get: operations["get_functions_api_v1_functions_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create New Function */
+        post: operations["create_new_function_api_v1_functions_create_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/id/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Function By Id */
+        get: operations["get_function_by_id_api_v1_functions_id__id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/id/{id}/toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Toggle Function By Id */
+        post: operations["toggle_function_by_id_api_v1_functions_id__id__toggle_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/id/{id}/toggle/global": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Toggle Global By Id */
+        post: operations["toggle_global_by_id_api_v1_functions_id__id__toggle_global_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/id/{id}/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Function By Id */
+        post: operations["update_function_by_id_api_v1_functions_id__id__update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/id/{id}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Function By Id */
+        delete: operations["delete_function_by_id_api_v1_functions_id__id__delete_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/id/{id}/valves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Function Valves By Id */
+        get: operations["get_function_valves_by_id_api_v1_functions_id__id__valves_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/id/{id}/valves/spec": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Function Valves Spec By Id */
+        get: operations["get_function_valves_spec_by_id_api_v1_functions_id__id__valves_spec_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/id/{id}/valves/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Function Valves By Id */
+        post: operations["update_function_valves_by_id_api_v1_functions_id__id__valves_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/id/{id}/valves/user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Function User Valves By Id */
+        get: operations["get_function_user_valves_by_id_api_v1_functions_id__id__valves_user_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/id/{id}/valves/user/spec": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Function User Valves Spec By Id */
+        get: operations["get_function_user_valves_spec_by_id_api_v1_functions_id__id__valves_user_spec_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/functions/id/{id}/valves/user/update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Update Function User Valves By Id */
+        post: operations["update_function_user_valves_by_id_api_v1_functions_id__id__valves_user_update_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evaluations/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Config */
+        get: operations["get_config_api_v1_evaluations_config_get"];
+        put?: never;
+        /** Update Config */
+        post: operations["update_config_api_v1_evaluations_config_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evaluations/feedbacks/all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get All Feedbacks */
+        get: operations["get_all_feedbacks_api_v1_evaluations_feedbacks_all_get"];
+        put?: never;
+        post?: never;
+        /** Delete All Feedbacks */
+        delete: operations["delete_all_feedbacks_api_v1_evaluations_feedbacks_all_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evaluations/feedbacks/all/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get All Feedbacks */
+        get: operations["get_all_feedbacks_api_v1_evaluations_feedbacks_all_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evaluations/feedbacks/user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Feedbacks */
+        get: operations["get_feedbacks_api_v1_evaluations_feedbacks_user_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evaluations/feedbacks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Feedbacks */
+        delete: operations["delete_feedbacks_api_v1_evaluations_feedbacks_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evaluations/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Feedback */
+        post: operations["create_feedback_api_v1_evaluations_feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evaluations/feedback/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Feedback By Id */
+        get: operations["get_feedback_by_id_api_v1_evaluations_feedback__id__get"];
+        put?: never;
+        /** Update Feedback By Id */
+        post: operations["update_feedback_by_id_api_v1_evaluations_feedback__id__post"];
+        /** Delete Feedback By Id */
+        delete: operations["delete_feedback_by_id_api_v1_evaluations_feedback__id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/utils/gravatar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Gravatar
+         * @description Get gravatar URL.
+         */
+        get: operations["get_gravatar_api_v1_utils_gravatar_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/utils/code/format": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Format Code
+         * @description Format code using black.
+         */
+        post: operations["format_code_api_v1_utils_code_format_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/utils/markdown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Html From Markdown
+         * @description Convert markdown to HTML.
+         */
+        post: operations["get_html_from_markdown_api_v1_utils_markdown_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/utils/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Download Chat As Pdf
+         * @description Download chat as PDF.
+         */
+        post: operations["download_chat_as_pdf_api_v1_utils_pdf_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/utils/db/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Db
+         * @description Download the database file.
+         */
+        get: operations["download_db_api_v1_utils_db_download_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/utils/litellm/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Download Litellm Config Yaml
+         * @description Download the LiTeLLM config file.
+         */
+        get: operations["download_litellm_config_yaml_api_v1_utils_litellm_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Models
+         * @description Get all models.
+         */
+        get: operations["get_models_api_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/models/base": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Base Models
+         * @description Get all base models.
+         */
+        get: operations["get_base_models_api_models_base_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chat/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Completion
+         * @description Handle chat completions.
+         */
+        post: operations["chat_completion_api_chat_completions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chat/completed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Completed
+         * @description Handle chat completions.
+         */
+        post: operations["chat_completed_api_chat_completed_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/chat/actions/{action_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Chat Action
+         * @description Handle chat actions.
+         */
+        post: operations["chat_action_api_chat_actions__action_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks/stop/{task_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop Task Endpoint
+         * @description Stop a task.
+         */
+        post: operations["stop_task_endpoint_api_tasks_stop__task_id__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/tasks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tasks Endpoint
+         * @description List all tasks.
+         */
+        get: operations["list_tasks_endpoint_api_tasks_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get App Config
+         * @description Get the app configuration.
+         */
+        get: operations["get_app_config_api_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/webhook": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Webhook Url
+         * @description Get the webhook URL.
+         */
+        get: operations["get_webhook_url_api_webhook_get"];
+        put?: never;
+        /**
+         * Update Webhook Url
+         * @description Update the webhook URL.
+         */
+        post: operations["update_webhook_url_api_webhook_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get App Version
+         * @description Get the app version.
+         */
+        get: operations["get_app_version_api_version_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/version/updates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get App Latest Release Version
+         * @description Get the latest release version from GitHub.
+         */
+        get: operations["get_app_latest_release_version_api_version_updates_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/changelog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get App Changelog
+         * @description Get the app changelog.
+         */
+        get: operations["get_app_changelog_api_changelog_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oauth/{provider}/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Oauth Login */
+        get: operations["oauth_login_oauth__provider__login_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/oauth/{provider}/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Oauth Callback
+         * @description Handle OAuth callback.
+         */
+        get: operations["oauth_callback_oauth__provider__callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/manifest.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Manifest Json */
+        get: operations["get_manifest_json_manifest_json_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/opensearch.xml": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Opensearch Xml */
+        get: operations["get_opensearch_xml_opensearch_xml_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -95,60 +5058,2437 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AsyncCursorPage[FileObject] */
-        AsyncCursorPage_FileObject_: {
-            /** Data */
-            data: components["schemas"]["FileObject"][];
-        } & {
-            [key: string]: unknown;
+        /**
+         * APIKey
+         * @description API key configuration.
+         */
+        APIKey: {
+            /**
+             * Enable
+             * @default true
+             */
+            enable: boolean;
+            /**
+             * Endpoint Restrictions
+             * @default false
+             */
+            endpoint_restrictions: boolean;
+            /** Allowed Endpoints */
+            allowed_endpoints?: string[];
         };
-        /** Body_upload_file_api_v1_files_post */
-        Body_upload_file_api_v1_files_post: {
+        /** AddMemoryForm */
+        AddMemoryForm: {
+            /** Content */
+            content: string;
+        };
+        /** AddUserForm */
+        AddUserForm: {
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
+            /**
+             * Profile Image Url
+             * @default /user.png
+             */
+            profile_image_url: string | null;
+            /**
+             * Role
+             * @default pending
+             */
+            role: string | null;
+        };
+        /**
+         * Admin
+         * @description Admin configuration.
+         */
+        Admin: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Email
+             * @default
+             */
+            email: string;
+        };
+        /**
+         * AdminConfig
+         * @description Admin configuration form.
+         */
+        AdminConfig: {
+            /** Show Admin Details */
+            SHOW_ADMIN_DETAILS: boolean;
+            /** Webui Url */
+            WEBUI_URL: string;
+            /** Enable Signup */
+            ENABLE_SIGNUP: boolean;
+            /** Enable Api Key */
+            ENABLE_API_KEY: boolean;
+            /** Enable Api Key Endpoint Restrictions */
+            ENABLE_API_KEY_ENDPOINT_RESTRICTIONS: boolean;
+            /** Api Key Allowed Endpoints */
+            API_KEY_ALLOWED_ENDPOINTS: string;
+            /** Enable Channels */
+            ENABLE_CHANNELS: boolean;
+            DEFAULT_USER_ROLE: components["schemas"]["UserRole"];
+            /** Jwt Expires In */
+            JWT_EXPIRES_IN: string;
+            /** Enable Community Sharing */
+            ENABLE_COMMUNITY_SHARING: boolean;
+            /** Enable Message Rating */
+            ENABLE_MESSAGE_RATING: boolean;
+        };
+        /** ApiKey */
+        ApiKey: {
+            /** Api Key */
+            api_key?: string | null;
+        };
+        /**
+         * Arena
+         * @description Evaluation Arena configuration.
+         */
+        Arena: {
+            /**
+             * Enable
+             * @default true
+             */
+            enable: boolean;
+            /** Models */
+            models?: components["schemas"]["ArenaModel"][];
+        };
+        /**
+         * ArenaModel
+         * @description Arena model configuration.
+         */
+        ArenaModel: {
+            /**
+             * Id
+             * @default arena-model
+             */
+            id: string;
+            /**
+             * Name
+             * @default Arena Model
+             */
+            name: string;
+            meta?: components["schemas"]["open_webui__config__ArenaModel__Meta"];
+        };
+        /** Audio */
+        Audio: {
+            /** Id */
+            id: string;
+        };
+        /**
+         * AudioConfig
+         * @description Audio configuration.
+         */
+        AudioConfig: {
+            tts?: components["schemas"]["TTS"];
+            stt?: components["schemas"]["STT"];
+        };
+        /**
+         * AudioConfigUpdateForm
+         * @description Audio config update form.
+         */
+        AudioConfigUpdateForm: {
+            tts: components["schemas"]["TTSConfigForm"];
+            stt: components["schemas"]["STTConfigForm"];
+        };
+        /**
+         * AuthConfig
+         * @description Authentication configuration.
+         */
+        AuthConfig: {
+            api_key?: components["schemas"]["APIKey"];
+            /** Jwt Expiry */
+            jwt_expiry?: string | null;
+            admin?: components["schemas"]["Admin"];
+        };
+        /**
+         * AutoComplete
+         * @description Auto-complete configuration.
+         */
+        AutoComplete: {
+            /**
+             * Enable
+             * @default true
+             */
+            enable: boolean;
+            /**
+             * Input Max Length
+             * @default -1
+             */
+            input_max_length: number;
+            /** Prompt Template */
+            prompt_template?: string;
+        };
+        /**
+         * AutoCompletionForm
+         * @description Autocompletion form.
+         */
+        AutoCompletionForm: {
+            /** Model */
+            model: string;
+            /** Prompt */
+            prompt: string;
+            /** Type */
+            type: string;
+            /** Messages */
+            messages: unknown[];
+            /** Chat Id */
+            chat_id: string | null;
+        };
+        /**
+         * Automatic1111ConfigForm
+         * @description Automatic1111 Config Form.
+         */
+        Automatic1111ConfigForm: {
+            /** Automatic1111 Base Url */
+            AUTOMATIC1111_BASE_URL: string;
+            /** Automatic1111 Api Auth */
+            AUTOMATIC1111_API_AUTH: string;
+            /** Automatic1111 Cfg Scale */
+            AUTOMATIC1111_CFG_SCALE: string | number | null;
+            /** Automatic1111 Sampler */
+            AUTOMATIC1111_SAMPLER: string | null;
+            /** Automatic1111 Scheduler */
+            AUTOMATIC1111_SCHEDULER: string | null;
+        };
+        /**
+         * Azure
+         * @description Azure configuration.
+         */
+        Azure: {
+            /**
+             * Speech Region
+             * @default eastus
+             */
+            speech_region: string;
+            /**
+             * Speech Output Format
+             * @default audio-24khz-160kbitrate-mono-mp3
+             */
+            speech_output_format: string;
+        };
+        /**
+         * BannerModel
+         * @description Banner model.
+         */
+        BannerModel: {
+            /** Id */
+            id: string;
+            /** Type */
+            type: string;
+            /** Title */
+            title?: string | null;
+            /** Content */
+            content: string;
+            /** Dismissible */
+            dismissible: boolean;
+            /** Timestamp */
+            timestamp: number;
+        };
+        /**
+         * BatchProcessFilesForm
+         * @description Form model for batch processing files.
+         */
+        BatchProcessFilesForm: {
+            /** Files */
+            files: components["schemas"]["File-Input"][];
+            /** Collection Name */
+            collection_name: string;
+        };
+        /**
+         * BatchProcessFilesResponse
+         * @description Response model for batch processing files.
+         */
+        BatchProcessFilesResponse: {
+            /** Results */
+            results: components["schemas"]["BatchProcessFilesResult"][];
+            /** Errors */
+            errors: components["schemas"]["BatchProcessFilesResult"][];
+        };
+        /**
+         * BatchProcessFilesResult
+         * @description Result model for batch processing files.
+         */
+        BatchProcessFilesResult: {
+            /** File Id */
+            file_id: string;
+            /** Status */
+            status: string;
+            /** Error */
+            error?: string | null;
+        };
+        /** Body_transcription_api_v1_audio_transcriptions_post */
+        Body_transcription_api_v1_audio_transcriptions_post: {
             /**
              * File
              * Format: binary
              */
             file: string;
-            /**
-             * Purpose
-             * @enum {string}
-             */
-            purpose: "assistants" | "batch" | "fine-tune" | "vision";
         };
-        /** FileObject */
-        FileObject: {
+        /** Body_upload_file_api_v1_files__post */
+        Body_upload_file_api_v1_files__post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_upload_model_ollama_models_upload__url_idx__post */
+        Body_upload_model_ollama_models_upload__url_idx__post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /** Body_upload_model_ollama_models_upload_post */
+        Body_upload_model_ollama_models_upload_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
+        };
+        /**
+         * ChangelogEntry
+         * @description Changelog entry.
+         */
+        ChangelogEntry: {
+            /** Title */
+            title: string;
+            /** Content */
+            content: string;
+        };
+        /**
+         * ChangelogItem
+         * @description Changelog item.
+         */
+        ChangelogItem: {
+            /** Added */
+            added?: components["schemas"]["ChangelogEntry"][] | null;
+            /** Changed */
+            changed?: components["schemas"]["ChangelogEntry"][] | null;
+            /** Deprecated */
+            deprecated?: components["schemas"]["ChangelogEntry"][] | null;
+            /** Removed */
+            removed?: components["schemas"]["ChangelogEntry"][] | null;
+            /** Fixed */
+            fixed?: components["schemas"]["ChangelogEntry"][] | null;
+            /** Security */
+            security?: components["schemas"]["ChangelogEntry"][] | null;
+            metadata: components["schemas"]["Metadata"];
+        };
+        /** ChannelForm */
+        ChannelForm: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Data */
+            data?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+        };
+        /** ChannelModel */
+        ChannelModel: {
             /** Id */
             id: string;
-            /** Bytes */
-            bytes: number;
+            /** User Id */
+            user_id: string;
+            /** Type */
+            type?: string | null;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /** Data */
+            data?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Access Control */
+            access_control?: Record<string, never> | null;
             /** Created At */
             created_at: number;
-            /** Filename */
-            filename: string;
+            /** Updated At */
+            updated_at: number;
+        };
+        /**
+         * Chat
+         * @description User chat permissions.
+         */
+        Chat: {
             /**
-             * Object
+             * File Upload
+             * @default true
+             */
+            file_upload: boolean;
+            /**
+             * Delete
+             * @default true
+             */
+            delete: boolean;
+            /**
+             * Edit
+             * @default true
+             */
+            edit: boolean;
+            /**
+             * Temporary
+             * @default true
+             */
+            temporary: boolean;
+        };
+        /** ChatCompletionAssistantMessageParam */
+        ChatCompletionAssistantMessageParam: {
+            /**
+             * Role
              * @constant
              */
-            object: "file";
+            role: "assistant";
+            audio?: components["schemas"]["Audio"] | null;
+            /** Content */
+            content?: string | (components["schemas"]["ChatCompletionContentPartTextParam"] | components["schemas"]["ChatCompletionContentPartRefusalParam"])[] | null;
+            function_call?: components["schemas"]["FunctionCall"] | null;
+            /** Name */
+            name?: string;
+            /** Refusal */
+            refusal?: string | null;
+            /** Tool Calls */
+            tool_calls?: components["schemas"]["ChatCompletionMessageToolCallParam"][];
+        };
+        /** ChatCompletionAudioParam */
+        ChatCompletionAudioParam: {
             /**
-             * Purpose
+             * Format
              * @enum {string}
              */
-            purpose: "assistants" | "assistants_output" | "batch" | "batch_output" | "fine-tune" | "fine-tune-results" | "vision";
+            format: "wav" | "mp3" | "flac" | "opus" | "pcm16";
             /**
-             * Status
+             * Voice
              * @enum {string}
              */
-            status: "uploaded" | "processed" | "error";
-            /** Status Details */
-            status_details?: string | null;
+            voice: "alloy" | "ash" | "ballad" | "coral" | "echo" | "sage" | "shimmer" | "verse";
+        };
+        /** ChatCompletionContentPartImageParam */
+        ChatCompletionContentPartImageParam: {
+            image_url: components["schemas"]["ImageURL"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "image_url";
+        };
+        /** ChatCompletionContentPartInputAudioParam */
+        ChatCompletionContentPartInputAudioParam: {
+            input_audio: components["schemas"]["InputAudio"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "input_audio";
+        };
+        /** ChatCompletionContentPartRefusalParam */
+        ChatCompletionContentPartRefusalParam: {
+            /** Refusal */
+            refusal: string;
+            /**
+             * Type
+             * @constant
+             */
+            type: "refusal";
+        };
+        /** ChatCompletionContentPartTextParam */
+        ChatCompletionContentPartTextParam: {
+            /** Text */
+            text: string;
+            /**
+             * Type
+             * @constant
+             */
+            type: "text";
+        };
+        /** ChatCompletionDeveloperMessageParam */
+        ChatCompletionDeveloperMessageParam: {
+            /** Content */
+            content: string | components["schemas"]["ChatCompletionContentPartTextParam"][];
+            /**
+             * Role
+             * @constant
+             */
+            role: "developer";
+            /** Name */
+            name?: string;
+        };
+        /** ChatCompletionFunctionCallOptionParam */
+        ChatCompletionFunctionCallOptionParam: {
+            /** Name */
+            name: string;
+        };
+        /** ChatCompletionFunctionMessageParam */
+        ChatCompletionFunctionMessageParam: {
+            /** Content */
+            content: string | null;
+            /** Name */
+            name: string;
+            /**
+             * Role
+             * @constant
+             */
+            role: "function";
+        };
+        /** ChatCompletionMessageToolCallParam */
+        ChatCompletionMessageToolCallParam: {
+            /** Id */
+            id: string;
+            function: components["schemas"]["openai__types__chat__chat_completion_message_tool_call_param__Function"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "function";
+        };
+        /** ChatCompletionNamedToolChoiceParam */
+        ChatCompletionNamedToolChoiceParam: {
+            function: components["schemas"]["openai__types__chat__chat_completion_named_tool_choice_param__Function"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "function";
+        };
+        /** ChatCompletionPredictionContentParam */
+        ChatCompletionPredictionContentParam: {
+            /** Content */
+            content: string | components["schemas"]["ChatCompletionContentPartTextParam"][];
+            /**
+             * Type
+             * @constant
+             */
+            type: "content";
+        };
+        /** ChatCompletionStreamOptionsParam */
+        ChatCompletionStreamOptionsParam: {
+            /** Include Usage */
+            include_usage?: boolean;
+        };
+        /** ChatCompletionSystemMessageParam */
+        ChatCompletionSystemMessageParam: {
+            /** Content */
+            content: string | components["schemas"]["ChatCompletionContentPartTextParam"][];
+            /**
+             * Role
+             * @constant
+             */
+            role: "system";
+            /** Name */
+            name?: string;
+        };
+        /** ChatCompletionToolMessageParam */
+        ChatCompletionToolMessageParam: {
+            /** Content */
+            content: string | components["schemas"]["ChatCompletionContentPartTextParam"][];
+            /**
+             * Role
+             * @constant
+             */
+            role: "tool";
+            /** Tool Call Id */
+            tool_call_id: string;
+        };
+        /** ChatCompletionToolParam */
+        ChatCompletionToolParam: {
+            function: components["schemas"]["FunctionDefinition"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "function";
+        };
+        /** ChatCompletionUserMessageParam */
+        ChatCompletionUserMessageParam: {
+            /** Content */
+            content: string | (components["schemas"]["ChatCompletionContentPartTextParam"] | components["schemas"]["ChatCompletionContentPartImageParam"] | components["schemas"]["ChatCompletionContentPartInputAudioParam"])[];
+            /**
+             * Role
+             * @constant
+             */
+            role: "user";
+            /** Name */
+            name?: string;
+        };
+        /**
+         * ChatFolderIdForm
+         * @description Request model for updating folder ID of a chat.
+         */
+        ChatFolderIdForm: {
+            /** Folder Id */
+            folder_id?: string | null;
+        };
+        /** ChatForm */
+        ChatForm: {
+            /** Chat */
+            chat: Record<string, never>;
+        };
+        /** ChatImportForm */
+        ChatImportForm: {
+            /** Chat */
+            chat: Record<string, never>;
+            /**
+             * Meta
+             * @default {}
+             */
+            meta: Record<string, never> | null;
+            /**
+             * Pinned
+             * @default false
+             */
+            pinned: boolean | null;
+            /** Folder Id */
+            folder_id?: string | null;
+        };
+        /**
+         * ChatMessage
+         * @description Chat Message.
+         */
+        ChatMessage: {
+            /** Role */
+            role: string;
+            /** Content */
+            content: string;
+            /** Images */
+            images?: string[] | null;
+        };
+        /** ChatPermissions */
+        ChatPermissions: {
+            /** File Upload */
+            file_upload: boolean;
+            /** Delete */
+            delete: boolean;
+            /** Edit */
+            edit: boolean;
+            /** Temporary */
+            temporary: boolean;
+        };
+        /** ChatResponse */
+        ChatResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Title */
+            title: string;
+            /** Chat */
+            chat: Record<string, never>;
+            /** Updated At */
+            updated_at: number;
+            /** Created At */
+            created_at: number;
+            /** Share Id */
+            share_id?: string | null;
+            /** Archived */
+            archived: boolean;
+            /**
+             * Pinned
+             * @default false
+             */
+            pinned: boolean | null;
+            /**
+             * Meta
+             * @default {}
+             */
+            meta: Record<string, never>;
+            /** Folder Id */
+            folder_id?: string | null;
+        };
+        /** ChatTitleIdResponse */
+        ChatTitleIdResponse: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Updated At */
+            updated_at: number;
+            /** Created At */
+            created_at: number;
+        };
+        /** ChatTitleMessagesForm */
+        ChatTitleMessagesForm: {
+            /** Title */
+            title: string;
+            /** Messages */
+            messages: Record<string, never>[];
+        };
+        /**
+         * ChunkParamUpdateForm
+         * @description Chunk param update form.
+         */
+        ChunkParamUpdateForm: {
+            /** Text Splitter */
+            text_splitter?: string | null;
+            /** Chunk Size */
+            chunk_size: number;
+            /** Chunk Overlap */
+            chunk_overlap: number;
+        };
+        /**
+         * ClientConfig
+         * @description OpenAI/Ollama client configuration.
+         */
+        ClientConfig: {
+            /**
+             * Enable
+             * @default true
+             */
+            enable: boolean;
+            /** Prefix Id */
+            prefix_id?: string | null;
+            /** Key */
+            key?: string | null;
+            /** Model Ids */
+            model_ids?: string[];
+        };
+        /**
+         * CodeFormatRequest
+         * @description Request model for code formatting.
+         */
+        CodeFormatRequest: {
+            /** Code */
+            code: string;
+        };
+        /**
+         * ComfyUIConfigForm
+         * @description ComfyUI Config Form.
+         */
+        ComfyUIConfigForm: {
+            /** Comfyui Base Url */
+            COMFYUI_BASE_URL: string;
+            /** Comfyui Api Key */
+            COMFYUI_API_KEY: string;
+            /** Comfyui Workflow */
+            COMFYUI_WORKFLOW: string;
+            /** Comfyui Workflow Nodes */
+            COMFYUI_WORKFLOW_NODES: Record<string, never>[];
+        };
+        /** CompletionCreateParamsNonStreaming */
+        CompletionCreateParamsNonStreaming: {
+            /** Messages */
+            messages: (components["schemas"]["ChatCompletionDeveloperMessageParam"] | components["schemas"]["ChatCompletionSystemMessageParam"] | components["schemas"]["ChatCompletionUserMessageParam"] | components["schemas"]["ChatCompletionAssistantMessageParam"] | components["schemas"]["ChatCompletionToolMessageParam"] | components["schemas"]["ChatCompletionFunctionMessageParam"])[];
+            /** Model */
+            model: string | ("o1" | "o1-2024-12-17" | "o1-preview" | "o1-preview-2024-09-12" | "o1-mini" | "o1-mini-2024-09-12" | "gpt-4o" | "gpt-4o-2024-11-20" | "gpt-4o-2024-08-06" | "gpt-4o-2024-05-13" | "gpt-4o-audio-preview" | "gpt-4o-audio-preview-2024-10-01" | "gpt-4o-audio-preview-2024-12-17" | "gpt-4o-mini-audio-preview" | "gpt-4o-mini-audio-preview-2024-12-17" | "chatgpt-4o-latest" | "gpt-4o-mini" | "gpt-4o-mini-2024-07-18" | "gpt-4-turbo" | "gpt-4-turbo-2024-04-09" | "gpt-4-0125-preview" | "gpt-4-turbo-preview" | "gpt-4-1106-preview" | "gpt-4-vision-preview" | "gpt-4" | "gpt-4-0314" | "gpt-4-0613" | "gpt-4-32k" | "gpt-4-32k-0314" | "gpt-4-32k-0613" | "gpt-3.5-turbo" | "gpt-3.5-turbo-16k" | "gpt-3.5-turbo-0301" | "gpt-3.5-turbo-0613" | "gpt-3.5-turbo-1106" | "gpt-3.5-turbo-0125" | "gpt-3.5-turbo-16k-0613");
+            audio?: components["schemas"]["ChatCompletionAudioParam"] | null;
+            /** Frequency Penalty */
+            frequency_penalty?: number | null;
+            /** Function Call */
+            function_call?: ("none" | "auto") | components["schemas"]["ChatCompletionFunctionCallOptionParam"];
+            /** Functions */
+            functions?: components["schemas"]["openai__types__chat__completion_create_params__Function"][];
+            /** Logit Bias */
+            logit_bias?: {
+                [key: string]: number;
+            } | null;
+            /** Logprobs */
+            logprobs?: boolean | null;
+            /** Max Completion Tokens */
+            max_completion_tokens?: number | null;
+            /** Max Tokens */
+            max_tokens?: number | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /** Modalities */
+            modalities?: ("text" | "audio")[] | null;
+            /** N */
+            n?: number | null;
+            /** Parallel Tool Calls */
+            parallel_tool_calls?: boolean;
+            prediction?: components["schemas"]["ChatCompletionPredictionContentParam"] | null;
+            /** Presence Penalty */
+            presence_penalty?: number | null;
+            /**
+             * Reasoning Effort
+             * @enum {string}
+             */
+            reasoning_effort?: "low" | "medium" | "high";
+            /** Response Format */
+            response_format?: components["schemas"]["ResponseFormatText"] | components["schemas"]["ResponseFormatJSONObject"] | components["schemas"]["ResponseFormatJSONSchema"];
+            /** Seed */
+            seed?: number | null;
+            /** Service Tier */
+            service_tier?: ("auto" | "default") | null;
+            /** Stop */
+            stop?: string | string[] | null;
+            /** Store */
+            store?: boolean | null;
+            stream_options?: components["schemas"]["ChatCompletionStreamOptionsParam"] | null;
+            /** Temperature */
+            temperature?: number | null;
+            /** Tool Choice */
+            tool_choice?: ("none" | "auto" | "required") | components["schemas"]["ChatCompletionNamedToolChoiceParam"];
+            /** Tools */
+            tools?: components["schemas"]["ChatCompletionToolParam"][];
+            /** Top Logprobs */
+            top_logprobs?: number | null;
+            /** Top P */
+            top_p?: number | null;
+            /** User */
+            user?: string;
+            /** Stream */
+            stream?: false | null;
+        };
+        /** CompletionCreateParamsStreaming */
+        CompletionCreateParamsStreaming: {
+            /** Messages */
+            messages: (components["schemas"]["ChatCompletionDeveloperMessageParam"] | components["schemas"]["ChatCompletionSystemMessageParam"] | components["schemas"]["ChatCompletionUserMessageParam"] | components["schemas"]["ChatCompletionAssistantMessageParam"] | components["schemas"]["ChatCompletionToolMessageParam"] | components["schemas"]["ChatCompletionFunctionMessageParam"])[];
+            /** Model */
+            model: string | ("o1" | "o1-2024-12-17" | "o1-preview" | "o1-preview-2024-09-12" | "o1-mini" | "o1-mini-2024-09-12" | "gpt-4o" | "gpt-4o-2024-11-20" | "gpt-4o-2024-08-06" | "gpt-4o-2024-05-13" | "gpt-4o-audio-preview" | "gpt-4o-audio-preview-2024-10-01" | "gpt-4o-audio-preview-2024-12-17" | "gpt-4o-mini-audio-preview" | "gpt-4o-mini-audio-preview-2024-12-17" | "chatgpt-4o-latest" | "gpt-4o-mini" | "gpt-4o-mini-2024-07-18" | "gpt-4-turbo" | "gpt-4-turbo-2024-04-09" | "gpt-4-0125-preview" | "gpt-4-turbo-preview" | "gpt-4-1106-preview" | "gpt-4-vision-preview" | "gpt-4" | "gpt-4-0314" | "gpt-4-0613" | "gpt-4-32k" | "gpt-4-32k-0314" | "gpt-4-32k-0613" | "gpt-3.5-turbo" | "gpt-3.5-turbo-16k" | "gpt-3.5-turbo-0301" | "gpt-3.5-turbo-0613" | "gpt-3.5-turbo-1106" | "gpt-3.5-turbo-0125" | "gpt-3.5-turbo-16k-0613");
+            audio?: components["schemas"]["ChatCompletionAudioParam"] | null;
+            /** Frequency Penalty */
+            frequency_penalty?: number | null;
+            /** Function Call */
+            function_call?: ("none" | "auto") | components["schemas"]["ChatCompletionFunctionCallOptionParam"];
+            /** Functions */
+            functions?: components["schemas"]["openai__types__chat__completion_create_params__Function"][];
+            /** Logit Bias */
+            logit_bias?: {
+                [key: string]: number;
+            } | null;
+            /** Logprobs */
+            logprobs?: boolean | null;
+            /** Max Completion Tokens */
+            max_completion_tokens?: number | null;
+            /** Max Tokens */
+            max_tokens?: number | null;
+            /** Metadata */
+            metadata?: {
+                [key: string]: string;
+            } | null;
+            /** Modalities */
+            modalities?: ("text" | "audio")[] | null;
+            /** N */
+            n?: number | null;
+            /** Parallel Tool Calls */
+            parallel_tool_calls?: boolean;
+            prediction?: components["schemas"]["ChatCompletionPredictionContentParam"] | null;
+            /** Presence Penalty */
+            presence_penalty?: number | null;
+            /**
+             * Reasoning Effort
+             * @enum {string}
+             */
+            reasoning_effort?: "low" | "medium" | "high";
+            /** Response Format */
+            response_format?: components["schemas"]["ResponseFormatText"] | components["schemas"]["ResponseFormatJSONObject"] | components["schemas"]["ResponseFormatJSONSchema"];
+            /** Seed */
+            seed?: number | null;
+            /** Service Tier */
+            service_tier?: ("auto" | "default") | null;
+            /** Stop */
+            stop?: string | string[] | null;
+            /** Store */
+            store?: boolean | null;
+            stream_options?: components["schemas"]["ChatCompletionStreamOptionsParam"] | null;
+            /** Temperature */
+            temperature?: number | null;
+            /** Tool Choice */
+            tool_choice?: ("none" | "auto" | "required") | components["schemas"]["ChatCompletionNamedToolChoiceParam"];
+            /** Tools */
+            tools?: components["schemas"]["ChatCompletionToolParam"][];
+            /** Top Logprobs */
+            top_logprobs?: number | null;
+            /** Top P */
+            top_p?: number | null;
+            /** User */
+            user?: string;
+            /**
+             * Stream
+             * @constant
+             */
+            stream: true;
+        };
+        /**
+         * ConfigData
+         * @deprecated
+         * @description Config data model.
+         */
+        ConfigData: {
+            /**
+             * Version
+             * @default 0
+             */
+            version: number;
+            audio?: components["schemas"]["AudioConfig"];
+            auth?: components["schemas"]["AuthConfig"];
+            evaluation?: components["schemas"]["Evaluation"];
+            image_generation?: components["schemas"]["ImageGenerationConfig"];
+            ldap?: components["schemas"]["LDAPConfig"];
+            oauth?: components["schemas"]["OAuthConfig"];
+            ollama?: components["schemas"]["OllamaConfig"];
+            openai?: components["schemas"]["OpenAIConfig"];
+            rag?: components["schemas"]["RAGConfig"];
+            task?: components["schemas"]["TaskConfig"];
+            ui?: components["schemas"]["UIConfig"];
+            user?: components["schemas"]["UserConfig"];
+            webui?: components["schemas"]["WebUIConfig"];
+            /**
+             * Webhook Url
+             * @default
+             */
+            webhook_url: string;
+        };
+        /**
+         * ConfigForm
+         * @description Config Form.
+         */
+        ConfigForm: {
+            /** Enabled */
+            enabled: boolean;
+            /** Engine */
+            engine: string;
+            openai: components["schemas"]["open_webui__routers__images__OpenAIConfigForm"];
+            automatic1111: components["schemas"]["Automatic1111ConfigForm"];
+            comfyui: components["schemas"]["ComfyUIConfigForm"];
+        };
+        /**
+         * ConfigUpdateForm
+         * @description Config update form.
+         */
+        ConfigUpdateForm: {
+            /** Pdf Extract Images */
+            pdf_extract_images?: boolean | null;
+            /** Enable Google Drive Integration */
+            enable_google_drive_integration?: boolean | null;
+            file?: components["schemas"]["FileConfig"] | null;
+            content_extraction?: components["schemas"]["ContentExtractionConfig"] | null;
+            chunk?: components["schemas"]["ChunkParamUpdateForm"] | null;
+            youtube?: components["schemas"]["YoutubeLoaderConfig"] | null;
+            web?: components["schemas"]["WebConfig"] | null;
+        };
+        /**
+         * ContentExtractionConfig
+         * @description Content extraction config form.
+         */
+        ContentExtractionConfig: {
+            /**
+             * Engine
+             * @default
+             */
+            engine: string;
+            /** Tika Server Url */
+            tika_server_url?: string | null;
+        };
+        /**
+         * ContentForm
+         * @description Request model for updating file data content.
+         */
+        ContentForm: {
+            /** Content */
+            content: string;
+        };
+        /**
+         * CopyModelForm
+         * @description Copy Model Form.
+         */
+        CopyModelForm: {
+            /** Source */
+            source: string;
+            /** Destination */
+            destination: string;
+        };
+        /**
+         * CreateModelForm
+         * @description Create Model Form.
+         */
+        CreateModelForm: {
+            /** Name */
+            name: string;
+            /** Modelfile */
+            modelfile?: string | null;
+            /** Stream */
+            stream?: boolean | null;
+            /** Path */
+            path?: string | null;
+        };
+        /**
+         * DeleteForm
+         * @description Form model for deleting entries from a collection in the vector database.
+         */
+        DeleteForm: {
+            /** Collection Name */
+            collection_name: string;
+            /** File Id */
+            file_id: string;
+        };
+        /**
+         * EmbeddingModelUpdateForm
+         * @description Embedding Model Update Form.
+         */
+        EmbeddingModelUpdateForm: {
+            openai_config?: components["schemas"]["open_webui__routers__retrieval__OpenAIConfigForm"] | null;
+            ollama_config?: components["schemas"]["open_webui__routers__retrieval__OllamaConfigForm"] | null;
+            /** Embedding Engine */
+            embedding_engine: string;
+            /** Embedding Model */
+            embedding_model: string;
+            /**
+             * Embedding Batch Size
+             * @default 1
+             */
+            embedding_batch_size: number | null;
+        };
+        /**
+         * Evaluation
+         * @description Evaluation configuration.
+         */
+        Evaluation: {
+            arena?: components["schemas"]["Arena"];
+        };
+        /** FeedbackForm */
+        FeedbackForm: {
+            /** Type */
+            type: string;
+            data?: components["schemas"]["RatingData"] | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            snapshot?: components["schemas"]["SnapshotData"] | null;
         } & {
             [key: string]: unknown;
+        };
+        /** FeedbackModel */
+        FeedbackModel: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Version */
+            version: number;
+            /** Type */
+            type: string;
+            /** Data */
+            data?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Snapshot */
+            snapshot?: Record<string, never> | null;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+        };
+        /** FeedbackUserResponse */
+        FeedbackUserResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Version */
+            version: number;
+            /** Type */
+            type: string;
+            /** Data */
+            data?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+            user?: components["schemas"]["UserModel"] | null;
+        };
+        /**
+         * File
+         * @description File model.
+         */
+        "File-Input": {
+            /** Id */
+            id?: string;
+            /** User Id */
+            user_id: string;
+            /** Hash */
+            hash?: string | null;
+            /** Filename */
+            filename: string;
+            /** Path */
+            path?: string | null;
+            /** Data */
+            data?: Record<string, never> | null;
+            meta?: components["schemas"]["Meta-Input"] | null;
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            /** Created At */
+            created_at?: number;
+            /** Updated At */
+            updated_at?: number;
+        };
+        /**
+         * FileConfig
+         * @description File config form.
+         */
+        FileConfig: {
+            /** Max Size */
+            max_size?: number | null;
+            /** Max Count */
+            max_count?: number | null;
+        };
+        /** FileMeta */
+        FileMeta: {
+            /** Name */
+            name?: string | null;
+            /** Content Type */
+            content_type?: string | null;
+            /** Size */
+            size?: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** FileMetadataResponse */
+        FileMetadataResponse: {
+            /** Id */
+            id: string;
+            /** Meta */
+            meta: Record<string, never>;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+        };
+        /** FileModelResponse */
+        FileModelResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Hash */
+            hash?: string | null;
+            /** Filename */
+            filename: string;
+            /** Data */
+            data?: Record<string, never> | null;
+            meta: components["schemas"]["FileMeta"];
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * FolderForm
+         * @description Folder form.
+         */
+        FolderForm: {
+            /** Name */
+            name: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * FolderIsExpandedForm
+         * @description Request model for updating folder is expanded.
+         */
+        FolderIsExpandedForm: {
+            /** Is Expanded */
+            is_expanded: boolean;
+        };
+        /**
+         * FolderModel
+         * @description Folder model.
+         */
+        FolderModel: {
+            /** Id */
+            id: string;
+            /** Parent Id */
+            parent_id?: string | null;
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            /** Items */
+            items?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /**
+             * Is Expanded
+             * @default false
+             */
+            is_expanded: boolean;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+        };
+        /**
+         * FolderParentIdForm
+         * @description Request model for updating folder parent id.
+         */
+        FolderParentIdForm: {
+            /** Parent Id */
+            parent_id?: string | null;
+        };
+        /** FunctionCall */
+        FunctionCall: {
+            /** Arguments */
+            arguments: string;
+            /** Name */
+            name: string;
+        };
+        /** FunctionDefinition */
+        FunctionDefinition: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string;
+            /** Parameters */
+            parameters?: Record<string, never>;
+            /** Strict */
+            strict?: boolean | null;
+        };
+        /** FunctionForm */
+        FunctionForm: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Content */
+            content: string;
+            meta: components["schemas"]["FunctionMeta"];
+        };
+        /** FunctionMeta */
+        FunctionMeta: {
+            /** Description */
+            description?: string | null;
+            /**
+             * Manifest
+             * @default {}
+             */
+            manifest: Record<string, never> | null;
+        };
+        /** FunctionModel */
+        FunctionModel: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            /** Type */
+            type: string;
+            /** Content */
+            content: string;
+            meta: components["schemas"]["FunctionMeta"];
+            /**
+             * Is Active
+             * @default false
+             */
+            is_active: boolean;
+            /**
+             * Is Global
+             * @default false
+             */
+            is_global: boolean;
+            /** Updated At */
+            updated_at: number;
+            /** Created At */
+            created_at: number;
+        };
+        /** FunctionResponse */
+        FunctionResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Type */
+            type: string;
+            /** Name */
+            name: string;
+            meta: components["schemas"]["FunctionMeta"];
+            /** Is Active */
+            is_active: boolean;
+            /** Is Global */
+            is_global: boolean;
+            /** Updated At */
+            updated_at: number;
+            /** Created At */
+            created_at: number;
+        };
+        /**
+         * GenerateChatCompletionForm
+         * @description Generate Chat Completion Form.
+         */
+        GenerateChatCompletionForm: {
+            /** Model */
+            model: string;
+            /** Messages */
+            messages: components["schemas"]["ChatMessage"][];
+            /** Format */
+            format?: Record<string, never> | null;
+            /** Options */
+            options?: Record<string, never> | null;
+            /** Template */
+            template?: string | null;
+            /**
+             * Stream
+             * @default true
+             */
+            stream: boolean | null;
+            /** Keep Alive */
+            keep_alive?: number | string | null;
+        };
+        /**
+         * GenerateCompletionForm
+         * @description Generate Completion Form.
+         */
+        GenerateCompletionForm: {
+            /** Model */
+            model: string;
+            /** Prompt */
+            prompt: string;
+            /** Suffix */
+            suffix?: string | null;
+            /** Images */
+            images?: string[] | null;
+            /** Format */
+            format?: string | null;
+            /** Options */
+            options?: Record<string, never> | null;
+            /** System */
+            system?: string | null;
+            /** Template */
+            template?: string | null;
+            /** Context */
+            context?: number[] | null;
+            /**
+             * Stream
+             * @default true
+             */
+            stream: boolean | null;
+            /** Raw */
+            raw?: boolean | null;
+            /** Keep Alive */
+            keep_alive?: number | string | null;
+        };
+        /**
+         * GenerateEmbedForm
+         * @description Generate Embed Form.
+         */
+        GenerateEmbedForm: {
+            /** Model */
+            model: string;
+            /** Input */
+            input: string[] | string;
+            /** Truncate */
+            truncate?: boolean | null;
+            /** Options */
+            options?: Record<string, never> | null;
+            /** Keep Alive */
+            keep_alive?: number | string | null;
+        };
+        /**
+         * GenerateEmbeddingsForm
+         * @description Generate Embeddings Form.
+         */
+        GenerateEmbeddingsForm: {
+            /** Model */
+            model: string;
+            /** Prompt */
+            prompt: string;
+            /** Options */
+            options?: Record<string, never> | null;
+            /** Keep Alive */
+            keep_alive?: number | string | null;
+        };
+        /**
+         * GenerateImageForm
+         * @description Generate Image Form.
+         */
+        GenerateImageForm: {
+            /** Model */
+            model?: string | null;
+            /** Prompt */
+            prompt: string;
+            /** Size */
+            size?: string | null;
+            /**
+             * N
+             * @default 1
+             */
+            n: number;
+            /** Negative Prompt */
+            negative_prompt?: string | null;
+        };
+        /**
+         * Google
+         * @description Google OAuth provider configuration.
+         */
+        Google: {
+            /**
+             * Client Id
+             * @default
+             */
+            client_id: string;
+            /**
+             * Client Secret
+             * @default
+             */
+            client_secret: string;
+            /**
+             * Scope
+             * @default openid email profile
+             */
+            scope: string;
+            /**
+             * Redirect Uri
+             * @default
+             */
+            redirect_uri: string;
+        };
+        /**
+         * GroupForm
+         * @description Group form model.
+         */
+        GroupForm: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+        };
+        /**
+         * GroupResponse
+         * @description Group response model.
+         */
+        GroupResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Permissions */
+            permissions?: Record<string, never> | null;
+            /** Data */
+            data?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /**
+             * User Ids
+             * @default []
+             */
+            user_ids: string[];
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+        };
+        /**
+         * GroupUpdateForm
+         * @description Group update form model.
+         */
+        GroupUpdateForm: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Permissions */
+            permissions?: Record<string, never> | null;
+            /** User Ids */
+            user_ids?: string[] | null;
+            /** Admin Ids */
+            admin_ids?: string[] | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /**
+         * ImageConfigForm
+         * @description Image Config Form.
+         */
+        ImageConfigForm: {
+            /** Model */
+            MODEL: string;
+            /** Image Size */
+            IMAGE_SIZE: string;
+            /** Image Steps */
+            IMAGE_STEPS: number;
+        };
+        /**
+         * ImageGenerationConfig
+         * @description Image generation configuration.
+         */
+        ImageGenerationConfig: {
+            /**
+             * Enable
+             * @default true
+             */
+            enable: boolean;
+        };
+        /** ImageURL */
+        ImageURL: {
+            /** Url */
+            url: string;
+            /**
+             * Detail
+             * @enum {string}
+             */
+            detail?: "auto" | "low" | "high";
+        };
+        /**
+         * ImportConfigForm
+         * @description Import config form.
+         */
+        ImportConfigForm: {
+            /** Config */
+            config: Record<string, never>;
+        };
+        /** InputAudio */
+        InputAudio: {
+            /** Data */
+            data: string;
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "wav" | "mp3";
+        };
+        /** JSONSchema */
+        JSONSchema: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string;
+            /** Schema */
+            schema?: Record<string, never>;
+            /** Strict */
+            strict?: boolean | null;
+        };
+        /**
+         * KnowledgeFileIdForm
+         * @description Knowledge file ID form.
+         */
+        KnowledgeFileIdForm: {
+            /** File Id */
+            file_id: string;
+        };
+        /**
+         * KnowledgeFilesResponse
+         * @description Knowledge files response.
+         */
+        KnowledgeFilesResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Data */
+            data?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+            /** Files */
+            files: components["schemas"]["open_webui__models__file__File-Output"][];
+        };
+        /** KnowledgeForm */
+        KnowledgeForm: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Data */
+            data?: Record<string, never> | null;
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+        };
+        /** KnowledgeResponse */
+        KnowledgeResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Data */
+            data?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+            /** Files */
+            files?: (components["schemas"]["FileMetadataResponse"] | Record<string, never>)[] | null;
+        };
+        /** KnowledgeUserResponse */
+        KnowledgeUserResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Data */
+            data?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+            user?: components["schemas"]["open_webui__models__users__UserResponse"] | null;
+            /** Files */
+            files?: (components["schemas"]["FileMetadataResponse"] | Record<string, never>)[] | null;
+        };
+        /**
+         * LDAPConfig
+         * @description LDAP configuration.
+         */
+        LDAPConfig: {
+            /**
+             * Enable
+             * @default false
+             */
+            enable: boolean;
+        };
+        /**
+         * LdapConfigForm
+         * @description LDAP configuration form.
+         */
+        LdapConfigForm: {
+            /** Enable Ldap */
+            enable_ldap?: boolean | null;
+        };
+        /** LdapForm */
+        LdapForm: {
+            /** User */
+            user: string;
+            /** Password */
+            password: string;
+        };
+        /**
+         * LdapServerConfig
+         * @description LDAP server configuration.
+         */
+        LdapServerConfig: {
+            /** Label */
+            label: string;
+            /** Host */
+            host: string;
+            /** Port */
+            port?: number | null;
+            /**
+             * Attribute For Username
+             * @default uid
+             */
+            attribute_for_username: string;
+            /** App Dn */
+            app_dn: string;
+            /** App Dn Password */
+            app_dn_password: string;
+            /** Search Base */
+            search_base: string;
+            /**
+             * Search Filters
+             * @default
+             */
+            search_filters: string;
+            /**
+             * Use Tls
+             * @default true
+             */
+            use_tls: boolean;
+            /** Certificate Path */
+            certificate_path?: string | null;
+            /**
+             * Ciphers
+             * @default ALL
+             */
+            ciphers: string | null;
+        };
+        /**
+         * MarkdownForm
+         * @description Request model for markdown to HTML conversion.
+         */
+        MarkdownForm: {
+            /** Md */
+            md: string;
+        };
+        /** MemoryModel */
+        MemoryModel: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Content */
+            content: string;
+            /** Updated At */
+            updated_at: number;
+            /** Created At */
+            created_at: number;
+        };
+        /** MemoryUpdateModel */
+        MemoryUpdateModel: {
+            /** Content */
+            content?: string | null;
+        };
+        /** MessageForm */
+        MessageForm: {
+            /** Content */
+            content: string;
+            /** Parent Id */
+            parent_id?: string | null;
+            /** Data */
+            data?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+        };
+        /** MessageModel */
+        MessageModel: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Channel Id */
+            channel_id?: string | null;
+            /** Parent Id */
+            parent_id?: string | null;
+            /** Content */
+            content: string;
+            /** Data */
+            data?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+        };
+        /** MessageUserResponse */
+        MessageUserResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Channel Id */
+            channel_id?: string | null;
+            /** Parent Id */
+            parent_id?: string | null;
+            /** Content */
+            content: string;
+            /** Data */
+            data?: Record<string, never> | null;
+            /** Meta */
+            meta?: Record<string, never> | null;
+            /** Created At */
+            created_at: number;
+            /** Updated At */
+            updated_at: number;
+            /** Latest Reply At */
+            latest_reply_at: number | null;
+            /** Reply Count */
+            reply_count: number;
+            /** Reactions */
+            reactions: components["schemas"]["Reactions"][];
+            user: components["schemas"]["UserNameResponse"];
+        };
+        /**
+         * Meta
+         * @description File metadata.
+         */
+        "Meta-Input": {
+            /** Name */
+            name: string;
+            /** Content Type */
+            content_type: string | null;
+            /** Size */
+            size: number;
+            /**
+             * Purpose
+             * @enum {string}
+             */
+            purpose?: "assistants" | "batch" | "fine-tune" | "vision";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status?: "uploaded" | "processed" | "error";
+            /** Collection Name */
+            collection_name?: string;
+        };
+        /**
+         * Metadata
+         * @description Metadata.
+         */
+        Metadata: {
+            /**
+             * Release Date
+             * Format: date
+             */
+            release_date: string;
+        };
+        /**
+         * Microsoft
+         * @description Microsoft OAuth provider configuration.
+         */
+        Microsoft: {
+            /**
+             * Client Id
+             * @default
+             */
+            client_id: string;
+            /**
+             * Client Secret
+             * @default
+             */
+            client_secret: string;
+            /**
+             * Scope
+             * @default openid email profile
+             */
+            scope: string;
+            /**
+             * Redirect Uri
+             * @default
+             */
+            redirect_uri: string;
+            /**
+             * Tenant Id
+             * @default
+             */
+            tenant_id: string;
+        };
+        /** ModelForm */
+        ModelForm: {
+            /** Id */
+            id: string;
+            /** Base Model Id */
+            base_model_id?: string | null;
+            /** Name */
+            name: string;
+            meta: components["schemas"]["ModelMeta"];
+            params: components["schemas"]["ModelParams"];
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
+        /** ModelMeta */
+        ModelMeta: {
+            /**
+             * Profile Image Url
+             * @default /static/favicon.png
+             */
+            profile_image_url: string | null;
+            /** Description */
+            description?: string | null;
+            /** Capabilities */
+            capabilities?: Record<string, never> | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ModelModel */
+        ModelModel: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Base Model Id */
+            base_model_id?: string | null;
+            /** Name */
+            name: string;
+            params: components["schemas"]["ModelParams"];
+            meta: components["schemas"]["ModelMeta"];
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Updated At */
+            updated_at: number;
+            /** Created At */
+            created_at: number;
+        };
+        /**
+         * ModelNameForm
+         * @description Model Name Form.
+         */
+        ModelNameForm: {
+            /** Name */
+            name: string;
+        };
+        /** ModelParams */
+        ModelParams: {
+            [key: string]: unknown;
+        };
+        /** ModelResponse */
+        ModelResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Base Model Id */
+            base_model_id?: string | null;
+            /** Name */
+            name: string;
+            params: components["schemas"]["ModelParams"];
+            meta: components["schemas"]["ModelMeta"];
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Updated At */
+            updated_at: number;
+            /** Created At */
+            created_at: number;
+        };
+        /** ModelUserResponse */
+        ModelUserResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Base Model Id */
+            base_model_id?: string | null;
+            /** Name */
+            name: string;
+            params: components["schemas"]["ModelParams"];
+            meta: components["schemas"]["ModelMeta"];
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Updated At */
+            updated_at: number;
+            /** Created At */
+            created_at: number;
+            user?: components["schemas"]["open_webui__models__users__UserResponse"] | null;
+        };
+        /**
+         * ModelsConfigForm
+         * @description Models config form.
+         */
+        ModelsConfigForm: {
+            /** Default Models */
+            DEFAULT_MODELS: string | null;
+            /** Model Order List */
+            MODEL_ORDER_LIST: string[] | null;
+        };
+        /**
+         * OAuthConfig
+         * @description OAuth configuration.
+         */
+        OAuthConfig: {
+            /**
+             * Enable Signup
+             * @default false
+             */
+            enable_signup: boolean;
+            /**
+             * Enable Role Mapping
+             * @default false
+             */
+            enable_role_mapping: boolean;
+            /**
+             * Enable Group Mapping
+             * @default false
+             */
+            enable_group_mapping: boolean;
+            /**
+             * Merge Accounts By Email
+             * @default false
+             */
+            merge_accounts_by_email: boolean;
+            google?: components["schemas"]["Google"];
+            microsoft?: components["schemas"]["Microsoft"];
+            oidc?: components["schemas"]["OIDC"];
+            /**
+             * Roles Claim
+             * @default roles
+             */
+            roles_claim: string;
+            /**
+             * Allowed Roles
+             * @default [
+             *       "admin",
+             *       "user"
+             *     ]
+             */
+            allowed_roles: components["schemas"]["UserRole"][];
+            /**
+             * Admin Roles
+             * @default [
+             *       "admin"
+             *     ]
+             */
+            admin_roles: string[];
+            /**
+             * Allowed Domains
+             * @default [
+             *       "*"
+             *     ]
+             */
+            allowed_domains: string[];
+        };
+        /**
+         * OIDC
+         * @description OIDC OAuth provider configuration.
+         */
+        OIDC: {
+            /**
+             * Client Id
+             * @default
+             */
+            client_id: string;
+            /**
+             * Client Secret
+             * @default
+             */
+            client_secret: string;
+            /**
+             * Scope
+             * @default openid email profile
+             */
+            scope: string;
+            /**
+             * Redirect Uri
+             * @default
+             */
+            redirect_uri: string;
+            /**
+             * Server Metadata Url
+             * @default
+             */
+            server_metadata_url: string;
+            /**
+             * Provider Name
+             * @default SSO
+             */
+            provider_name: string;
+            /**
+             * Username Claim
+             * @default name
+             */
+            username_claim: string;
+            /**
+             * Avatar Claim
+             * @default picture
+             */
+            avatar_claim: string;
+            /**
+             * Email Claim
+             * @default email
+             */
+            email_claim: string;
+            /**
+             * Roles Claim
+             * @default roles
+             */
+            roles_claim: string;
+            /**
+             * Group Claim
+             * @default groups
+             */
+            group_claim: string;
+            /**
+             * Allowed Roles
+             * @default [
+             *       "user",
+             *       "admin"
+             *     ]
+             */
+            allowed_roles: string[];
+            /**
+             * Admin Roles
+             * @default [
+             *       "admin"
+             *     ]
+             */
+            admin_roles: string[];
+        };
+        /**
+         * OllamaConfig
+         * @description Ollama configuration.
+         */
+        OllamaConfig: {
+            /**
+             * Enable
+             * @default true
+             */
+            enable: boolean;
+            /**
+             * Host
+             * @default http://127.0.0.1:11434
+             */
+            host: string;
+            /** Base Urls */
+            base_urls?: string[];
+            /** Api Configs */
+            api_configs?: {
+                [key: string]: components["schemas"]["ClientConfig"];
+            };
+        };
+        /**
+         * OpenAICompletionForm
+         * @description OpenAI Completion Form.
+         */
+        OpenAICompletionForm: {
+            /** Model */
+            model: string;
+            /** Prompt */
+            prompt: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * OpenAIConfig
+         * @description OpenAI configuration.
+         */
+        OpenAIConfig: {
+            /**
+             * Enable
+             * @default true
+             */
+            enable: boolean;
+            /** Api Keys */
+            api_keys?: string[];
+            /** Api Base Urls */
+            api_base_urls?: string[];
+            /** Api Configs */
+            api_configs?: {
+                [key: string]: components["schemas"]["ClientConfig"];
+            };
+        };
+        /**
+         * Permissions
+         * @description User permissions.
+         */
+        Permissions: {
+            workspace?: components["schemas"]["Workspace"];
+            chat?: components["schemas"]["Chat"];
+        };
+        /**
+         * ProcessFileForm
+         * @description Process file form.
+         */
+        ProcessFileForm: {
+            /** File Id */
+            file_id: string;
+            /** Content */
+            content?: string | null;
+            /** Collection Name */
+            collection_name?: string | null;
+        };
+        /**
+         * ProcessTextForm
+         * @description Process text form.
+         */
+        ProcessTextForm: {
+            /** Name */
+            name: string;
+            /** Content */
+            content: string;
+            /** Collection Name */
+            collection_name?: string | null;
+        };
+        /**
+         * ProcessUrlForm
+         * @description Process URL form.
+         */
+        ProcessUrlForm: {
+            /** Collection Name */
+            collection_name?: string | null;
+            /** Url */
+            url: string;
+        };
+        /** PromptForm */
+        PromptForm: {
+            /** Command */
+            command: string;
+            /** Title */
+            title: string;
+            /** Content */
+            content: string;
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+        };
+        /** PromptModel */
+        PromptModel: {
+            /** Command */
+            command: string;
+            /** User Id */
+            user_id: string;
+            /** Title */
+            title: string;
+            /** Content */
+            content: string;
+            /** Timestamp */
+            timestamp: number;
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+        };
+        /**
+         * PromptSuggestion
+         * @description Prompt suggestion model.
+         */
+        "PromptSuggestion-Input": {
+            /** Title */
+            title: [
+                string,
+                string
+            ];
+            /** Content */
+            content: string;
+        };
+        /** PromptUserResponse */
+        PromptUserResponse: {
+            /** Command */
+            command: string;
+            /** User Id */
+            user_id: string;
+            /** Title */
+            title: string;
+            /** Content */
+            content: string;
+            /** Timestamp */
+            timestamp: number;
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            user?: components["schemas"]["open_webui__models__users__UserResponse"] | null;
+        };
+        /**
+         * PushModelForm
+         * @description Push Model Form.
+         */
+        PushModelForm: {
+            /** Name */
+            name: string;
+            /** Insecure */
+            insecure?: boolean | null;
+            /** Stream */
+            stream?: boolean | null;
+        };
+        /**
+         * QueryCollectionsForm
+         * @description Form model for querying collections in the vector database.
+         */
+        QueryCollectionsForm: {
+            /** Collection Names */
+            collection_names: string[];
+            /** Query */
+            query: string;
+            /** K */
+            k?: number | null;
+            /** R */
+            r?: number | null;
+            /** Hybrid */
+            hybrid?: boolean | null;
+        };
+        /**
+         * QueryDocForm
+         * @description Form model for querying a collection in the vector database.
+         */
+        QueryDocForm: {
+            /** Collection Name */
+            collection_name: string;
+            /** Query */
+            query: string;
+            /** K */
+            k?: number | null;
+            /** R */
+            r?: number | null;
+            /** Hybrid */
+            hybrid?: boolean | null;
+        };
+        /** QueryMemoryForm */
+        QueryMemoryForm: {
+            /** Content */
+            content: string;
+            /**
+             * K
+             * @default 1
+             */
+            k: number | null;
+        };
+        /**
+         * QuerySettingsForm
+         * @description Query settings form.
+         */
+        QuerySettingsForm: {
+            /**
+             * K
+             * @default 4
+             */
+            k: number;
+            /**
+             * R
+             * @default 0
+             */
+            r: number;
+            /** Template */
+            template?: string | null;
+            /**
+             * Hybrid
+             * @default false
+             */
+            hybrid: boolean;
+        };
+        /**
+         * RAGConfig
+         * @description RAG configuration.
+         */
+        RAGConfig: {
+            web?: components["schemas"]["Web"];
+            file?: components["schemas"]["open_webui__config__RAGConfig__File"];
+            /**
+             * Chunk Size
+             * @default 1000
+             */
+            chunk_size: number;
+            /** Template */
+            template?: string;
+        };
+        /** RatingData */
+        RatingData: {
+            /** Rating */
+            rating?: string | number | null;
+            /** Model Id */
+            model_id?: string | null;
+            /** Sibling Model Ids */
+            sibling_model_ids?: string[] | null;
+            /** Reason */
+            reason?: string | null;
+            /** Comment */
+            comment?: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ReactionForm */
+        ReactionForm: {
+            /** Name */
+            name: string;
+        };
+        /** Reactions */
+        Reactions: {
+            /** Name */
+            name: string;
+            /** User Ids */
+            user_ids: string[];
+            /** Count */
+            count: number;
+        };
+        /**
+         * RerankingModelUpdateForm
+         * @description Reranking model update form.
+         */
+        RerankingModelUpdateForm: {
+            /** Reranking Model */
+            reranking_model: string;
+        };
+        /** ResponseFormatJSONObject */
+        ResponseFormatJSONObject: {
+            /**
+             * Type
+             * @constant
+             */
+            type: "json_object";
+        };
+        /** ResponseFormatJSONSchema */
+        ResponseFormatJSONSchema: {
+            json_schema: components["schemas"]["JSONSchema"];
+            /**
+             * Type
+             * @constant
+             */
+            type: "json_schema";
+        };
+        /** ResponseFormatText */
+        ResponseFormatText: {
+            /**
+             * Type
+             * @constant
+             */
+            type: "text";
+        };
+        /** RootModel[SpeechCreateParams] */
+        RootModel_SpeechCreateParams_: components["schemas"]["SpeechCreateParams"];
+        /** RootModel[Union[CompletionCreateParamsNonStreaming, CompletionCreateParamsStreaming]] */
+        RootModel_Union_CompletionCreateParamsNonStreaming__CompletionCreateParamsStreaming__: components["schemas"]["CompletionCreateParamsNonStreaming"] | components["schemas"]["CompletionCreateParamsStreaming"];
+        /**
+         * STT
+         * @description Speech-to-text configuration.
+         */
+        STT: {
+            /**
+             * Engine
+             * @default
+             */
+            engine: string;
+        };
+        /**
+         * STTConfigForm
+         * @description STT config form.
+         */
+        STTConfigForm: {
+            /** Openai Api Base Url */
+            OPENAI_API_BASE_URL: string;
+            /** Openai Api Key */
+            OPENAI_API_KEY: string;
+            /** Engine */
+            ENGINE: string;
+            /** Model */
+            MODEL: string;
+            /** Whisper Model */
+            WHISPER_MODEL: string;
+        };
+        /**
+         * Search
+         * @description Search configuration.
+         */
+        Search: {
+            /**
+             * Enable
+             * @default true
+             */
+            enable: boolean;
+        };
+        /**
+         * SearchForm
+         * @description Search form.
+         */
+        SearchForm: {
+            /** Collection Name */
+            collection_name?: string | null;
+            /** Query */
+            query: string;
         };
         /** ServerParams */
         ServerParams: {
@@ -157,7 +7497,34 @@ export interface components {
                 [key: string]: components["schemas"]["StdioServerParameters"];
             };
         };
-        /** Settings */
+        /**
+         * SessionUserResponse
+         * @description Session user response.
+         */
+        SessionUserResponse: {
+            /** Id */
+            id: string;
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+            /** Role */
+            role: string;
+            /** Profile Image Url */
+            profile_image_url: string;
+            /** Token */
+            token: string;
+            /** Token Type */
+            token_type: string;
+            /** Expires At */
+            expires_at?: number | null;
+            /** Permissions */
+            permissions?: Record<string, never> | null;
+        };
+        /**
+         * Settings
+         * @description Omni WebUI settings.
+         */
         Settings: {
             /**
              * Title
@@ -183,6 +7550,70 @@ export interface components {
                 [key: string]: components["schemas"]["StdioServerParameters"];
             };
         };
+        /** SigninForm */
+        SigninForm: {
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
+        };
+        /** SigninResponse */
+        SigninResponse: {
+            /** Id */
+            id: string;
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+            /** Role */
+            role: string;
+            /** Profile Image Url */
+            profile_image_url: string;
+            /** Token */
+            token: string;
+            /** Token Type */
+            token_type: string;
+        };
+        /** SignupForm */
+        SignupForm: {
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            /** Password */
+            password: string;
+            /**
+             * Profile Image Url
+             * @default /user.png
+             */
+            profile_image_url: string | null;
+        };
+        /** SnapshotData */
+        SnapshotData: {
+            /** Chat */
+            chat?: Record<string, never> | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** SpeechCreateParams */
+        SpeechCreateParams: {
+            /** Input */
+            input: string;
+            /** Model */
+            model: string | ("tts-1" | "tts-1-hd");
+            /**
+             * Voice
+             * @enum {string}
+             */
+            voice: "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer";
+            /**
+             * Response Format
+             * @enum {string}
+             */
+            response_format?: "mp3" | "opus" | "aac" | "flac" | "wav" | "pcm";
+            /** Speed */
+            speed?: number;
+        };
         /** StdioServerParameters */
         StdioServerParameters: {
             /** Command */
@@ -206,35 +7637,278 @@ export interface components {
             encoding_error_handler: "strict" | "ignore" | "replace";
         };
         /**
-         * User
-         * @description User model.
+         * TTS
+         * @description Text-to-speech configuration.
          */
-        User: {
-            /** Id */
-            id?: string;
+        TTS: {
+            azure?: components["schemas"]["Azure"];
+            /**
+             * Engine
+             * @default
+             */
+            engine: string;
+            /**
+             * Model
+             * @default tts-1
+             */
+            model: string;
+            /**
+             * Voice
+             * @default alloy
+             */
+            voice: string;
+            /**
+             * Split On
+             * @default punctuation
+             */
+            split_on: string;
+        };
+        /**
+         * TTSConfigForm
+         * @description TTS config form.
+         */
+        TTSConfigForm: {
+            /** Openai Api Base Url */
+            OPENAI_API_BASE_URL: string;
+            /** Openai Api Key */
+            OPENAI_API_KEY: string;
+            /** Api Key */
+            API_KEY: string;
+            /** Engine */
+            ENGINE: string;
+            /** Model */
+            MODEL: string;
+            /** Voice */
+            VOICE: string;
+            /** Split On */
+            SPLIT_ON: string;
+            /** Azure Speech Region */
+            AZURE_SPEECH_REGION: string;
+            /** Azure Speech Output Format */
+            AZURE_SPEECH_OUTPUT_FORMAT: string;
+        };
+        /**
+         * TagForm
+         * @description Request model for tag name.
+         */
+        TagForm: {
             /** Name */
             name: string;
+        };
+        /** TagModel */
+        TagModel: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** User Id */
+            user_id: string;
+            /** Meta */
+            meta?: Record<string, never> | null;
+        };
+        /**
+         * TaskConfig
+         * @description Task configuration.
+         */
+        TaskConfig: {
+            autocomplete?: components["schemas"]["AutoComplete"];
+        };
+        /**
+         * TaskConfigForm
+         * @description Task config form.
+         */
+        TaskConfigForm: {
+            /** Task Model */
+            TASK_MODEL: string | null;
+            /** Task Model External */
+            TASK_MODEL_EXTERNAL: string | null;
+            /** Title Generation Prompt Template */
+            TITLE_GENERATION_PROMPT_TEMPLATE: string;
+            /** Enable Autocomplete Generation */
+            ENABLE_AUTOCOMPLETE_GENERATION: boolean;
+            /** Autocomplete Generation Input Max Length */
+            AUTOCOMPLETE_GENERATION_INPUT_MAX_LENGTH: number;
+            /** Tags Generation Prompt Template */
+            TAGS_GENERATION_PROMPT_TEMPLATE: string;
+            /** Enable Tags Generation */
+            ENABLE_TAGS_GENERATION: boolean;
+            /** Enable Search Query Generation */
+            ENABLE_SEARCH_QUERY_GENERATION: boolean;
+            /** Enable Retrieval Query Generation */
+            ENABLE_RETRIEVAL_QUERY_GENERATION: boolean;
+            /** Query Generation Prompt Template */
+            QUERY_GENERATION_PROMPT_TEMPLATE: string;
+            /** Tools Function Calling Prompt Template */
+            TOOLS_FUNCTION_CALLING_PROMPT_TEMPLATE: string;
+        };
+        /** ToolForm */
+        ToolForm: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Content */
+            content: string;
+            meta: components["schemas"]["ToolMeta"];
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+        };
+        /** ToolMeta */
+        ToolMeta: {
+            /** Description */
+            description?: string | null;
             /**
-             * Email
-             * Format: email
+             * Manifest
+             * @default {}
              */
+            manifest: Record<string, never> | null;
+        };
+        /** ToolModel */
+        ToolModel: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            /** Content */
+            content: string;
+            /** Specs */
+            specs: Record<string, never>[];
+            meta: components["schemas"]["ToolMeta"];
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            /** Updated At */
+            updated_at: number;
+            /** Created At */
+            created_at: number;
+        };
+        /** ToolResponse */
+        ToolResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            meta: components["schemas"]["ToolMeta"];
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            /** Updated At */
+            updated_at: number;
+            /** Created At */
+            created_at: number;
+        };
+        /** ToolUserResponse */
+        ToolUserResponse: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: string;
+            /** Name */
+            name: string;
+            meta: components["schemas"]["ToolMeta"];
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            /** Updated At */
+            updated_at: number;
+            /** Created At */
+            created_at: number;
+            user?: components["schemas"]["open_webui__models__users__UserResponse"] | null;
+        };
+        /**
+         * UIConfig
+         * @description UI configuration.
+         */
+        UIConfig: {
+            /**
+             * Default Locale
+             * @default
+             */
+            default_locale: string;
+            /** Prompt Suggestions */
+            prompt_suggestions?: components["schemas"]["open_webui__config__UIConfig__PromptSuggestion"][];
+            /**
+             * Enable Signup
+             * @default true
+             */
+            enable_signup: boolean;
+            /** Default Models */
+            default_models?: string | null;
+            /** Model Order List */
+            model_order_list?: string[];
+            /**
+             * Enable Login Form
+             * @default true
+             */
+            ENABLE_LOGIN_FORM: boolean;
+            /** @default pending */
+            default_user_role: components["schemas"]["UserRole"];
+            /**
+             * Enable Community Sharing
+             * @default true
+             */
+            enable_community_sharing: boolean;
+            /**
+             * Enable Message Rating
+             * @default true
+             */
+            enable_message_rating: boolean;
+            /** Banners */
+            banners?: components["schemas"]["BannerModel"][];
+        };
+        /** UpdateConfigForm */
+        UpdateConfigForm: {
+            /** Enable Evaluation Arena Models */
+            ENABLE_EVALUATION_ARENA_MODELS?: boolean | null;
+            /** Evaluation Arena Models */
+            EVALUATION_ARENA_MODELS?: Record<string, never>[] | null;
+        };
+        /** UpdatePasswordForm */
+        UpdatePasswordForm: {
+            /** Password */
+            password: string;
+            /** New Password */
+            new_password: string;
+        };
+        /** UpdateProfileForm */
+        UpdateProfileForm: {
+            /** Profile Image Url */
+            profile_image_url: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * UserConfig
+         * @description User configuration.
+         */
+        UserConfig: {
+            permissions?: components["schemas"]["Permissions"];
+        };
+        /**
+         * UserModel
+         * @description User Model.
+         */
+        UserModel: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Email */
             email: string;
             /**
              * Role
              * @default pending
              */
             role: string;
-            /**
-             * Profile Image Url
-             * @default /user.png
-             */
+            /** Profile Image Url */
             profile_image_url: string;
             /** Last Active At */
-            last_active_at?: number;
+            last_active_at: number;
             /** Updated At */
-            updated_at?: number;
+            updated_at: number;
             /** Created At */
-            created_at?: number;
+            created_at: number;
             /** Api Key */
             api_key?: string | null;
             settings?: components["schemas"]["UserSettings"] | null;
@@ -244,12 +7918,62 @@ export interface components {
             oauth_sub?: string | null;
         };
         /**
+         * UserNameResponse
+         * @description User Name Response Model.
+         */
+        UserNameResponse: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Role */
+            role: string;
+            /** Profile Image Url */
+            profile_image_url: string;
+        };
+        /** UserPermissions */
+        UserPermissions: {
+            workspace: components["schemas"]["WorkspacePermissions"];
+            chat: components["schemas"]["ChatPermissions"];
+        };
+        /** @enum {string} */
+        UserRole: "pending" | "user" | "admin";
+        /**
+         * UserRoleUpdateForm
+         * @description User Role Update Form.
+         */
+        UserRoleUpdateForm: {
+            /** Id */
+            id: string;
+            /** Role */
+            role: string;
+        };
+        /**
          * UserSettings
-         * @description User settings model.
+         * @description User Settings Model.
          */
         UserSettings: {
-            /** Ui */
-            ui?: Record<string, never>;
+            /**
+             * Ui
+             * @default {}
+             */
+            ui: Record<string, never> | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * UserUpdateForm
+         * @description User Update Form.
+         */
+        UserUpdateForm: {
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            /** Profile Image Url */
+            profile_image_url: string;
+            /** Password */
+            password?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -260,6 +7984,380 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /**
+         * Web
+         * @description Web configuration.
+         */
+        Web: {
+            search?: components["schemas"]["Search"];
+        };
+        /**
+         * WebConfig
+         * @description Web config form.
+         */
+        WebConfig: {
+            search: components["schemas"]["WebSearchConfig"];
+            /** Web Loader Ssl Verification */
+            web_loader_ssl_verification?: boolean | null;
+        };
+        /**
+         * WebSearchConfig
+         * @description Web search config form.
+         */
+        WebSearchConfig: {
+            /** Enabled */
+            enabled: boolean;
+            /** Engine */
+            engine?: string | null;
+            /** Searxng Query Url */
+            searxng_query_url?: string | null;
+            /** Google Pse Api Key */
+            google_pse_api_key?: string | null;
+            /** Google Pse Engine Id */
+            google_pse_engine_id?: string | null;
+            /** Brave Search Api Key */
+            brave_search_api_key?: string | null;
+            /** Kagi Search Api Key */
+            kagi_search_api_key?: string | null;
+            /** Mojeek Search Api Key */
+            mojeek_search_api_key?: string | null;
+            /** Serpstack Api Key */
+            serpstack_api_key?: string | null;
+            /** Serpstack Https */
+            serpstack_https?: boolean | null;
+            /** Serper Api Key */
+            serper_api_key?: string | null;
+            /** Serply Api Key */
+            serply_api_key?: string | null;
+            /** Tavily Api Key */
+            tavily_api_key?: string | null;
+            /** Searchapi Api Key */
+            searchapi_api_key?: string | null;
+            /** Searchapi Engine */
+            searchapi_engine?: string | null;
+            /** Jina Api Key */
+            jina_api_key?: string | null;
+            /** Bing Search V7 Endpoint */
+            bing_search_v7_endpoint?: string | null;
+            /** Bing Search V7 Subscription Key */
+            bing_search_v7_subscription_key?: string | null;
+            /** Result Count */
+            result_count?: number | null;
+            /** Concurrent Requests */
+            concurrent_requests?: number | null;
+        };
+        /**
+         * WebUIConfig
+         * @description WebUI configuration.
+         */
+        WebUIConfig: {
+            /**
+             * Url
+             * @default http://localhost:3000
+             */
+            url: string;
+        };
+        /**
+         * Workspace
+         * @description User workspace permissions.
+         */
+        Workspace: {
+            /**
+             * Models
+             * @default true
+             */
+            models: boolean;
+            /**
+             * Knowledge
+             * @default true
+             */
+            knowledge: boolean;
+            /**
+             * Prompts
+             * @default true
+             */
+            prompts: boolean;
+            /**
+             * Tools
+             * @default true
+             */
+            tools: boolean;
+        };
+        /** WorkspacePermissions */
+        WorkspacePermissions: {
+            /** Models */
+            models: boolean;
+            /** Knowledge */
+            knowledge: boolean;
+            /** Prompts */
+            prompts: boolean;
+            /** Tools */
+            tools: boolean;
+        };
+        /**
+         * YoutubeLoaderConfig
+         * @description Youtube loader config form.
+         */
+        YoutubeLoaderConfig: {
+            /** Language */
+            language: string[];
+            /** Translation */
+            translation?: string | null;
+            /**
+             * Proxy Url
+             * @default
+             */
+            proxy_url: string;
+        };
+        /**
+         * UrlForm
+         * @description URL form.
+         */
+        omni_webui__app__UrlForm: {
+            /** Url */
+            url: string;
+        };
+        /**
+         * Meta
+         * @description Arena model meta configuration.
+         */
+        open_webui__config__ArenaModel__Meta: {
+            /**
+             * Profile Image Url
+             * @default /favicon.png
+             */
+            profile_image_url: string;
+            /**
+             * Description
+             * @default Submit your questions to anonymous AI chatbots and vote on the best response.
+             */
+            description: string;
+        };
+        /**
+         * File
+         * @description File configuration.
+         */
+        open_webui__config__RAGConfig__File: {
+            /** Max Count */
+            max_count?: number | null;
+            /** Max Size */
+            max_size?: number | null;
+        };
+        /**
+         * PromptSuggestion
+         * @description Prompt suggestion model.
+         */
+        open_webui__config__UIConfig__PromptSuggestion: {
+            /** Title */
+            title: [
+                string,
+                string
+            ];
+            /** Content */
+            content: string;
+        };
+        /** UserResponse */
+        open_webui__models__auths__UserResponse: {
+            /** Id */
+            id: string;
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+            /** Role */
+            role: string;
+            /** Profile Image Url */
+            profile_image_url: string;
+        };
+        /**
+         * File
+         * @description File model.
+         */
+        "open_webui__models__file__File-Output": {
+            /** Id */
+            id?: string;
+            /** User Id */
+            user_id: string;
+            /** Hash */
+            hash?: string | null;
+            /** Filename */
+            filename: string;
+            /** Path */
+            path?: string | null;
+            /** Data */
+            data?: Record<string, never> | null;
+            meta?: components["schemas"]["open_webui__models__file__Meta"] | null;
+            /** Access Control */
+            access_control?: Record<string, never> | null;
+            /** Created At */
+            created_at?: number;
+            /** Updated At */
+            updated_at?: number;
+        };
+        /**
+         * Meta
+         * @description File metadata.
+         */
+        open_webui__models__file__Meta: {
+            /** Name */
+            name: string;
+            /** Content Type */
+            content_type: string | null;
+            /** Size */
+            size: number;
+            /**
+             * Purpose
+             * @enum {string}
+             */
+            purpose?: "assistants" | "batch" | "fine-tune" | "vision";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status?: "uploaded" | "processed" | "error";
+            /** Collection Name */
+            collection_name?: string;
+        };
+        /**
+         * UserResponse
+         * @description User Response Model.
+         */
+        open_webui__models__users__UserResponse: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Email */
+            email: string;
+            /** Role */
+            role: string;
+            /** Profile Image Url */
+            profile_image_url: string;
+        };
+        /**
+         * PromptSuggestion
+         * @description Prompt suggestion.
+         */
+        open_webui__routers__configs__PromptSuggestion: {
+            /** Title */
+            title: string[];
+            /** Content */
+            content: string;
+        };
+        /**
+         * OpenAIConfigForm
+         * @description OpenAI Config Form.
+         */
+        open_webui__routers__images__OpenAIConfigForm: {
+            /** Openai Api Base Url */
+            OPENAI_API_BASE_URL: string;
+            /** Openai Api Key */
+            OPENAI_API_KEY: string;
+        };
+        /**
+         * ConnectionVerificationForm
+         * @description Connection Verification Form.
+         */
+        open_webui__routers__ollama__ConnectionVerificationForm: {
+            /** Url */
+            url: string;
+            /** Key */
+            key?: string | null;
+        };
+        /**
+         * OllamaConfigForm
+         * @description Ollama Config Form.
+         */
+        open_webui__routers__ollama__OllamaConfigForm: {
+            /** Enable Ollama Api */
+            ENABLE_OLLAMA_API?: boolean | null;
+            /** Ollama Base Urls */
+            OLLAMA_BASE_URLS: string[];
+            /** Ollama Api Configs */
+            OLLAMA_API_CONFIGS: Record<string, never>;
+        };
+        /**
+         * UrlForm
+         * @description Form for downloading a model from a URL.
+         */
+        open_webui__routers__ollama__UrlForm: {
+            /** Url */
+            url: string;
+        };
+        /**
+         * ConnectionVerificationForm
+         * @description Connection verification form.
+         */
+        open_webui__routers__openai__ConnectionVerificationForm: {
+            /** Url */
+            url: string;
+            /** Key */
+            key: string;
+        };
+        /**
+         * OpenAIConfigForm
+         * @description OpenAI API configuration form.
+         */
+        open_webui__routers__openai__OpenAIConfigForm: {
+            /** Enable Openai Api */
+            ENABLE_OPENAI_API?: boolean | null;
+            /** Openai Api Base Urls */
+            OPENAI_API_BASE_URLS: string[];
+            /** Openai Api Keys */
+            OPENAI_API_KEYS: string[];
+            /** Openai Api Configs */
+            OPENAI_API_CONFIGS: Record<string, never>;
+        };
+        /**
+         * OllamaConfigForm
+         * @description Ollama Config Form.
+         */
+        open_webui__routers__retrieval__OllamaConfigForm: {
+            /** Url */
+            url: string;
+            /** Key */
+            key: string;
+        };
+        /**
+         * OpenAIConfigForm
+         * @description OpenAI Config Form.
+         */
+        open_webui__routers__retrieval__OpenAIConfigForm: {
+            /** Url */
+            url: string;
+            /** Key */
+            key: string;
+        };
+        /** UserResponse */
+        open_webui__routers__users__UserResponse: {
+            /** Name */
+            name: string;
+            /** Profile Image Url */
+            profile_image_url: string;
+            /** Active */
+            active?: boolean | null;
+        };
+        /** Function */
+        openai__types__chat__chat_completion_message_tool_call_param__Function: {
+            /** Arguments */
+            arguments: string;
+            /** Name */
+            name: string;
+        };
+        /** Function */
+        openai__types__chat__chat_completion_named_tool_choice_param__Function: {
+            /** Name */
+            name: string;
+        };
+        /** Function */
+        openai__types__chat__completion_create_params__Function: {
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string;
+            /** Parameters */
+            parameters?: Record<string, never>;
+        };
     };
     responses: never;
     parameters: never;
@@ -269,108 +8367,6 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    list_users_api_v1_users_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["User"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_files_api_v1_files_get: {
-        parameters: {
-            query?: {
-                after?: string | null;
-                limit?: number;
-                order?: "asc" | "desc";
-                purpose?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                token?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AsyncCursorPage_FileObject_"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    upload_file_api_v1_files_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: {
-                token?: string | null;
-            };
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_upload_file_api_v1_files_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["FileObject"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     retrieve_servers_mcp_servers_get: {
         parameters: {
             query?: never;
@@ -420,6 +8416,8301 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_status_ollama__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_status_ollama__head: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    verify_connection_ollama_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["open_webui__routers__ollama__ConnectionVerificationForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_config_ollama_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_config_ollama_config_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["open_webui__routers__ollama__OllamaConfigForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ollama_tags_ollama_api_tags__url_idx__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ollama_tags_ollama_api_tags_get: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ollama_versions_ollama_api_version__url_idx__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ollama_versions_ollama_api_version_get: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ollama_loaded_models_ollama_api_ps_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    pull_model_ollama_api_pull__url_idx__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelNameForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pull_model_ollama_api_pull_post: {
+        parameters: {
+            query?: {
+                url_idx?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelNameForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    push_model_ollama_api_push__url_idx__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushModelForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    push_model_ollama_api_push_delete: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PushModelForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_model_ollama_api_create__url_idx__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateModelForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_model_ollama_api_create_post: {
+        parameters: {
+            query?: {
+                url_idx?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateModelForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    copy_model_ollama_api_copy__url_idx__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopyModelForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    copy_model_ollama_api_copy_post: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopyModelForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_model_ollama_api_delete__url_idx__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelNameForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_model_ollama_api_delete_delete: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelNameForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    show_model_info_ollama_api_show_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelNameForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    embed_ollama_api_embed__url_idx__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateEmbedForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    embed_ollama_api_embed_post: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateEmbedForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    embeddings_ollama_api_embeddings__url_idx__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateEmbeddingsForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    embeddings_ollama_api_embeddings_post: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateEmbeddingsForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_completion_ollama_api_generate__url_idx__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateCompletionForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_completion_ollama_api_generate_post: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateCompletionForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_chat_completion_ollama_api_chat__url_idx__post: {
+        parameters: {
+            query?: {
+                bypass_filter?: boolean | null;
+            };
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateChatCompletionForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_chat_completion_ollama_api_chat_post: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+                bypass_filter?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateChatCompletionForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_openai_completion_ollama_v1_completions__url_idx__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAICompletionForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_openai_completion_ollama_v1_completions_post: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAICompletionForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_openai_chat_completion_ollama_v1_chat_completions__url_idx__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_openai_chat_completion_ollama_v1_chat_completions_post: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_openai_models_ollama_v1_models__url_idx__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_openai_models_ollama_v1_models_get: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_model_ollama_models_download__url_idx__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["open_webui__routers__ollama__UrlForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_model_ollama_models_download_post: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["open_webui__routers__ollama__UrlForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_model_ollama_models_upload__url_idx__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_model_ollama_models_upload__url_idx__post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_model_ollama_models_upload_post: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_model_ollama_models_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_config_openai_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_config_openai_config_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["open_webui__routers__openai__OpenAIConfigForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    speech_openai_audio_speech_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RootModel_SpeechCreateParams_"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_models_openai_models__url_idx__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                url_idx: number | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_models_openai_models_get: {
+        parameters: {
+            query?: {
+                url_idx?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_connection_openai_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["open_webui__routers__openai__ConnectionVerificationForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_chat_completion_openai_chat_completions_post: {
+        parameters: {
+            query?: {
+                bypass_filter?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RootModel_Union_CompletionCreateParamsNonStreaming__CompletionCreateParamsStreaming__"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_task_config_api_v1_tasks_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_task_config_api_v1_tasks_config_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TaskConfigForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_title_api_v1_tasks_title_completions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_chat_tags_api_v1_tasks_tags_completions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_queries_api_v1_tasks_queries_completions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_autocompletion_api_v1_tasks_auto_completions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoCompletionForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_emoji_api_v1_tasks_emoji_completions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_moa_response_api_v1_tasks_moa_completions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_config_api_v1_images_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_config_api_v1_images_config_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_url_api_v1_images_config_url_verify_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_image_config_api_v1_images_image_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_image_config_api_v1_images_image_config_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImageConfigForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_models_api_v1_images_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    image_generations_api_v1_images_generations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GenerateImageForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_audio_config_api_v1_audio_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_audio_config_api_v1_audio_config_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AudioConfigUpdateForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    speech_api_v1_audio_speech_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    transcription_api_v1_audio_transcriptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_transcription_api_v1_audio_transcriptions_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_models_api_v1_audio_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_voices_api_v1_audio_voices_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_status_api_v1_retrieval__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_embedding_config_api_v1_retrieval_embedding_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_reraanking_config_api_v1_retrieval_reranking_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_embedding_config_api_v1_retrieval_embedding_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmbeddingModelUpdateForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_reranking_config_api_v1_retrieval_reranking_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RerankingModelUpdateForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rag_config_api_v1_retrieval_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_rag_config_api_v1_retrieval_config_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfigUpdateForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_rag_template_api_v1_retrieval_template_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_query_settings_api_v1_retrieval_query_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_query_settings_api_v1_retrieval_query_settings_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuerySettingsForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    process_file_api_v1_retrieval_process_file_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessFileForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    process_text_api_v1_retrieval_process_text_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessTextForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    process_youtube_video_api_v1_retrieval_process_youtube_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessUrlForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    process_web_api_v1_retrieval_process_web_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProcessUrlForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    process_web_search_api_v1_retrieval_process_web_search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    query_doc_handler_api_v1_retrieval_query_doc_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QueryDocForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    query_collection_handler_api_v1_retrieval_query_collection_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QueryCollectionsForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_entries_from_collection_api_v1_retrieval_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_vector_db_api_v1_retrieval_reset_db_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    reset_upload_dir_api_v1_retrieval_reset_uploads_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    get_embeddings_api_v1_retrieval_ef__text__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                text: string | null;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    process_files_batch_api_v1_retrieval_process_files_batch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BatchProcessFilesForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BatchProcessFilesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_config_api_v1_configs_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImportConfigForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigData"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_config_api_v1_configs_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConfigData"];
+                };
+            };
+        };
+    };
+    get_models_config_api_v1_configs_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelsConfigForm"];
+                };
+            };
+        };
+    };
+    set_models_config_api_v1_configs_models_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelsConfigForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelsConfigForm"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_default_suggestions_api_v1_configs_suggestions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptSuggestion-Input"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["open_webui__routers__configs__PromptSuggestion"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_banners_api_v1_configs_banners_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BannerModel"][];
+                };
+            };
+        };
+    };
+    set_banners_api_v1_configs_banners_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BannerModel"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BannerModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_session_user_api_v1_auths__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionUserResponse"];
+                };
+            };
+        };
+    };
+    update_profile_api_v1_auths_update_profile_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["open_webui__models__auths__UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_password_api_v1_auths_update_password_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePasswordForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ldap_auth_api_v1_auths_ldap_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LdapForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SigninResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    signin_api_v1_auths_signin_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SigninForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionUserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    signup_api_v1_auths_signup_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SignupForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionUserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    signout_api_v1_auths_signout_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    add_user_api_v1_auths_add_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddUserForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SigninResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_admin_details_api_v1_auths_admin_details_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_admin_config_api_v1_auths_admin_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_admin_config_api_v1_auths_admin_config_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminConfig"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ldap_server_api_v1_auths_admin_config_ldap_server_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LdapServerConfig"];
+                };
+            };
+        };
+    };
+    update_ldap_server_api_v1_auths_admin_config_ldap_server_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LdapServerConfig"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ldap_config_api_v1_auths_admin_config_ldap_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_ldap_config_api_v1_auths_admin_config_ldap_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LdapConfigForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_api_key_api_v1_auths_api_key_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKey"];
+                };
+            };
+        };
+    };
+    generate_api_key_api_v1_auths_api_key_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKey"];
+                };
+            };
+        };
+    };
+    delete_api_key_api_v1_auths_api_key_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    get_users_api_v1_users__get: {
+        parameters: {
+            query?: {
+                skip?: number | null;
+                limit?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_groups_api_v1_users_groups_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_user_permissisions_api_v1_users_permissions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_user_permissions_api_v1_users_default_permissions_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_user_permissions_api_v1_users_default_permissions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserPermissions"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user_role_api_v1_users_update_role_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserRoleUpdateForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_settings_by_session_user_api_v1_users_user_settings_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSettings"] | null;
+                };
+            };
+        };
+    };
+    update_user_settings_by_session_user_api_v1_users_user_settings_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserSettings"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserSettings"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_info_by_session_user_api_v1_users_user_info_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+        };
+    };
+    update_user_info_by_session_user_api_v1_users_user_info_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_by_id_api_v1_users__user_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["open_webui__routers__users__UserResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_user_by_id_api_v1_users__user_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_user_by_id_api_v1_users__user_id__update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UserUpdateForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_channels_api_v1_channels__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelModel"][];
+                };
+            };
+        };
+    };
+    create_new_channel_api_v1_channels_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChannelForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_channel_by_id_api_v1_channels__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_channel_by_id_api_v1_channels__id__update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChannelForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChannelModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_channel_by_id_api_v1_channels__id__delete_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_channel_messages_api_v1_channels__id__messages_get: {
+        parameters: {
+            query?: {
+                skip?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageUserResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_new_message_api_v1_channels__id__messages_post_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_channel_message_api_v1_channels__id__messages__message_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageUserResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_channel_thread_messages_api_v1_channels__id__messages__message_id__thread_get: {
+        parameters: {
+            query?: {
+                skip?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                id: string;
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageUserResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_message_by_id_api_v1_channels__id__messages__message_id__update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MessageForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MessageModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_reaction_to_message_api_v1_channels__id__messages__message_id__reactions_add_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactionForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_reaction_by_id_and_user_id_and_name_api_v1_channels__id__messages__message_id__reactions_remove_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReactionForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_message_by_id_api_v1_channels__id__messages__message_id__delete_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_session_user_chat_list_api_v1_chats_list_get: {
+        parameters: {
+            query?: {
+                page?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatTitleIdResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_session_user_chat_list_api_v1_chats__get: {
+        parameters: {
+            query?: {
+                page?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatTitleIdResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_all_user_chats_api_v1_chats__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    get_user_chat_list_by_user_id_api_v1_chats_list_user__user_id__get: {
+        parameters: {
+            query?: {
+                skip?: number;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatTitleIdResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_new_chat_api_v1_chats_new_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    import_chat_api_v1_chats_import_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatImportForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_user_chats_api_v1_chats_search_get: {
+        parameters: {
+            query: {
+                text: string;
+                page?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatTitleIdResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_chats_by_folder_id_api_v1_chats_folder__folder_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                folder_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_pinned_chats_api_v1_chats_pinned_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"][];
+                };
+            };
+        };
+    };
+    get_user_chats_api_v1_chats_all_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"][];
+                };
+            };
+        };
+    };
+    get_user_archived_chats_api_v1_chats_all_archived_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"][];
+                };
+            };
+        };
+    };
+    get_all_user_tags_api_v1_chats_all_tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagModel"][];
+                };
+            };
+        };
+    };
+    get_all_user_chats_in_db_api_v1_chats_all_db_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"][];
+                };
+            };
+        };
+    };
+    get_archived_session_user_chat_list_api_v1_chats_archived_get: {
+        parameters: {
+            query?: {
+                skip?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatTitleIdResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_all_chats_api_v1_chats_archive_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    get_shared_chat_by_id_api_v1_chats_share__share_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                share_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_user_chat_list_by_tag_name_api_v1_chats_tags_post: {
+        parameters: {
+            query: {
+                name: string;
+                skip?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatTitleIdResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_chat_by_id_api_v1_chats__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_chat_by_id_api_v1_chats__id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_chat_by_id_api_v1_chats__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_pinned_status_by_id_api_v1_chats__id__pinned_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pin_chat_by_id_api_v1_chats__id__pin_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clone_chat_by_id_api_v1_chats__id__clone_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clone_shared_chat_by_id_api_v1_chats__id__clone_shared_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    archive_chat_by_id_api_v1_chats__id__archive_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    share_chat_by_id_api_v1_chats__id__share_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_shared_chat_by_id_api_v1_chats__id__share_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_chat_folder_id_by_id_api_v1_chats__id__folder_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatFolderIdForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_chat_tags_by_id_api_v1_chats__id__tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_tag_by_id_and_tag_name_api_v1_chats__id__tags_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_tag_by_id_and_tag_name_api_v1_chats__id__tags_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagModel"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_all_tags_by_id_api_v1_chats__id__tags_all_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_models_api_v1_models__get: {
+        parameters: {
+            query?: {
+                id?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelUserResponse"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_base_models_api_v1_models_base_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelResponse"][];
+                };
+            };
+        };
+    };
+    create_new_model_api_v1_models_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_model_by_id_api_v1_models_model_get: {
+        parameters: {
+            query: {
+                id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    toggle_model_by_id_api_v1_models_model_toggle_post: {
+        parameters: {
+            query: {
+                id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_model_by_id_api_v1_models_model_update_post: {
+        parameters: {
+            query: {
+                id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ModelForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_model_by_id_api_v1_models_model_delete_delete: {
+        parameters: {
+            query: {
+                id: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_all_models_api_v1_models_delete_all_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    get_knowledge_api_v1_knowledge__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeUserResponse"][];
+                };
+            };
+        };
+    };
+    get_knowledge_list_api_v1_knowledge_list_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeUserResponse"][];
+                };
+            };
+        };
+    };
+    create_new_knowledge_api_v1_knowledge_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_knowledge_by_id_api_v1_knowledge__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeFilesResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_knowledge_by_id_api_v1_knowledge__id__update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeFilesResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_file_to_knowledge_by_id_api_v1_knowledge__id__file_add_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeFileIdForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeFilesResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_file_from_knowledge_by_id_api_v1_knowledge__id__file_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeFileIdForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeFilesResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_file_from_knowledge_by_id_api_v1_knowledge__id__file_remove_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeFileIdForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeFilesResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_knowledge_by_id_api_v1_knowledge__id__delete_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_knowledge_by_id_api_v1_knowledge__id__reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_files_to_knowledge_batch_api_v1_knowledge__id__files_batch_add_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeFileIdForm"][];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeFilesResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_prompts_api_v1_prompts__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptModel"][];
+                };
+            };
+        };
+    };
+    get_prompt_list_api_v1_prompts_list_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptUserResponse"][];
+                };
+            };
+        };
+    };
+    create_new_prompt_api_v1_prompts_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_prompt_by_command_api_v1_prompts_command__command__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                command: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_prompt_by_command_api_v1_prompts_command__command__update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                command: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromptForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromptModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_prompt_by_command_api_v1_prompts_command__command__delete_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                command: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tools_api_v1_tools__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolUserResponse"][];
+                };
+            };
+        };
+    };
+    get_tool_list_api_v1_tools_list_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolUserResponse"][];
+                };
+            };
+        };
+    };
+    export_tools_api_v1_tools_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolModel"][];
+                };
+            };
+        };
+    };
+    create_new_tools_api_v1_tools_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToolForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tools_by_id_api_v1_tools_id__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_tools_by_id_api_v1_tools_id__id__update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToolForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_tools_by_id_api_v1_tools_id__id__delete_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tools_valves_by_id_api_v1_tools_id__id__valves_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tools_valves_spec_by_id_api_v1_tools_id__id__valves_spec_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_tools_valves_by_id_api_v1_tools_id__id__valves_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tools_user_valves_by_id_api_v1_tools_id__id__valves_user_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_tools_user_valves_spec_by_id_api_v1_tools_id__id__valves_user_spec_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_tools_user_valves_by_id_api_v1_tools_id__id__valves_user_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_embeddings_api_v1_memories_ef_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_memories_api_v1_memories__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryModel"][];
+                };
+            };
+        };
+    };
+    add_memory_api_v1_memories_add_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddMemoryForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    query_memory_api_v1_memories_query_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QueryMemoryForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_memory_from_vector_db_api_v1_memories_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    delete_memory_by_user_id_api_v1_memories_delete_user_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    update_memory_by_id_api_v1_memories__memory_id__update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memory_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MemoryUpdateModel"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_memory_by_id_api_v1_memories__memory_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memory_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_folders_api_v1_folders__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderModel"][];
+                };
+            };
+        };
+    };
+    create_folder_api_v1_folders__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FolderForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_folder_by_id_api_v1_folders__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FolderModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_folder_by_id_api_v1_folders__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_folder_name_by_id_api_v1_folders__id__update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FolderForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_folder_parent_id_by_id_api_v1_folders__id__update_parent_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FolderParentIdForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_folder_is_expanded_by_id_api_v1_folders__id__update_expanded_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FolderIsExpandedForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_groups_api_v1_groups__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupResponse"][];
+                };
+            };
+        };
+    };
+    create_new_function_api_v1_groups_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_group_by_id_api_v1_groups_id__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_group_by_id_api_v1_groups_id__id__update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GroupUpdateForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_group_by_id_api_v1_groups_id__id__delete_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_files_api_v1_files__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FileModelResponse"][];
+                };
+            };
+        };
+    };
+    upload_file_api_v1_files__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_file_api_v1_files__post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["open_webui__models__file__File-Output"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_file_by_id_api_v1_files__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["open_webui__models__file__File-Output"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_file_by_id_api_v1_files__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_file_data_content_by_id_api_v1_files__id__data_content_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ContentForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_file_content_by_id_api_v1_files__id__content_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_functions_api_v1_functions__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FunctionResponse"][];
+                };
+            };
+        };
+    };
+    get_functions_api_v1_functions_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FunctionModel"][];
+                };
+            };
+        };
+    };
+    create_new_function_api_v1_functions_create_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FunctionForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FunctionResponse"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_function_by_id_api_v1_functions_id__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FunctionModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    toggle_function_by_id_api_v1_functions_id__id__toggle_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FunctionModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    toggle_global_by_id_api_v1_functions_id__id__toggle_global_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FunctionModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_function_by_id_api_v1_functions_id__id__update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FunctionForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FunctionModel"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_function_by_id_api_v1_functions_id__id__delete_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_function_valves_by_id_api_v1_functions_id__id__valves_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_function_valves_spec_by_id_api_v1_functions_id__id__valves_spec_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_function_valves_by_id_api_v1_functions_id__id__valves_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_function_user_valves_by_id_api_v1_functions_id__id__valves_user_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_function_user_valves_spec_by_id_api_v1_functions_id__id__valves_user_spec_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_function_user_valves_by_id_api_v1_functions_id__id__valves_user_update_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never> | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_config_api_v1_evaluations_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_config_api_v1_evaluations_config_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateConfigForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_all_feedbacks_api_v1_evaluations_feedbacks_all_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackUserResponse"][];
+                };
+            };
+        };
+    };
+    delete_all_feedbacks_api_v1_evaluations_feedbacks_all_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_all_feedbacks_api_v1_evaluations_feedbacks_all_export_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackModel"][];
+                };
+            };
+        };
+    };
+    get_feedbacks_api_v1_evaluations_feedbacks_user_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackUserResponse"][];
+                };
+            };
+        };
+    };
+    delete_feedbacks_api_v1_evaluations_feedbacks_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": boolean;
+                };
+            };
+        };
+    };
+    create_feedback_api_v1_evaluations_feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_feedback_by_id_api_v1_evaluations_feedback__id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_feedback_by_id_api_v1_evaluations_feedback__id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FeedbackForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FeedbackModel"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_feedback_by_id_api_v1_evaluations_feedback__id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_gravatar_api_v1_utils_gravatar_get: {
+        parameters: {
+            query: {
+                email: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    format_code_api_v1_utils_code_format_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CodeFormatRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_html_from_markdown_api_v1_utils_markdown_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MarkdownForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_chat_as_pdf_api_v1_utils_pdf_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatTitleMessagesForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_db_api_v1_utils_db_download_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    download_litellm_config_yaml_api_v1_utils_litellm_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_models_api_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_base_models_api_models_base_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    chat_completion_api_chat_completions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_completed_api_chat_completed_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    chat_action_api_chat_actions__action_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_task_endpoint_api_tasks_stop__task_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                task_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tasks_endpoint_api_tasks_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_app_config_api_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                token?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_webhook_url_api_webhook_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    update_webhook_url_api_webhook_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["omni_webui__app__UrlForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_app_version_api_version_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_app_latest_release_version_api_version_updates_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_app_changelog_api_changelog_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": Record<string, never>;
+                };
+            };
+        };
+    };
+    oauth_login_oauth__provider__login_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    oauth_callback_oauth__provider__callback_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_manifest_json_manifest_json_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_opensearch_xml_opensearch_xml_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };

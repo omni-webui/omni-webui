@@ -10,11 +10,15 @@ from urllib.parse import urlparse
 import valkey.asyncio
 from fastapi import Depends
 from loguru import logger
+from platformdirs import PlatformDirs
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
 
 OPENAI_BASE_URL = "https://api.openai.com/v1"
 OLLAMA_HOST = "http://127.0.0.1:11434"
+
+
+D = PlatformDirs(appname="omni-webui")
 
 
 @lru_cache
@@ -31,7 +35,7 @@ def get_package_dir(name: str) -> Path:
 class Environments(BaseSettings, case_sensitive=True):
     """Environment variables."""
 
-    DATA_DIR: Path = get_package_dir("open_webui") / "data"
+    DATA_DIR: str = D.user_data_dir
     UPLOAD_DIR: str = ""
     STATIC_DIR: Path = get_package_dir("open_webui") / "static"
     FONTS_DIR: Path = get_package_dir("open_webui") / "static" / "fonts"
@@ -73,11 +77,17 @@ class Environments(BaseSettings, case_sensitive=True):
     def model_post_init(self, __context):
         """Post init."""
         if self.DATABASE_URL == "":
-            self.DATABASE_URL = f"sqlite:///{self.DATA_DIR / 'webui.db'}"
-        if self.PGVECTOR_DB_URL == "":
+            self.data_path.mkdir(parents=True, exist_ok=True)
+            self.DATABASE_URL = f"sqlite:///{self.data_path / 'webui.db'}"
+        if self.PGVECTOR_DB_URL == "" and self.DATABASE_URL.startswith("postgresql"):
             self.PGVECTOR_DB_URL = self.DATABASE_URL
         if self.UPLOAD_DIR == "":
             self.UPLOAD_DIR = f"{self.DATA_DIR}/uploads"
+
+    @property
+    def data_path(self) -> Path:
+        """Get the data path."""
+        return Path(self.DATA_DIR) if "://" not in self.DATA_DIR else D.user_data_path
 
     def __hash__(self):
         return hash(self.model_dump_json())
@@ -152,14 +162,6 @@ VERSION = "0.5.4"
 ENABLE_FORWARD_USER_INFO_HEADERS = (
     os.environ.get("ENABLE_FORWARD_USER_INFO_HEADERS", "False").lower() == "true"
 )
-
-# Check if the file exists
-if os.path.exists(env.DATA_DIR / "ollama.db"):
-    # Rename the file
-    os.rename(env.DATA_DIR / "ollama.db", env.DATA_DIR / "webui.db")
-    logger.info("Database migrated from Ollama-WebUI successfully.")
-else:
-    pass
 
 DATABASE_POOL_SIZE = os.environ.get("DATABASE_POOL_SIZE", 0)
 

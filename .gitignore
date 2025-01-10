@@ -16,3 +16,4 @@ dist/
 
 # Open WebUI
 build/
+openapi.json
