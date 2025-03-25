@@ -171,7 +171,7 @@ export default function ChatArea() {
           <Button
             onClick={handleSubmit}
             disabled={!userInput.trim() || isLoading}
-            className="shrink-0"
+            className="shrink-0 h-[60px]"
           >
             <SendHorizontal className="h-5 w-5" />
             <span className="sr-only">Send</span>
