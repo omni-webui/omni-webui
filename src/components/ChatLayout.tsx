@@ -1,10 +1,10 @@
+import ChatArea from "@/components/ChatArea";
 import Sidebar from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useChatStore } from "@/lib/store";
 import { Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import ChatArea from "@/components/ChatArea";
 
 export default function ChatLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
