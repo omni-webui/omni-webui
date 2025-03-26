@@ -24,7 +24,7 @@ export default function SuggestedPrompts({
         >
           <div className="flex flex-col h-full">
             <div className="font-medium mb-1">{prompt.title}</div>
-            <p className="text-sm text-muted-foreground flex-grow mb-2">
+            <p className="text-sm text-muted-foreground grow mb-2">
               {prompt.description}
             </p>
             <div className="flex justify-between items-center mt-auto">

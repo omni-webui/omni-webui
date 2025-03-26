@@ -1,14 +1,10 @@
-"use client";
-
 import Sidebar from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useChatStore } from "@/lib/store";
 import { Menu, X } from "lucide-react";
-import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
-
-const ChatArea = dynamic(() => import("@/components/ChatArea"), { ssr: false });
+import ChatArea from "@/components/ChatArea";
 
 export default function ChatLayout() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
