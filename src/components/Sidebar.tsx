@@ -95,8 +95,10 @@ export default function Sidebar() {
                   onClick={() => selectChat(chat.id)}
                 >
                   <div className="truncate flex-1">
-                    <div className="truncate font-medium">{chat.title}</div>
-                    <div className="text-xs text-muted-foreground truncate">
+                    <div className="truncate font-medium pl-2">
+                      {chat.title}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate pl-2">
                       {formatDate(chat.updatedAt)}
                     </div>
                   </div>
