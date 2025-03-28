@@ -5,6 +5,14 @@ import { defineConfig } from "vite";
 import biomePlugin from "vite-plugin-biome";
 
 export default defineConfig({
+  define: {
+    "import.meta.env.OPENAI_API_KEY": JSON.stringify(
+      process.env.OPENAI_API_KEY,
+    ),
+    "import.meta.env.OPENAI_BASE_URL": JSON.stringify(
+      process.env.OPENAI_BASE_URL,
+    ),
+  },
   plugins: [biomePlugin(), react(), tailwindcss()],
   resolve: {
     alias: {

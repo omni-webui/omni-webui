@@ -1,4 +1,6 @@
-import type { Chat, Message, Model } from "@/types";
+import { client } from "@/lib/api";
+import type { Chat, Message } from "@/types";
+import type { Model } from "openai/resources/models";
 import { v4 as uuidv4 } from "uuid";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -20,41 +22,19 @@ interface ChatStore {
   updateMessage: (chatId: string, messageId: string, content: string) => void;
   deleteMessage: (chatId: string, messageId: string) => void;
 
+  getModels: () => void;
   selectModel: (modelId: string) => void;
 
   // Getters
   getSelectedChat: () => Chat | undefined;
 }
-
-// Mock models for demonstration
-const defaultModels: Model[] = [
-  {
-    id: "gpt-4",
-    name: "GPT-4",
-    provider: "OpenAI",
-    description: "Most advanced OpenAI model",
-  },
-  {
-    id: "gpt-3.5-turbo",
-    name: "GPT-3.5 Turbo",
-    provider: "OpenAI",
-    description: "Fast and efficient OpenAI model",
-  },
-  {
-    id: "claude-3",
-    name: "Claude 3",
-    provider: "Anthropic",
-    description: "Anthropic's latest model",
-  },
-];
-
 export const useChatStore = create<ChatStore>()(
   persist(
     (set, get) => ({
       chats: [],
       selectedChatId: null,
-      models: defaultModels,
-      selectedModelId: defaultModels[0].id,
+      models: [],
+      selectedModelId: "",
 
       createChat: (modelId) => {
         const id = uuidv4();
@@ -132,17 +112,31 @@ export const useChatStore = create<ChatStore>()(
 
       updateMessage: (chatId, messageId, content) => {
         set((state) => ({
-          chats: state.chats.map((chat) =>
-            chat.id === chatId
-              ? {
-                  ...chat,
-                  messages: chat.messages.map((msg) =>
-                    msg.id === messageId ? { ...msg, content } : msg,
-                  ),
-                  updatedAt: new Date(),
-                }
-              : chat,
-          ),
+          chats: state.chats.map((chat) => {
+            if (chat.id !== chatId) return chat;
+            const messageExists = chat.messages.some(
+              (msg) => msg.id === messageId,
+            );
+            const messages = messageExists
+              ? chat.messages.map((msg) =>
+                  msg.id === messageId ? { ...msg, content } : msg,
+                )
+              : [
+                  ...chat.messages,
+                  {
+                    id: messageId,
+                    role: "assistant" as const,
+                    content,
+                    createdAt: new Date(),
+                  },
+                ];
+
+            return {
+              ...chat,
+              messages,
+              updatedAt: new Date(),
+            };
+          }),
         }));
       },
 
@@ -160,6 +154,10 @@ export const useChatStore = create<ChatStore>()(
         }));
       },
 
+      getModels: async () => {
+        const models = await client.models.list();
+        set({ models: models.data });
+      },
       selectModel: (modelId) => {
         set({ selectedModelId: modelId });
       },

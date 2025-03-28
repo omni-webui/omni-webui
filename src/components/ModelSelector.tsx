@@ -23,7 +23,7 @@ export default function ModelSelector() {
         <Button variant="outline" className="w-full justify-between">
           <div className="flex items-center">
             <div className="mr-2 h-4 w-4 rounded-full bg-primary/10" />
-            <span>{selectedModel?.name || "Select Model"}</span>
+            <span>{selectedModel?.id || "Select Model"}</span>
           </div>
           <ChevronDown className="h-4 w-4 ml-2" />
         </Button>
@@ -39,10 +39,10 @@ export default function ModelSelector() {
               <div
                 className={`mr-2 h-3 w-3 rounded-full ${selectedModelId === model.id ? "bg-primary" : "bg-primary/10"}`}
               />
-              <span>{model.name}</span>
+              <span>{model.id}</span>
             </div>
             <span className="text-xs text-muted-foreground">
-              {model.provider}
+              {model.owned_by}
             </span>
           </DropdownMenuItem>
         ))}

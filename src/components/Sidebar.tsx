@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { filterChats, formatDate } from "@/lib/chatHelpers";
 import { useChatStore } from "@/lib/store";
 import { Info, PlusCircle, Search, Settings, Trash } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Sidebar() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -25,6 +25,10 @@ export default function Sidebar() {
   const selectChat = useChatStore((state) => state.selectChat);
   const deleteChat = useChatStore((state) => state.deleteChat);
   const clearChats = useChatStore((state) => state.clearChats);
+  const getModels = useChatStore((state) => state.getModels);
+  useEffect(() => {
+    getModels();
+  }, [getModels]);
 
   const filteredChats = filterChats(chats, searchQuery);
 

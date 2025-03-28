@@ -5,6 +5,7 @@ export interface Message {
   role: MessageRole;
   content: string;
   createdAt: Date;
+  isStreaming?: boolean;
 }
 
 export interface Chat {
@@ -14,14 +15,6 @@ export interface Chat {
   createdAt: Date;
   updatedAt: Date;
   modelId: string;
-}
-
-export interface Model {
-  id: string;
-  name: string;
-  description?: string;
-  provider: string;
-  iconUrl?: string;
 }
 
 export interface SuggestedPrompt {

@@ -1,11 +1,9 @@
-"use client";
-
 import SuggestedPrompts from "@/components/SuggestedPrompts";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { sendMessage } from "@/lib/api";
+import { client } from "@/lib/api";
 import { defaultPrompts } from "@/lib/chatHelpers";
 import { useChatStore } from "@/lib/store";
 import { Bot, SendHorizontal } from "lucide-react";
@@ -21,6 +19,7 @@ export default function ChatArea() {
 
   const selectedChat = useChatStore((state) => state.getSelectedChat());
   const addMessage = useChatStore((state) => state.addMessage);
+  const updateMessage = useChatStore((state) => state.updateMessage);
   const updateChatTitle = useChatStore((state) => state.updateChatTitle);
 
   // Auto-scroll to bottom on new messages
@@ -52,13 +51,21 @@ export default function ChatArea() {
     // Get AI response
     setIsLoading(true);
     try {
-      const { response } = await sendMessage(modelId, [
-        ...selectedChat.messages,
-        { id: "temp", role: "user", content: userInput, createdAt: new Date() },
-      ]);
+      const stream = await client.chat.completions.create({
+        model: modelId,
+        messages: [
+          ...selectedChat.messages,
+          { role: "user", content: userInput },
+        ],
+        stream: true,
+      });
 
-      // Add assistant message to chat
-      addMessage(chatId, "assistant", response);
+      let fullResponse = "";
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        fullResponse += content;
+        updateMessage(chatId, chunk.id, fullResponse);
+      }
     } catch (error) {
       console.error("Error getting response:", error);
       addMessage(
@@ -128,6 +135,9 @@ export default function ChatArea() {
                       >
                         {message.content}
                       </ReactMarkdown>
+                      {message.isStreaming && (
+                        <span className="ml-1 inline-block h-2 w-2 animate-pulse rounded-full bg-current" />
+                      )}
                     </div>
                   ) : (
                     <p className="whitespace-pre-wrap">{message.content}</p>
@@ -136,24 +146,6 @@ export default function ChatArea() {
               </div>
             </div>
           ))
-        )}
-
-        {/* Loading indicator */}
-        {isLoading && (
-          <div className="flex justify-start">
-            <div className="flex gap-3 max-w-3xl">
-              <Avatar className="bg-secondary">
-                <AvatarFallback>AI</AvatarFallback>
-              </Avatar>
-              <Card className="p-4">
-                <div className="flex space-x-2 items-center">
-                  <div className="w-2 h-2 rounded-full bg-current animate-bounce [animation-delay:-0.3s]" />
-                  <div className="w-2 h-2 rounded-full bg-current animate-bounce [animation-delay:-0.15s]" />
-                  <div className="w-2 h-2 rounded-full bg-current animate-bounce" />
-                </div>
-              </Card>
-            </div>
-          </div>
         )}
       </div>
 
