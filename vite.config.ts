@@ -5,14 +5,21 @@ import { defineConfig } from "vite";
 import biomePlugin from "vite-plugin-biome";
 
 export default defineConfig({
-  define: {
-    "import.meta.env.OPENAI_API_KEY": JSON.stringify(
-      process.env.OPENAI_API_KEY,
-    ),
-    "import.meta.env.OPENAI_BASE_URL": JSON.stringify(
-      process.env.OPENAI_BASE_URL,
-    ),
-  },
+  envPrefix: [
+    "OMNI_WEBUI_",
+    "FASTOAI_",  // FastOAI is also created by me :)
+    "OPENAI_",
+    "ANTHROPIC_",
+    "GEMINI_",
+    "GRQQ_",
+    "LM_STUDIO_",
+    "XAI_",
+    "AZURE_",
+    "COHERE_",
+    "DEEPSEEK_",
+    "OLLAMA_",
+    "OPENROUTER_",
+  ],
   plugins: [biomePlugin(), react(), tailwindcss()],
   resolve: {
     alias: {
